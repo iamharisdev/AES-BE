@@ -2,6 +2,6 @@ name: core-app
 runtime: nodejs
 description: A minimal AWS TypeScript Pulumi program
 config:
-  pulumi:tags:
-    value:
-      pulumi:template: aws-typescript
+    pulumi:tags:
+        value:
+            pulumi:template: aws-typescript
