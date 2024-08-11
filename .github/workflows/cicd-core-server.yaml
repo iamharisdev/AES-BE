@@ -14,6 +14,9 @@ on:
     paths:
     - core-server/**
   workflow_dispatch:
+    branches:
+    - production
+    - development
 
 env:
   PROJECT_ID: awaz-e-sehat
