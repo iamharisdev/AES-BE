@@ -1,0 +1,41 @@
+name: Build and Push Core Server Docker Image to ECR
+
+on:
+  push:
+    branches:
+    - development
+    - production
+env:
+  AWS_REGION: ap-southeast-1
+  BRANCH_NAME: ${{ github.ref_name }}
+  ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+  ECR_REPOSITORY: awaaz-core-server-${{ github.ref_name }}
+  ENV_TYPE: ${{ env.BRANCH_NAME }}
+  IMAGE_TAG: ${{ github.sha }}
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@latest
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@latest
+
+    - name: Build, tag, and push image to Amazon ECR
+      id: build-image
+      env:
+      run: |
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+        echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+        echo "Docker image $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG has been built and pushed."
