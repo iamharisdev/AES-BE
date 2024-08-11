@@ -4,12 +4,20 @@ on:
   push:
     branches:
     - production
+  pull_request:
+    branches:
+    - production
+
+  paths:
+  - core-server/**
+
+  workflow_dispatch:
 
 env:
   PROJECT_ID: awaz-e-sehat
   REPOSITORY: awaaz-core-server
   IMAGE_NAME: server
-  BUILD_DIR: web-server
+  BUILD_DIR: core-server
   REGION: asia-southeast1
 
 jobs:
@@ -29,20 +37,21 @@ jobs:
       run: |
         gcloud auth configure-docker $REGION-docker.pkg.dev
 
+
     - name: Build Docker image
       run: |
         SHORT_SHA=$(git rev-parse --short HEAD)
-        docker build -t us-central1-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE_NAME:$SHORT_SHA $BUILD_DIR
+        docker build -t $REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE_NAME:$SHORT_SHA $BUILD_DIR
 
     - name: Push Docker image
       run: |
         SHORT_SHA=$(git rev-parse --short HEAD)
-        docker push us-central1-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE_NAME:$SHORT_SHA
+        docker push $REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE_NAME:$SHORT_SHA
 
     - name: Deploy to Cloud Run
       run: |
         SHORT_SHA=$(git rev-parse --short HEAD)
         SERVICE_NAME=core-server-${{ github.ref_name }}
         gcloud run services update $SERVICE_NAME \
-          --image us-central1-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE_NAME:$SHORT_SHA \
+          --image $REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE_NAME:$SHORT_SHA \
           --region $REGION
