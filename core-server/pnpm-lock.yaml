@@ -1,0 +1,166 @@
+lockfileVersion: '9.0'
+
+settings:
+    autoInstallPeers: true
+    excludeLinksFromLockfile: false
+
+importers:
+    .:
+        dependencies:
+            '@hono/swagger-ui':
+                specifier: ^0.4.0
+                version: 0.4.0(hono@4.5.4)
+            '@hono/zod-openapi':
+                specifier: ^0.15.2
+                version: 0.15.2(hono@4.5.4)(zod@3.23.8)
+            hono:
+                specifier: ^4.5.4
+                version: 4.5.4
+        devDependencies:
+            '@types/bun':
+                specifier: latest
+                version: 1.1.6
+
+packages:
+    '@asteasolutions/zod-to-openapi@7.1.1':
+        resolution:
+            {
+                integrity: sha512-lF0d1gAc0lYLO9/BAGivwTwE2Sh9h6CHuDcbk5KnGBfIuAsAkDC+Fdat4dkQY3CS/zUWKHRmFEma0B7X132Ymw==,
+            }
+        peerDependencies:
+            zod: ^3.20.2
+
+    '@hono/swagger-ui@0.4.0':
+        resolution:
+            {
+                integrity: sha512-8lF+dexzgV2HRM1R/gf49E5djroq4jVMYMSwLkSF9pT0I6sYhuqirFDCRFrBtbbLCBsKzw6f2MF5rS+WY3d7Nw==,
+            }
+        peerDependencies:
+            hono: '*'
+
+    '@hono/zod-openapi@0.15.2':
+        resolution:
+            {
+                integrity: sha512-WcXV7COQRf2NqckL3UW7xDAaHxyZNPdBmQNJlshoEPZc7uMWkrWBHP9Zoet23eXr3Bw8SKxRZ7jQmy8wfzAb1g==,
+            }
+        engines: { node: '>=16.0.0' }
+        peerDependencies:
+            hono: '>=4.3.6'
+            zod: 3.*
+
+    '@hono/zod-validator@0.2.2':
+        resolution:
+            {
+                integrity: sha512-dSDxaPV70Py8wuIU2QNpoVEIOSzSXZ/6/B/h4xA7eOMz7+AarKTSGV8E6QwrdcCbBLkpqfJ4Q2TmBO0eP1tCBQ==,
+            }
+        peerDependencies:
+            hono: '>=3.9.0'
+            zod: ^3.19.1
+
+    '@types/bun@1.1.6':
+        resolution:
+            {
+                integrity: sha512-uJgKjTdX0GkWEHZzQzFsJkWp5+43ZS7HC8sZPFnOwnSo1AsNl2q9o2bFeS23disNDqbggEgyFkKCHl/w8iZsMA==,
+            }
+
+    '@types/node@20.12.14':
+        resolution:
+            {
+                integrity: sha512-scnD59RpYD91xngrQQLGkE+6UrHUPzeKZWhhjBSa3HSkwjbQc38+q3RoIVEwxQGRw3M+j5hpNAM+lgV3cVormg==,
+            }
+
+    '@types/ws@8.5.12':
+        resolution:
+            {
+                integrity: sha512-3tPRkv1EtkDpzlgyKyI8pGsGZAGPEaXeu0DOj5DI25Ja91bdAYddYHbADRYVrZMRbfW+1l5YwXVDKohDJNQxkQ==,
+            }
+
+    bun-types@1.1.17:
+        resolution:
+            {
+                integrity: sha512-Z4+OplcSd/YZq7ZsrfD00DKJeCwuNY96a1IDJyR73+cTBaFIS7SC6LhpY/W3AMEXO9iYq5NJ58WAwnwL1p5vKg==,
+            }
+
+    hono@4.5.4:
+        resolution:
+            {
+                integrity: sha512-k2IguJfRgNCpDbAfpxk+o+fZBLFHl4+eIZUpjc1ItZWHeZ37SmT3efA1UpkIaC0hSf1NJg0E79/wWn6g9LQ4Cw==,
+            }
+        engines: { node: '>=16.0.0' }
+
+    openapi3-ts@4.3.3:
+        resolution:
+            {
+                integrity: sha512-LKkzBGJcZ6wdvkKGMoSvpK+0cbN5Xc3XuYkJskO+vjEQWJgs1kgtyUk0pjf8KwPuysv323Er62F5P17XQl96Qg==,
+            }
+
+    undici-types@5.26.5:
+        resolution:
+            {
+                integrity: sha512-JlCMO+ehdEIKqlFxk6IfVoAUVmgz7cU7zD/h9XZ0qzeosSHmUJVOzSQvvYSYWXkFXC+IfLKSIffhv0sVZup6pA==,
+            }
+
+    yaml@2.5.0:
+        resolution:
+            {
+                integrity: sha512-2wWLbGbYDiSqqIKoPjar3MPgB94ErzCtrNE1FdqGuaO0pi2JGjmE8aW8TDZwzU7vuxcGRdL/4gPQwQ7hD5AMSw==,
+            }
+        engines: { node: '>= 14' }
+        hasBin: true
+
+    zod@3.23.8:
+        resolution:
+            {
+                integrity: sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g==,
+            }
+
+snapshots:
+    '@asteasolutions/zod-to-openapi@7.1.1(zod@3.23.8)':
+        dependencies:
+            openapi3-ts: 4.3.3
+            zod: 3.23.8
+
+    '@hono/swagger-ui@0.4.0(hono@4.5.4)':
+        dependencies:
+            hono: 4.5.4
+
+    '@hono/zod-openapi@0.15.2(hono@4.5.4)(zod@3.23.8)':
+        dependencies:
+            '@asteasolutions/zod-to-openapi': 7.1.1(zod@3.23.8)
+            '@hono/zod-validator': 0.2.2(hono@4.5.4)(zod@3.23.8)
+            hono: 4.5.4
+            zod: 3.23.8
+
+    '@hono/zod-validator@0.2.2(hono@4.5.4)(zod@3.23.8)':
+        dependencies:
+            hono: 4.5.4
+            zod: 3.23.8
+
+    '@types/bun@1.1.6':
+        dependencies:
+            bun-types: 1.1.17
+
+    '@types/node@20.12.14':
+        dependencies:
+            undici-types: 5.26.5
+
+    '@types/ws@8.5.12':
+        dependencies:
+            '@types/node': 20.12.14
+
+    bun-types@1.1.17:
+        dependencies:
+            '@types/node': 20.12.14
+            '@types/ws': 8.5.12
+
+    hono@4.5.4: {}
+
+    openapi3-ts@4.3.3:
+        dependencies:
+            yaml: 2.5.0
+
+    undici-types@5.26.5: {}
+
+    yaml@2.5.0: {}
+
+    zod@3.23.8: {}

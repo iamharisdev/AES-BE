@@ -1,0 +1,16 @@
+{
+    "compilerOptions": {
+        // needed for postgres.js to work
+        "esModuleInterop": true,
+
+        "strict": true,
+        "jsx": "react-jsx",
+        "jsxImportSource": "hono/jsx",
+
+        // Configure Absolute Paths
+        "paths": {
+            "@/*": ["./src/*"]
+        }
+    },
+    "exclude": ["node_modules"]
+}
