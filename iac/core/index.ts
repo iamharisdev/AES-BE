@@ -99,34 +99,6 @@ const coreServerDockerRepo = new gcp.artifactregistry.Repository('core-server-do
     location: region,
 })
 
-const virtualRepo = new gcp.cloudbuildv2.Repository('cicd-repo', {
-    name: `awaazesehat-cicd-repo`,
-    location: region,
-    parentConnection: connectionName,
-    remoteUri: pulumi.interpolate`https://github.com/${githubOwner}/${githubRepo}.git`,
-})
-
-new gcp.cloudbuild.Trigger(
-    'core-server-trigger',
-    {
-        name: `core-server-trigger`,
-        includeBuildLogs: 'INCLUDE_BUILD_LOGS_WITH_STATUS',
-        includedFiles: ['core-server/**'],
-        ignoredFiles: ['README.md'],
-        filename: 'core-server/cloudbuild.yaml',
-        location: region,
-        repositoryEventConfig: {
-            repository: virtualRepo.id,
-            push: {
-                branch: '^(production)$',
-            },
-        },
-    },
-    {
-        dependsOn: [virtualRepo],
-    }
-)
-
 export const jwtSecret = jwtSecretGen.result
 export const appSAKeySecretId = appServiceAccountKeySecret.secretId
 export const serviceAccountEmail = applicationServiceAccount.email

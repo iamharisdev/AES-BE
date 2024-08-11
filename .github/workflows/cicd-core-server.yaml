@@ -1,0 +1,48 @@
+name: Build and Deploy to Cloud Run
+
+on:
+  push:
+    branches:
+    - production
+
+env:
+  PROJECT_ID: awaz-e-sehat
+  REPOSITORY: awaaz-core-server
+  IMAGE_NAME: server
+  BUILD_DIR: web-server
+  REGION: asia-southeast1
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+    - name: Configure Docker for Google Artifact Registry
+      run: |
+        gcloud auth configure-docker $REGION-docker.pkg.dev
+
+    - name: Build Docker image
+      run: |
+        SHORT_SHA=$(git rev-parse --short HEAD)
+        docker build -t us-central1-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE_NAME:$SHORT_SHA $BUILD_DIR
+
+    - name: Push Docker image
+      run: |
+        SHORT_SHA=$(git rev-parse --short HEAD)
+        docker push us-central1-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE_NAME:$SHORT_SHA
+
+    - name: Deploy to Cloud Run
+      run: |
+        SHORT_SHA=$(git rev-parse --short HEAD)
+        SERVICE_NAME=core-server-${{ github.ref_name }}
+        gcloud run services update $SERVICE_NAME \
+          --image us-central1-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE_NAME:$SHORT_SHA \
+          --region $REGION
