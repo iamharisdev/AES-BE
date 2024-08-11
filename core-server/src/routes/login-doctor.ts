@@ -6,48 +6,41 @@ import { db } from '@/db'
 import { schema } from '@/models'
 import { eq } from 'drizzle-orm'
 
-const RequestBodySchema = z
+const LoginRequestBodySchema = z
     .object({
-        name: z.string().openapi({
-            example: 'Nazia',
-        }),
         phoneNumber: z.string().openapi({
             example: '03001234567',
         }),
         password: z.string().openapi({
             example: 'xxxxxxxxx',
         }),
-        maternityHomeName: z.string().openapi({
-            example: 'Zacha Bacha',
-        }),
     })
-    // This would create the object
-    .openapi('ExampleBody')
+    .openapi('LoginRequestBody')
 
-const SuccessResponseSchema = z.object({
+const LoginSuccessResponseSchema = z.object({
     message: z.string().openapi({
-        example: 'Record Created',
+        example: 'Login Successful',
     }),
     token: z.string().describe('JWT Token for Authentication'),
 })
 
-const ConflictSchema = z.object({
+const UnauthorizedSchema = z.object({
     error: z.string().openapi({
-        example: 'Doctor with the ID is already Created',
+        example: 'Invalid phone number or password',
     }),
 })
 
 const route = createRoute({
     method: 'post',
-    operationId: 'registerDoctor',
+    operationId: 'loginDoctor',
     tags: ['Auth'],
-    path: '/doctor/register',
-    summary: 'Register the Health Practitioner in the system',
+    path: '/doctor/login',
+    summary: 'Login the Health Practitioner in the system',
     request: {
         body: {
             content: {
                 'application/json': {
-                    schema: RequestBodySchema,
+                    schema: LoginRequestBodySchema,
                 },
             },
         },
@@ -56,23 +49,23 @@ const route = createRoute({
         200: {
             content: {
                 'application/json': {
-                    schema: SuccessResponseSchema,
+                    schema: LoginSuccessResponseSchema,
                 },
             },
-            description: 'Register The User',
+            description: 'Login Successful',
         },
-        409: {
+        401: {
             content: {
                 'application/json': {
-                    schema: ConflictSchema,
+                    schema: UnauthorizedSchema,
                 },
             },
-            description: 'User Already Exists',
+            description: 'Unauthorized',
         },
     },
 })
 
-const handler = app.openapi(route, async (c) => {
+const loginHandler = app.openapi(route, async (c) => {
     const details = c.req.valid('json')
 
     // check if the user exists in the database
@@ -82,33 +75,35 @@ const handler = app.openapi(route, async (c) => {
         .where(eq(schema.doctor.phone, details.phoneNumber))
         .then((user) => user.at(0))
 
-    if (user) {
+    if (!user) {
         return c.json(
             {
-                error: `Record With Phone Number ${details.phoneNumber} already exists`,
+                error: 'Invalid phone number or password',
             },
-            409
+            401
         )
     }
 
-    await db.insert(schema.doctor).values({
-        name: details.name,
-        phone: details.phoneNumber,
-        encryptedPassword: (await sha256(details.password)) ?? '',
-        maternityHomeName: details.maternityHomeName,
-    })
+    // verify password
+    const encryptedPassword = (await sha256(details.password)) ?? ''
+    if (user.encryptedPassword !== encryptedPassword) {
+        return c.json(
+            {
+                error: 'Invalid phone number or password',
+            },
+            401
+        )
+    }
 
     const token = await sign({ phone: details.phoneNumber }, process.env.JWT_SECRET!, 'HS256')
-
     return c.json(
         {
-            message: 'Account Created',
+            message: 'Login Successful',
             token,
         },
         200
     )
 })
 
-export type RegisterDoctorRoute = typeof handler
-
+export type LoginDoctorRoute = typeof loginHandler
 export default route
