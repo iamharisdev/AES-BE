@@ -42,7 +42,7 @@ const database = new gcp.sql.Database('database', {
 
 const coreServerService = new gcp.cloudrunv2.Service('core-server-service', {
     name: `core-server-${environment}`,
-    location: 'us-central1',
+    location: region,
     ingress: 'INGRESS_TRAFFIC_ALL',
     template: {
         serviceAccount: serviceAccountEmail,
@@ -91,6 +91,7 @@ const coreServerService = new gcp.cloudrunv2.Service('core-server-service', {
                     { name: 'DATABASE_PASSWORD', value: databasePassword },
                     { name: 'DATABASE_NAME', value: database.name },
                     { name: 'JWT_SECRET', value: jwtSecret },
+                    { name: 'KEYFILE_PATH', value: '/secrets/keyfile.json' },
                     // PORT env is automatically provided by cloud run
                     // { name: 'PORT', value: '8000' },
                 ],
@@ -108,12 +109,19 @@ const noauth = gcp.organizations.getIAMPolicy({
         },
     ],
 })
+
 const noauthIamPolicy = new gcp.cloudrun.IamPolicy('noauth', {
     location: coreServerService.location,
     project: coreServerService.project,
     service: coreServerService.name,
     policyData: noauth.then((noauth) => noauth.policyData),
 })
+
+// Allow the CICD SA to act as the Run Service Account
+// gcloud iam service-accounts add-iam-policy-binding awaazesehatapp@awaz-e-sehat.iam.gserviceaccount.com \
+//   --member="serviceAccount:cicdpipeline@awaz-e-sehat.iam.gserviceaccount.com" \
+//   --role="roles/iam.serviceAccountUser" \
+//   --project="awaz-e-sehat"
 
 export const coreServiceUrl = coreServerService.uri
 export const uploadBucketName = uploadsBucket.name
