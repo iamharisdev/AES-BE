@@ -4,12 +4,14 @@ on:
   push:
     branches:
     - production
+    paths:
+    - core-server/**
+
   pull_request:
     branches:
     - production
-
-  paths:
-  - core-server/**
+    paths:
+    - core-server/**
 
   workflow_dispatch:
 
