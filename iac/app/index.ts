@@ -1,77 +1,119 @@
 import * as pulumi from '@pulumi/pulumi'
-import * as aws from '@pulumi/aws'
-import * as awsx from '@pulumi/awsx'
-
+import * as gcp from '@pulumi/gcp'
 // Environment Variables
-const awsConfig = new pulumi.Config('aws')
-const region = awsConfig.require('region')
+const gcpConfig = new pulumi.Config('gcp')
+const region = gcpConfig.require('region')
+const project = gcpConfig.require('project')
 
 // Reference to Stack Outputs For Parent Stack
 const coreStackReference = new pulumi.StackReference(`organization/core-app/default`)
 
+const databaseHost = coreStackReference.requireOutput('databaseHost')
 const databaseInstanceName = coreStackReference.requireOutput('databaseInstanceName')
 const databaseUsername = coreStackReference.requireOutput('databaseUsername')
 const databasePassword = coreStackReference.requireOutput('databasePassword')
 
-const appIamUserName = coreStackReference.requireOutput('appIamUserName')
-const appIamAccessId = coreStackReference.requireOutput('appIamAccessId')
-const appIamAccessKey = coreStackReference.requireOutput('appIamAccessKey')
+const jwtSecret = coreStackReference.requireOutput('jwtSecret')
+const serviceAccountEmail = coreStackReference.requireOutput('serviceAccountEmail')
+const appSAKeySecretId = coreStackReference.requireOutput('appSAKeySecretId')
+const artifactRegistryName = coreStackReference.requireOutput('artifactRegistryName')
 
 // Using the Stack Name as The Environment Name
 const environment = pulumi.getStack()
-
-/**
- * We Would be creating a Docker Repository for storing our application packages.
- * This repository is for the Core Server Application.
- */
-const coreServerDockerRepo = new aws.ecr.Repository('core-server-docker-repo', {
-    name: `awaaz-core-server-${environment}`,
-
-    // For Metadata Purposes
-    tags: {
-        ProjectName: 'awaaz-core-server',
-        EnvironmentType: environment,
-    },
-})
 
 /**
  * Let's also create a S3 Bucket for Storing any kind of files like:
  * - EMR Audio Files
  * - Big data blobs
  */
-const uploadsBucket = new aws.s3.Bucket('uploads-bucket', {
-    bucket: `awaaz-sehat-uploads-${environment}`,
+const uploadsBucket = new gcp.storage.Bucket('uploads-bucket', {
+    name: `awaaz-sehat-uploads-${environment}`,
+    location: region,
+})
+
+const database = new gcp.sql.Database('database', {
+    name: environment,
+    instance: databaseInstanceName,
 })
 
 /**
- * Host our Core Server On App Runner
+ * Host our Core Server On Cloud Run (Fully Managed Serverless Service)
  */
-// const coreServerAppRunnerConfig = new aws.apprunner.Auto("core-server-")
 
-const coreServerAppRunnerService = new aws.apprunner.Service('core-server-service', {
-    serviceName: `awaaz-core-server-${environment}`,
-    sourceConfiguration: {
-        imageRepository: {
-            imageConfiguration: {
-                port: '8000',
-                runtimeEnvironmentSecrets: {},
-                runtimeEnvironmentVariables: {},
+const coreServerService = new gcp.cloudrunv2.Service('core-server-service', {
+    name: `core-server-${environment}`,
+    location: 'us-central1',
+    ingress: 'INGRESS_TRAFFIC_ALL',
+    template: {
+        serviceAccount: serviceAccountEmail,
+        volumes: [
+            {
+                name: 'keyfile-volume',
+                secret: {
+                    secret: appSAKeySecretId,
+                    defaultMode: 292,
+                    items: [
+                        {
+                            version: '1',
+                            path: 'keyfile.json',
+                        },
+                    ],
+                },
             },
-            // TODO: It should use the reference to our core service repository
-            imageIdentifier: 'public.ecr.aws/aws-containers/hello-app-runner:latest',
-            imageRepositoryType: 'ECR_PUBLIC',
-        },
-        // should be set to true
-        autoDeploymentsEnabled: false,
-    },
-    instanceConfiguration: {
-        cpu: '256',
-        memory: '512',
-        // This might be equivalent to the GCP Service Account but i am not sure.
-        // instanceRoleArn: "???",
+            // {
+            //     name: 'cloudsql',
+            //     cloudSqlInstance: {
+            //         instances: [cloudSqlInstanceConnectionName],
+            //     },
+            // },
+        ],
+        containers: [
+            {
+                image: 'umernaeem/minimalistic-server',
+                volumeMounts: [
+                    {
+                        name: 'keyfile-volume',
+                        mountPath: '/secrets',
+                    },
+                    // {
+                    //     name: 'cloudsql',
+                    //     mountPath: '/cloudsql',
+                    // },
+                ],
+                ports: [
+                    {
+                        containerPort: 8000,
+                    },
+                ],
+                envs: [
+                    { name: 'DATABASE_HOST', value: databaseHost },
+                    { name: 'DATABASE_USER', value: databaseUsername },
+                    { name: 'DATABASE_PASSWORD', value: databasePassword },
+                    { name: 'DATABASE_NAME', value: database.name },
+                    { name: 'JWT_SECRET', value: jwtSecret },
+                    // PORT env is automatically provided by cloud run
+                    // { name: 'PORT', value: '8000' },
+                ],
+            },
+        ],
     },
 })
 
-export const coreServerRepo = coreServerDockerRepo.name
-export const coreServiceUrl = coreServerAppRunnerService.serviceUrl
-export const uploadBucketName = uploadsBucket.bucket
+// Allow Unauthenticated Access
+const noauth = gcp.organizations.getIAMPolicy({
+    bindings: [
+        {
+            role: 'roles/run.invoker',
+            members: ['allUsers'],
+        },
+    ],
+})
+const noauthIamPolicy = new gcp.cloudrun.IamPolicy('noauth', {
+    location: coreServerService.location,
+    project: coreServerService.project,
+    service: coreServerService.name,
+    policyData: noauth.then((noauth) => noauth.policyData),
+})
+
+export const coreServiceUrl = coreServerService.uri
+export const uploadBucketName = uploadsBucket.name

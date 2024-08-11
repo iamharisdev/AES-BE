@@ -1,5 +1,5 @@
 secretsprovider: gcpkms://projects/awaz-e-sehat/locations/asia-southeast1/keyRings/pulumi-key-ring/cryptoKeys/pulumi-iac-key
-encryptedkey: CiQAUCiXD8dIog2od8lkUKFItS0oOeQH0cT+fyjm8xvZqPrUCK0SSQCmRDKTiM+1+PvbJZWeh0BXM4foTc4eV8LleVE+vDidlVLjJmlnwYS6hGgczgscWvwbv3cnuOHJSQ8qwM+EbKadYyQQbyT41YE=
+encryptedkey: CiQAUCiXD0SalE7c+TVV8u85HuKVavpMFtM4dC7Cq8JEQS8DUtISSQCmRDKTEtAgvakYsQQ0jw+TPhG4lXojma/ilVa7xaJ8RT24eJOoh3VwLVE5euSIa43ko+YRK63uB8vHoV3Lcuupj4tK+g0C8qo=
 config:
   gcp:project: awaz-e-sehat
   gcp:region: asia-southeast1
