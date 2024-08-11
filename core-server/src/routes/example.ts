@@ -15,17 +15,16 @@ const ParamsSchema = z.object({
         }),
 })
 
-const RequestBodySchema = z
-    .object({
-        name: z.string().optional().openapi({
-            example: 'John Doe',
-        }),
-        age: z.number().optional().openapi({
-            example: 42,
-        }),
-    })
-    // This would create the object
-    .openapi('ExampleBody')
+const RequestBodySchema = z.object({
+    name: z.string().optional().openapi({
+        example: 'John Doe',
+    }),
+    age: z.number().optional().openapi({
+        example: 42,
+    }),
+})
+// This would create the object if it is reusable
+// .openapi('ExampleBody')
 
 const SuccessResponseSchema = z.object({
     message: z.string().default('Record Updated').openapi({

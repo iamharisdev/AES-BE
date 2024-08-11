@@ -6,16 +6,14 @@ import { db } from '@/db'
 import { schema } from '@/models'
 import { eq } from 'drizzle-orm'
 
-const LoginRequestBodySchema = z
-    .object({
-        phoneNumber: z.string().openapi({
-            example: '03001234567',
-        }),
-        password: z.string().openapi({
-            example: 'xxxxxxxxx',
-        }),
-    })
-    .openapi('LoginRequestBody')
+const LoginRequestBodySchema = z.object({
+    phoneNumber: z.string().openapi({
+        example: '03001234567',
+    }),
+    password: z.string().openapi({
+        example: 'xxxxxxxxx',
+    }),
+})
 
 const LoginSuccessResponseSchema = z.object({
     message: z.string().openapi({

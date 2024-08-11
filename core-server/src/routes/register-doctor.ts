@@ -6,23 +6,20 @@ import { db } from '@/db'
 import { schema } from '@/models'
 import { eq } from 'drizzle-orm'
 
-const RequestBodySchema = z
-    .object({
-        name: z.string().openapi({
-            example: 'Nazia',
-        }),
-        phoneNumber: z.string().openapi({
-            example: '03001234567',
-        }),
-        password: z.string().openapi({
-            example: 'xxxxxxxxx',
-        }),
-        maternityHomeName: z.string().openapi({
-            example: 'Zacha Bacha',
-        }),
-    })
-    // This would create the object
-    .openapi('ExampleBody')
+const RequestBodySchema = z.object({
+    name: z.string().openapi({
+        example: 'Nazia',
+    }),
+    phoneNumber: z.string().openapi({
+        example: '03001234567',
+    }),
+    password: z.string().openapi({
+        example: 'xxxxxxxxx',
+    }),
+    maternityHomeName: z.string().openapi({
+        example: 'Zacha Bacha',
+    }),
+})
 
 const SuccessResponseSchema = z.object({
     message: z.string().openapi({
