@@ -75,7 +75,7 @@ const coreServerService = new gcp.cloudrunv2.Service(
             ],
             containers: [
                 {
-                    image: 'umernaeem/minimalistic-server--',
+                    image: 'umernaeem/minimalistic-server',
                     volumeMounts: [
                         {
                             name: 'keyfile-volume',
@@ -93,7 +93,7 @@ const coreServerService = new gcp.cloudrunv2.Service(
                     ],
                     envs: [
                         { name: 'DATABASE_HOST', value: databaseHost },
-                        { name: 'DATABASE_USER', value: databaseUsername },
+                        { name: 'DATABASE_USERNAME', value: databaseUsername },
                         { name: 'DATABASE_PASSWORD', value: databasePassword },
                         { name: 'DATABASE_NAME', value: database.name },
                         { name: 'JWT_SECRET', value: jwtSecret },
