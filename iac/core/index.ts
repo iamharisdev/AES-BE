@@ -7,29 +7,22 @@ const region = gcpConfig.require('region')
 const project = gcpConfig.require('project')
 
 const config = new pulumi.Config()
-const githubOwner = config.require('githubOwner')
-const githubRepo = config.require('githubRepo')
-
-/**
- * `connectionName` needs to be generated manually in the GCP Console
- * go to: Cloud Build -> Repositories -> Create Connection
- * Connect Bot Account Instead of User Account
- */
-const connectionName = config.require('connectionName')
 
 const databasePasswordGen = new random.RandomPassword('db-password', {
-    length: 24,
-    special: false,
-})
-
-const jwtSecretGen = new random.RandomPassword('jwt-secret', {
     length: 32,
     special: false,
 })
 
+const jwtSecretGen = new random.RandomPassword('jwt-secret', {
+    length: 36,
+    special: false,
+})
+
 // Sharing this database for development, staging and production
-const databaseInstance = new gcp.sql.DatabaseInstance('solver-ai-db-instance', {
-    name: 'solvemate-ai-default',
+const databaseInstance = new gcp.sql.DatabaseInstance('app-db-instance', {
+    // name: 'solvemate-ai-default',
+    name: 'awaazesehat-main',
+    deletionProtection: false,
     databaseVersion: 'POSTGRES_13',
     region: region,
     settings: {
@@ -86,6 +79,12 @@ const appServiceAccountKeySecretVersion = new gcp.secretmanager.SecretVersion('a
 new gcp.projects.IAMMember('secret-accessor-iam-binding', {
     member: applicationServiceAccount.member,
     role: 'roles/secretmanager.secretAccessor',
+    project,
+})
+
+new gcp.projects.IAMMember('storage-admin-binding', {
+    member: applicationServiceAccount.member,
+    role: 'roles/storage.admin',
     project,
 })
 

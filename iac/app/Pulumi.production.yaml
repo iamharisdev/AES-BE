@@ -1,5 +1,7 @@
 secretsprovider: gcpkms://projects/awaz-e-sehat/locations/asia-southeast1/keyRings/pulumi-key-ring/cryptoKeys/pulumi-iac-key
 encryptedkey: CiQAUCiXD0SalE7c+TVV8u85HuKVavpMFtM4dC7Cq8JEQS8DUtISSQCmRDKTEtAgvakYsQQ0jw+TPhG4lXojma/ilVa7xaJ8RT24eJOoh3VwLVE5euSIa43ko+YRK63uB8vHoV3Lcuupj4tK+g0C8qo=
 config:
+  app-environment:OPENAI_API_KEY:
+    secure: v1:nBR1ZIK3bGqkB8bZ:MmrwWNXP9JdxSVGbvKRANIrzAtfSFsUs9hhw+zV9hQZfaCGtpceyXhA80RicNNSKU1wEgQJdXiVe/tOtxFSK7hCRSZMj2GJY8s2vkiw+H9BW6Q/aqPvgxPn2pAia5uzCx7XK3iGdWE/ei6AOjL+i0iBcjxcemqlAXL/FA8Jzww3RuJNMqRUdIcSlLTRKvHupZ+uLYC4m1SLOoqOE7OHiMbfyTzr+b8Mypk//
   gcp:project: awaz-e-sehat
   gcp:region: asia-southeast1

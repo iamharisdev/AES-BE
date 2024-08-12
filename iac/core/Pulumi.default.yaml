@@ -3,6 +3,3 @@ encryptedkey: CiQAUCiXD4oeRZ2zmO/jjMgiR5A0puMI4cNW1SulH0IdyjxEsw4SSQCmRDKTshyrKN
 config:
   gcp:project: awaz-e-sehat
   gcp:region: asia-southeast1
-  connectionName: awaazesehat-app
-  githubOwner: Awaazesehat
-  githubRepo: core-backend

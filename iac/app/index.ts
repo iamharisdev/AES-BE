@@ -5,6 +5,8 @@ const gcpConfig = new pulumi.Config('gcp')
 const region = gcpConfig.require('region')
 const project = gcpConfig.require('project')
 
+const config = new pulumi.Config()
+
 // Reference to Stack Outputs For Parent Stack
 const coreStackReference = new pulumi.StackReference(`organization/core-app/default`)
 
@@ -17,6 +19,8 @@ const jwtSecret = coreStackReference.requireOutput('jwtSecret')
 const serviceAccountEmail = coreStackReference.requireOutput('serviceAccountEmail')
 const appSAKeySecretId = coreStackReference.requireOutput('appSAKeySecretId')
 const artifactRegistryName = coreStackReference.requireOutput('artifactRegistryName')
+
+const OPENAI_API_KEY = config.requireSecret('OPENAI_API_KEY')
 
 // Using the Stack Name as The Environment Name
 const environment = pulumi.getStack()
@@ -40,65 +44,72 @@ const database = new gcp.sql.Database('database', {
  * Host our Core Server On Cloud Run (Fully Managed Serverless Service)
  */
 
-const coreServerService = new gcp.cloudrunv2.Service('core-server-service', {
-    name: `core-server-${environment}`,
-    location: region,
-    ingress: 'INGRESS_TRAFFIC_ALL',
-    template: {
-        serviceAccount: serviceAccountEmail,
-        volumes: [
-            {
-                name: 'keyfile-volume',
-                secret: {
-                    secret: appSAKeySecretId,
-                    defaultMode: 292,
-                    items: [
+const coreServerService = new gcp.cloudrunv2.Service(
+    'core-server-service',
+    {
+        name: `core-server-${environment}`,
+        location: region,
+        ingress: 'INGRESS_TRAFFIC_ALL',
+        template: {
+            serviceAccount: serviceAccountEmail,
+            volumes: [
+                {
+                    name: 'keyfile-volume',
+                    secret: {
+                        secret: appSAKeySecretId,
+                        defaultMode: 292,
+                        items: [
+                            {
+                                version: '1',
+                                path: 'keyfile.json',
+                            },
+                        ],
+                    },
+                },
+                // {
+                //     name: 'cloudsql',
+                //     cloudSqlInstance: {
+                //         instances: [cloudSqlInstanceConnectionName],
+                //     },
+                // },
+            ],
+            containers: [
+                {
+                    image: 'umernaeem/minimalistic-server--',
+                    volumeMounts: [
                         {
-                            version: '1',
-                            path: 'keyfile.json',
+                            name: 'keyfile-volume',
+                            mountPath: '/secrets',
+                        },
+                        // {
+                        //     name: 'cloudsql',
+                        //     mountPath: '/cloudsql',
+                        // },
+                    ],
+                    ports: [
+                        {
+                            containerPort: 8000,
                         },
                     ],
+                    envs: [
+                        { name: 'DATABASE_HOST', value: databaseHost },
+                        { name: 'DATABASE_USER', value: databaseUsername },
+                        { name: 'DATABASE_PASSWORD', value: databasePassword },
+                        { name: 'DATABASE_NAME', value: database.name },
+                        { name: 'JWT_SECRET', value: jwtSecret },
+                        { name: 'KEYFILE_PATH', value: '/secrets/keyfile.json' },
+                        { name: 'OPENAI_API_KEY', value: OPENAI_API_KEY },
+                        // PORT env is automatically provided by cloud run
+                        // { name: 'PORT', value: '8000' },
+                    ],
                 },
-            },
-            // {
-            //     name: 'cloudsql',
-            //     cloudSqlInstance: {
-            //         instances: [cloudSqlInstanceConnectionName],
-            //     },
-            // },
-        ],
-        containers: [
-            {
-                image: 'umernaeem/minimalistic-server',
-                volumeMounts: [
-                    {
-                        name: 'keyfile-volume',
-                        mountPath: '/secrets',
-                    },
-                    // {
-                    //     name: 'cloudsql',
-                    //     mountPath: '/cloudsql',
-                    // },
-                ],
-                ports: [
-                    {
-                        containerPort: 8000,
-                    },
-                ],
-                envs: [
-                    { name: 'DATABASE_HOST', value: databaseHost },
-                    { name: 'DATABASE_USER', value: databaseUsername },
-                    { name: 'DATABASE_PASSWORD', value: databasePassword },
-                    { name: 'DATABASE_NAME', value: database.name },
-                    { name: 'JWT_SECRET', value: jwtSecret },
-                    { name: 'KEYFILE_PATH', value: '/secrets/keyfile.json' },
-                    // PORT env is automatically provided by cloud run
-                    // { name: 'PORT', value: '8000' },
-                ],
-            },
-        ],
+            ],
+        },
     },
-})
+    {
+        ignoreChanges: ['template.containers[0].image'],
+    }
+)
 
 // Allow Unauthenticated Access
 const noauth = gcp.organizations.getIAMPolicy({
