@@ -3,6 +3,7 @@ import homeRoute from '@/routes/home-page'
 import loginDoctorRoute from '@/routes/login-doctor'
 import registerDoctorRoute from '@/routes/register-doctor'
 import generatePresignedUrls from '@/routes/generate-presigned-urls'
+import emrGenerationRoute from '@/routes/emrGeneration'
 
 export const registerRoutes = () => {
     // hacky way to call the scripts and registering the routes
@@ -11,4 +12,5 @@ export const registerRoutes = () => {
     loginDoctorRoute.getRoutingPath()
     registerDoctorRoute.getRoutingPath()
     generatePresignedUrls.getRoutingPath()
+    emrGenerationRoute.getRoutingPath()
 }
