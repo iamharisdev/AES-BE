@@ -9,6 +9,6 @@ const socioEconomicHistory = z.object({
     historyOfDomesticAbuse: yesNoEnum.optional(),
     mentalHealthIssues: yesNoEnum.optional(),
     additionalInformation: z.string().optional(),
-});
+})
 
-export { socioEconomicHistory };
+export { socioEconomicHistory }

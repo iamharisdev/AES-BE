@@ -17,7 +17,7 @@ const personalDetails = z.object({
     smokingHistory: yesNoEnum.optional(),
     drugHistory: yesNoEnum.optional(),
     presentMedication: z.string().optional(),
-});
+})
 
 const husbandDetails = z.object({
     name: z.string().optional(),
@@ -25,14 +25,14 @@ const husbandDetails = z.object({
     education: educationEnum.optional(),
     bloodGroup: bloodGroupEnum.optional(),
     occupation: occupationEnum.optional(),
-});
+})
 
 const surgicalHistory = z.object({
     bloodTransfusion: yesNoEnum.optional(),
     infertility: yesNoEnum.optional(),
     anestheticProblem: yesNoEnum.optional(),
     operationAllergies: yesNoEnum.optional(),
-});
+})
 
 const medicalHistory = z.object({
     diabetes: yesNoEnum.optional(),
@@ -43,7 +43,7 @@ const medicalHistory = z.object({
     anemia: yesNoEnum.optional(),
     hepatitis: yesNoEnum.optional(),
     hypertension: yesNoEnum.optional(),
-});
+})
 
 const medicalHistoryEmr = z.object({
     personalDetails: personalDetails.optional(),
@@ -51,6 +51,6 @@ const medicalHistoryEmr = z.object({
     medicalHistory: medicalHistory.optional(),
     surgicalHistory: surgicalHistory.optional(),
     additionalInfo: z.string().optional(),
-});
+})
 
-export { medicalHistoryEmr };
+export { medicalHistoryEmr }

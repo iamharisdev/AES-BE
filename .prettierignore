@@ -13,3 +13,8 @@ coverage
 **/.hg
 **/node_modules
 
+# ignore all yaml files
+*.yaml
+*.yml
+# ignore all json files
+*.json

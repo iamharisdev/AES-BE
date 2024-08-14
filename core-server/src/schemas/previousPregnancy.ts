@@ -1,5 +1,5 @@
-import { z } from 'zod';
-import { yesNoEnum, durationOfLaborEnum, modeOfDeliveryEnum, sexEnum, healthStatusEnum } from './enums';
+import { z } from 'zod'
+import { yesNoEnum, durationOfLaborEnum, modeOfDeliveryEnum, sexEnum, healthStatusEnum } from './enums'
 
 const pregnancyDetails = z.object({
     yearOfBirth: z.union([z.number(), yesNoEnum]).optional(),
@@ -19,10 +19,10 @@ const pregnancyDetails = z.object({
     sexOfBaby: sexEnum.optional(),
     currentHealthStatusOfBaby: healthStatusEnum.optional(),
     additionalInfo: z.string().optional(),
-});
+})
 
 const previousPregnancyEmr = z.object({
     pregnancies: z.array(pregnancyDetails),
-});
+})
 
-export { previousPregnancyEmr };
+export { previousPregnancyEmr }
