@@ -13,7 +13,6 @@
         "@google-cloud/storage": "^7.12.1",
         "@hono/swagger-ui": "^0.4.0",
         "@hono/zod-openapi": "^0.15.2",
-        "axios": "^1.7.4",
         "drizzle-kit": "^0.24.0",
         "drizzle-orm": "^0.33.0",
         "hono": "^4.5.4",

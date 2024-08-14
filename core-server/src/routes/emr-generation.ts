@@ -70,8 +70,11 @@ const emrGenerationHandler = app.openapi(route, async (c) => {
     const bucket = process.env.UPLOAD_BUCKET || 'undefined'
     const downloadUrl = await createPresignedGetUrl({ bucket, key: fileID })
 
+    console.time('transcription')
     const transcription = await getTranscription({ downloadUrl })
+    console.timeEnd('transcription')
 
+    console.time('gpt-structuring')
     // prettier-ignore
     const [currentPregnancy, previousPregnancy, familyHistory, socioEconomicHistory, medicalHistory] = await Promise.all([
         generateStructuredOutput({
@@ -100,6 +103,7 @@ const emrGenerationHandler = app.openapi(route, async (c) => {
             transcription,
         }),
     ])
+    console.timeEnd('gpt-structuring')
 
     return c.json(
         {
