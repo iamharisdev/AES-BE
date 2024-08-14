@@ -18,6 +18,12 @@ app.doc('/docs.json', {
     },
 })
 
+app.openAPIRegistry.registerComponent('securitySchemes', 'jwt', {
+    type: 'http',
+    scheme: 'bearer',
+    bearerFormat: 'JWT',
+})
+
 app.get('/docs', swaggerUI({ url: '/docs.json' }))
 
 const PORT = parseInt(process.env.PORT ?? '3002')
