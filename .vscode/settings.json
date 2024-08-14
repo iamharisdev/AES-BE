@@ -1,4 +1,9 @@
 {
-    "editor.formatOnSave": true,
-    "prettier.requireConfig": true
+	"editor.defaultFormatter": "dprint.dprint",
+	"editor.formatOnSave": true,
+	// or specify per language, for example
+	"[javascript]": {
+		"editor.defaultFormatter": "dprint.dprint",
+		"editor.formatOnSave": true
+	}
 }

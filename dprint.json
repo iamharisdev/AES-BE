@@ -1,0 +1,22 @@
+{
+	"lineWidth": 120,
+	"useTabs": true,
+	"typescript": {
+		"quoteStyle": "preferSingle",
+		"binaryExpression.operatorPosition": "sameLine",
+		"indentWidth": 4,
+		"semiColons": "asi"
+	},
+	"json": {
+		"indentWidth": 4
+	},
+	"excludes": [
+		"**/*-lock.json",
+		"**/*.lockb"
+	],
+	"plugins": [
+		"https://plugins.dprint.dev/typescript-0.91.6.wasm",
+		"https://plugins.dprint.dev/json-0.19.3.wasm",
+		"https://plugins.dprint.dev/markdown-0.17.2.wasm"
+	]
+}
