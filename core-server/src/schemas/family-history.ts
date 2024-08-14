@@ -2,25 +2,23 @@ import { z } from 'zod'
 import { yesNoEnum } from './enums'
 
 const patientFamilyHistory = z.object({
-    diabetes: yesNoEnum.optional(),
-    hypertension: yesNoEnum.optional(),
-    multiplePregnancy: yesNoEnum.optional(),
-    haemoglobinopathiesTb: yesNoEnum.optional(),
-    congenitalAnomalies: yesNoEnum.optional(),
+    diabetes: yesNoEnum,
+    hypertension: yesNoEnum,
+    multiplePregnancy: yesNoEnum,
+    haemoglobinopathiesTb: yesNoEnum,
+    congenitalAnomalies: yesNoEnum,
 })
 
 const husbandFamilyHistory = z.object({
-    diabetes: yesNoEnum.optional(),
-    hypertension: yesNoEnum.optional(),
-    multiplePregnancy: yesNoEnum.optional(),
-    haemoglobinopathiesTb: yesNoEnum.optional(),
-    congenitalAnomalies: yesNoEnum.optional(),
+    diabetes: yesNoEnum,
+    hypertension: yesNoEnum,
+    multiplePregnancy: yesNoEnum,
+    haemoglobinopathiesTb: yesNoEnum,
+    congenitalAnomalies: yesNoEnum,
 })
 
-const familyHistoryEmr = z.object({
-    patientFamilyHistory: patientFamilyHistory.optional(),
-    husbandFamilyHistory: husbandFamilyHistory.optional(),
-    additionalInfo: z.string().optional(),
+export const familyHistoryEmrSchema = z.object({
+    patientFamilyHistory: patientFamilyHistory,
+    husbandFamilyHistory: husbandFamilyHistory,
+    additionalInfo: z.string(),
 })
-
-export { familyHistoryEmr }

@@ -2,12 +2,13 @@
     "singleQuote": true,
     "printWidth": 120,
     "editor.formatOnSave": true,
-    "proseWrap": "always",
+    "proseWrap": "preserve",
     "tabWidth": 4,
-    "requireConfig": false,
+    "requireConfig": true,
     "useTabs": false,
     "trailingComma": "es5",
     "bracketSpacing": true,
     "jsxBracketSameLine": false,
+    "quoteProps": "as-needed",
     "semi": false
 }

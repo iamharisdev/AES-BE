@@ -2,55 +2,53 @@ import { z } from 'zod'
 import { bloodGroupEnum, educationEnum, occupationEnum, nmcEnum, yesNoEnum } from './enums'
 
 const personalDetails = z.object({
-    bloodGroupSelf: bloodGroupEnum.optional(),
-    educationSelf: educationEnum.optional(),
-    occupationSelf: occupationEnum.optional(),
-    marriedSince: z.union([z.number(), yesNoEnum]).optional(),
-    gravida: z.union([z.number(), yesNoEnum]).optional(),
-    para: z.union([z.number(), yesNoEnum]).optional(),
-    miscarriage: z.union([z.number(), yesNoEnum]).optional(),
-    abortion: z.union([z.number(), yesNoEnum]).optional(),
-    nmc: nmcEnum.optional(),
-    consanguinousMarriage: yesNoEnum.optional(),
-    vaginalBleedingSinceLastPeriod: yesNoEnum.optional(),
-    contraceptives: yesNoEnum.optional(),
-    smokingHistory: yesNoEnum.optional(),
-    drugHistory: yesNoEnum.optional(),
-    presentMedication: z.string().optional(),
+    bloodGroupSelf: bloodGroupEnum,
+    educationSelf: educationEnum,
+    occupationSelf: occupationEnum,
+    marriedSince: z.union([z.number(), yesNoEnum]),
+    gravida: z.union([z.number(), yesNoEnum]),
+    para: z.union([z.number(), yesNoEnum]),
+    miscarriage: z.union([z.number(), yesNoEnum]),
+    abortion: z.union([z.number(), yesNoEnum]),
+    nmc: nmcEnum,
+    consanguinousMarriage: yesNoEnum,
+    vaginalBleedingSinceLastPeriod: yesNoEnum,
+    contraceptives: yesNoEnum,
+    smokingHistory: yesNoEnum,
+    drugHistory: yesNoEnum,
+    presentMedication: z.string(),
 })
 
 const husbandDetails = z.object({
-    name: z.string().optional(),
-    age: z.string().optional(),
-    education: educationEnum.optional(),
-    bloodGroup: bloodGroupEnum.optional(),
-    occupation: occupationEnum.optional(),
+    name: z.string(),
+    age: z.string(),
+    education: educationEnum,
+    bloodGroup: bloodGroupEnum,
+    occupation: occupationEnum,
 })
 
 const surgicalHistory = z.object({
-    bloodTransfusion: yesNoEnum.optional(),
-    infertility: yesNoEnum.optional(),
-    anestheticProblem: yesNoEnum.optional(),
-    operationAllergies: yesNoEnum.optional(),
+    bloodTransfusion: yesNoEnum,
+    infertility: yesNoEnum,
+    anestheticProblem: yesNoEnum,
+    operationAllergies: yesNoEnum,
 })
 
 const medicalHistory = z.object({
-    diabetes: yesNoEnum.optional(),
-    recurrentUti: yesNoEnum.optional(),
-    cardiacProblem: yesNoEnum.optional(),
-    hemoglobinopathy: yesNoEnum.optional(),
-    endocrineDysfunction: yesNoEnum.optional(),
-    anemia: yesNoEnum.optional(),
-    hepatitis: yesNoEnum.optional(),
-    hypertension: yesNoEnum.optional(),
+    diabetes: yesNoEnum,
+    recurrentUti: yesNoEnum,
+    cardiacProblem: yesNoEnum,
+    hemoglobinopathy: yesNoEnum,
+    endocrineDysfunction: yesNoEnum,
+    anemia: yesNoEnum,
+    hepatitis: yesNoEnum,
+    hypertension: yesNoEnum,
 })
 
-const medicalHistoryEmr = z.object({
-    personalDetails: personalDetails.optional(),
-    husbandDetails: husbandDetails.optional(),
-    medicalHistory: medicalHistory.optional(),
-    surgicalHistory: surgicalHistory.optional(),
-    additionalInfo: z.string().optional(),
+export const medicalHistoryEmrSchema = z.object({
+    personalDetails: personalDetails,
+    husbandDetails: husbandDetails,
+    medicalHistory: medicalHistory,
+    surgicalHistory: surgicalHistory,
+    additionalInfo: z.string(),
 })
-
-export { medicalHistoryEmr }
