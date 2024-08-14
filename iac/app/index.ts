@@ -21,6 +21,7 @@ const appSAKeySecretId = coreStackReference.requireOutput('appSAKeySecretId')
 const artifactRegistryName = coreStackReference.requireOutput('artifactRegistryName')
 
 const OPENAI_API_KEY = config.requireSecret('OPENAI_API_KEY')
+const DATACRUNCH_API_KEY = config.requireSecret('DATACRUNCH_API_KEY')
 
 // Using the Stack Name as The Environment Name
 const environment = pulumi.getStack()
@@ -99,6 +100,7 @@ const coreServerService = new gcp.cloudrunv2.Service(
                         { name: 'JWT_SECRET', value: jwtSecret },
                         { name: 'KEYFILE_PATH', value: '/secrets/keyfile.json' },
                         { name: 'OPENAI_API_KEY', value: OPENAI_API_KEY },
+                        { name: 'DATACRUNCH_API_KEY', value: DATACRUNCH_API_KEY },
                         // PORT env is automatically provided by cloud run
                         // { name: 'PORT', value: '8000' },
                     ],

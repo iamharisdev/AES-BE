@@ -18,21 +18,23 @@ So! What is the solution then?
 
 ### S3 as State Backend
 
-We Need to Create A S3 Bucket for hosting state backend file. We would also need an enterprise grade managed enryption service such as AWS KMS to encrypts our secrets. Pulumi handles secrets out of the box, we just need to configure them.
+We Need to Create A Storage Bucket for hosting state backend file. We would also need an enterprise grade managed enryption service such as GCP KMS to encrypts our secrets. Pulumi handles secrets out of the box, we just need to configure them.
 
-So, we need to create a S3 Bucket and KMS keys. Now, We can't use Pulumi to create these because we need these to initialize a Pulumi Project. This creates a `chicken and egg` problem. So, only for this time, we would create these resources outside of pulumi using the AWS CLI.
+So, we need to create a Cloud Storage Bucket and KMS keys. Now, We can't use Pulumi to create these because we need these to initialize a Pulumi Project. This creates a `chicken and egg` problem. So, only for this time, we would create these resources outside of pulumi using the AWS CLI.
 
 After that we would be using pulumi to manage all resources.
 
 ## Get Started
 
-### AWS CLI
+### Gcloud CLI
 
 Download the AWS CLI.
 
 ```bash
-# configure your aws account if it is your first time
-aws configure
+# Authenticate
+gcloud init
+
+gcloud auth application-default login
 ```
 
 ### Pulumi CLI
@@ -44,10 +46,10 @@ Well you also need Pulumi CLI, NodeJs and PNPM (I dont like npm);
 npm install -g pnpm
 ```
 
-Then Use the AWS S3 Bucket to Authenticate the Pulumi.
+Then Use the GCP Cloud Storage Bucket to Authenticate the Pulumi.
 
 ```bash
-pulumi login s3://awaaz-sehat-pulumi
+pulumi login gs://awaaz-sehat-pulumi
 ```
 
 ### Applying Changes to Existing Projects
