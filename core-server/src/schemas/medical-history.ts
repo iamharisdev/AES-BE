@@ -5,26 +5,26 @@ const personalDetails = z.object({
     bloodGroupSelf: bloodGroupEnum,
     educationSelf: educationEnum,
     occupationSelf: occupationEnum,
-    marriedSince: z.union([z.number(), yesNoEnum]),
-    gravida: z.union([z.number(), yesNoEnum]),
-    para: z.union([z.number(), yesNoEnum]),
-    miscarriage: z.union([z.number(), yesNoEnum]),
-    abortion: z.union([z.number(), yesNoEnum]),
+    marriedSince: z.union([z.number(),  z.literal('Not provided')]),
+gravida: z.union([z.number(), z.literal('Not provided')]),
+    para: z.union([z.number(),  z.literal('Not provided')]),
+    miscarriage: z.union([z.number(),  z.literal('Not provided')]),
+    abortion: z.union([z.number(), z.literal('Not provided')]),
     nmc: nmcEnum,
     consanguinousMarriage: yesNoEnum,
     vaginalBleedingSinceLastPeriod: yesNoEnum,
     contraceptives: yesNoEnum,
     smokingHistory: yesNoEnum,
     drugHistory: yesNoEnum,
-    presentMedication: z.string(),
+    presentMedication: z.union([z.string(),  z.literal('Not provided')]),
 })
 
 const husbandDetails = z.object({
-    name: z.string(),
-    age: z.string(),
-    education: educationEnum,
-    bloodGroup: bloodGroupEnum,
-    occupation: occupationEnum,
+    husband_name: z.union([z.string(),  z.literal('Not provided')]),
+    husband_age: z.union([z.number(),  z.literal('Not provided')]),
+    husband_education: educationEnum,
+    husband_bloodGroup: bloodGroupEnum,
+    husband_occupation: occupationEnum,
 })
 
 const surgicalHistory = z.object({
@@ -50,5 +50,5 @@ export const medicalHistoryEmrSchema = z.object({
     husbandDetails: husbandDetails,
     medicalHistory: medicalHistory,
     surgicalHistory: surgicalHistory,
-    additionalInfo: z.string(),
+    additionalInfo: z.string().optional(),
 })

@@ -3,8 +3,8 @@ import { presentationEnum, yesNoEnum, generalFoodIntakeEnum } from './enums'
 
 export const currentPregnancyEmrSchema = z.object({
     heightSymphysisPubis: z.union([z.number(), z.literal('Not provided')]),
-    presentation: z.array(presentationEnum),
-    engagement: yesNoEnum,
+    fetal_presentation: z.array(presentationEnum),
+    fetal_engagement: yesNoEnum,
     fetalMovement: yesNoEnum,
     edema: yesNoEnum,
     burningMicturition: yesNoEnum,
@@ -17,7 +17,7 @@ export const currentPregnancyEmrSchema = z.object({
     contractions: yesNoEnum,
     leakageOfFluidPerVagina: yesNoEnum,
     vaginalBleeding: yesNoEnum,
-    anyWarningYesNos: z.string(),
+    anyWarnings: z.string().optional(),
     generalFoodIntake: generalFoodIntakeEnum,
-    additionalInfo: z.string(),
+    additionalInfo: z.string().optional(),
 })
