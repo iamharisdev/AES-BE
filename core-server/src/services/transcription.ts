@@ -16,7 +16,9 @@ export const getTranscription = async ({ downloadUrl }: { downloadUrl: string })
     })
 
     if (!response.ok) {
-        throw new Error(`Whisper Inference Failed. ${response.status}, ${response.statusText}`)
+        throw new Error(
+            `Whisper Inference Failed. ${response.status}, ${response.statusText}, ${await response.text()}`
+        )
     }
     const data = await response.json()
     return z.string({ message: 'Incorrect Response From Datacrunch API' }).parse(data?.segments?.at(0)?.text)

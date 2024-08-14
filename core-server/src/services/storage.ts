@@ -25,3 +25,14 @@ export const createPresignedGetUrl = async ({ bucket, key }: { bucket: string; k
         })
         .then((urls) => urls[0])
 }
+
+export const doesFileExists = async ({ bucket, key }: { bucket: string; key: string }) => {
+    // in case of any error we are going to assume that the file does not exists
+    // this handles the edge case where try to access a bucket that we do not have permission to
+    return storage
+        .bucket(bucket)
+        .file(key)
+        .exists()
+        .then((arr) => arr[0])
+        .catch(() => false)
+}

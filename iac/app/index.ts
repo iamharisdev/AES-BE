@@ -101,6 +101,8 @@ const coreServerService = new gcp.cloudrunv2.Service(
                         { name: 'KEYFILE_PATH', value: '/secrets/keyfile.json' },
                         { name: 'OPENAI_API_KEY', value: OPENAI_API_KEY },
                         { name: 'DATACRUNCH_API_KEY', value: DATACRUNCH_API_KEY },
+                        { name: 'UPLOAD_BUCKET', value: uploadsBucket.name },
+                        { name: 'ENVIRONMENT_TYPE', value: environment },
                         // PORT env is automatically provided by cloud run
                         // { name: 'PORT', value: '8000' },
                     ],

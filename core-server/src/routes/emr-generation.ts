@@ -1,6 +1,6 @@
 import app from '@/app'
 import { createRoute, z } from '@hono/zod-openapi'
-import { createPresignedGetUrl } from '@/services/storage'
+import { createPresignedGetUrl, doesFileExists } from '@/services/storage'
 import { currentPregnancyEmrSchema } from '@/schemas/current-pregnancy'
 import { previousPregnancyEmrSchema } from '@/schemas/previous-pregnancy'
 import { familyHistoryEmrSchema } from '@/schemas/family-history'
@@ -24,8 +24,8 @@ const EmrGenerationResponseSchema = z.object({
 })
 
 // Error Schema
-const serverErrorSchema = z.object({
-    error: z.string().openapi({ example: 'Internal Server Error' }),
+const audioNotFoundSchema = z.object({
+    error: z.string().openapi({ example: 'No File Exists with the Key' }),
 })
 
 // Route definition
@@ -53,13 +53,13 @@ const route = createRoute({
             },
             description: 'EMR generated successfully',
         },
-        500: {
+        404: {
             content: {
                 'application/json': {
-                    schema: serverErrorSchema,
+                    schema: audioNotFoundSchema,
                 },
             },
-            description: 'Internal Server Error',
+            description: 'File Not Found',
         },
     },
 })
@@ -68,6 +68,18 @@ const route = createRoute({
 const emrGenerationHandler = app.openapi(route, async (c) => {
     const { fileID } = c.req.valid('json')
     const bucket = process.env.UPLOAD_BUCKET || 'undefined'
+    const fileExists = await doesFileExists({ bucket, key: fileID })
+
+    if (!fileExists) {
+        // This will also handle the case where
+        return c.json(
+            {
+                error: `No File Exists with path ${bucket}/${fileID}`,
+            },
+            404
+        )
+    }
+
     const downloadUrl = await createPresignedGetUrl({ bucket, key: fileID })
 
     console.time('transcription')
