@@ -45,6 +45,7 @@ const route = createRoute({
     tags: ['Example'],
     path: '/example/{id}',
     summary: 'A Sample API for testing out the Swagger UI',
+    security: [{ jwt: [] }],
     request: {
         params: ParamsSchema,
         body: {
@@ -94,7 +95,7 @@ const handler = app.openapi(route, async (c) => {
     }
 
     // Your Response Schema is Defined With
-    return c.json({ message: '' }, 200)
+    return c.json({ message: 'Updated' }, 200)
 })
 
 export type ExampleRoute = typeof handler
