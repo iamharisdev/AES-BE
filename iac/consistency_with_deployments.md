@@ -27,7 +27,7 @@ The minimalistic server image is used as a default for the first-time creation o
 In our setup, everything related to the Cloud Run resource is managed by Pulumi, except for the container image. The container image is managed by GitHub Actions, which is responsible for building the image and creating a new revision (deployment).
 
 1. **GitHub Actions**: This workflow builds the container image and deploys it to a container registry. It then creates a new revision of the Cloud Run service using this image.
-   
+
 2. **Pulumi**: Manages the rest of the Cloud Run service configuration, such as environment variables, secrets, and other settings. Before applying any updates, Pulumi fetches the current state of the Cloud Run service to get the latest image.
 
 ### Example Workflow

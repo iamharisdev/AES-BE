@@ -34,7 +34,7 @@ We are Using:
 
 - `OpenAPI:` is the [formal standard](https://www.openapis.org/) for describing HTTP APIs. We can use a project like `SwaggerUI` to generate an interactive document for the APIs.
 
-- `Swagger UI:` [Swagger UI](https://swagger.io/tools/swagger-ui/) allows anyone to visualize and interact with the API’s resources without having any of the implementation logic in place. It’s automatically generated from your OpenAPI Specification. 
+- `Swagger UI:` [Swagger UI](https://swagger.io/tools/swagger-ui/) allows anyone to visualize and interact with the API’s resources without having any of the implementation logic in place. It’s automatically generated from your OpenAPI Specification.
 
 ## Directory Structure
 
@@ -66,7 +66,7 @@ bun run db:push
 
 This will run the migrations, but before that it will show you the DDL query generated for migrations and asks you for confirmation. It is a good idea to review it. sometimes it can creates queries that drop tables and you may not want that for your `production` database :expressionless:
 
-* Note that this does not actually creates any record of migration in the database table `migrations` even tho it actually created a migration. Run `bun run db:migrate` to not only run the migration but also record it. you do not have run `db:push` command as it automatically migrates to latest migration but it does not show what SQL DDL queries it is running so I prefer to use `db:push` first to review the command and then follow it by `db:migrate`
+- Note that this does not actually creates any record of migration in the database table `migrations` even tho it actually created a migration. Run `bun run db:migrate` to not only run the migration but also record it. you do not have run `db:push` command as it automatically migrates to latest migration but it does not show what SQL DDL queries it is running so I prefer to use `db:push` first to review the command and then follow it by `db:migrate`
 
 ### Run Database Studio
 

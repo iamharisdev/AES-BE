@@ -1,6 +1,6 @@
-import postgres from 'postgres'
-import { drizzle } from 'drizzle-orm/postgres-js'
 import { schema } from '@/models'
+import { drizzle } from 'drizzle-orm/postgres-js'
+import postgres from 'postgres'
 
 const USERNAME = process.env.DATABASE_USERNAME
 const PASSWORD = process.env.DATABASE_PASSWORD

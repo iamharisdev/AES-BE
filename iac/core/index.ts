@@ -1,5 +1,5 @@
-import * as pulumi from '@pulumi/pulumi'
 import * as gcp from '@pulumi/gcp'
+import * as pulumi from '@pulumi/pulumi'
 import * as random from '@pulumi/random'
 
 const gcpConfig = new pulumi.Config('gcp')
@@ -9,83 +9,83 @@ const project = gcpConfig.require('project')
 const config = new pulumi.Config()
 
 const databasePasswordGen = new random.RandomPassword('db-password', {
-    length: 32,
-    special: false,
+	length: 32,
+	special: false,
 })
 
 const jwtSecretGen = new random.RandomPassword('jwt-secret', {
-    length: 36,
-    special: false,
+	length: 36,
+	special: false,
 })
 
 // Sharing this database for development, staging and production
 const databaseInstance = new gcp.sql.DatabaseInstance('app-db-instance', {
-    // name: 'solvemate-ai-default',
-    name: 'awaazesehat-main',
-    deletionProtection: false,
-    databaseVersion: 'POSTGRES_13',
-    region: region,
-    settings: {
-        availabilityType: 'REGIONAL',
-        tier: 'db-f1-micro',
-        backupConfiguration: {
-            enabled: true,
-            pointInTimeRecoveryEnabled: true,
-            backupRetentionSettings: {
-                retainedBackups: 7,
-            },
-        },
-        ipConfiguration: {
-            ipv4Enabled: true,
-            authorizedNetworks: [
-                {
-                    name: 'Allow Allow',
-                    value: '0.0.0.0/0',
-                },
-            ],
-        },
-        diskSize: 10,
-    },
+	// name: 'solvemate-ai-default',
+	name: 'awaazesehat-main',
+	deletionProtection: false,
+	databaseVersion: 'POSTGRES_13',
+	region: region,
+	settings: {
+		availabilityType: 'REGIONAL',
+		tier: 'db-f1-micro',
+		backupConfiguration: {
+			enabled: true,
+			pointInTimeRecoveryEnabled: true,
+			backupRetentionSettings: {
+				retainedBackups: 7,
+			},
+		},
+		ipConfiguration: {
+			ipv4Enabled: true,
+			authorizedNetworks: [
+				{
+					name: 'Allow Allow',
+					value: '0.0.0.0/0',
+				},
+			],
+		},
+		diskSize: 10,
+	},
 })
 
 const databaseUser = new gcp.sql.User('db-user', {
-    instance: databaseInstance.id,
-    name: 'postgres',
-    password: databasePasswordGen.result,
+	instance: databaseInstance.id,
+	name: 'postgres',
+	password: databasePasswordGen.result,
 })
 
 const applicationServiceAccount = new gcp.serviceaccount.Account('application-service-account', {
-    accountId: 'awaazesehatapp',
+	accountId: 'awaazesehatapp',
 })
 
 const applicationServiceAccountKey = new gcp.serviceaccount.Key('application-sa-key', {
-    serviceAccountId: applicationServiceAccount.accountId,
+	serviceAccountId: applicationServiceAccount.accountId,
 })
 
 const appServiceAccountKeySecret = new gcp.secretmanager.Secret('app-sa-key-secret', {
-    secretId: 'application-service-account-secret-key',
-    replication: {
-        auto: {},
-    },
+	secretId: 'application-service-account-secret-key',
+	replication: {
+		auto: {},
+	},
 })
 
 const appServiceAccountKeySecretVersion = new gcp.secretmanager.SecretVersion('app-sa-key-secret-version', {
-    secret: appServiceAccountKeySecret.name,
-    secretData: applicationServiceAccountKey.privateKey.apply((base64) =>
-        Buffer.from(base64, 'base64').toString('utf-8')
-    ),
+	secret: appServiceAccountKeySecret.name,
+	secretData: applicationServiceAccountKey.privateKey.apply((base64) =>
+		Buffer.from(base64, 'base64').toString('utf-8')
+	),
 })
 
 new gcp.projects.IAMMember('secret-accessor-iam-binding', {
-    member: applicationServiceAccount.member,
-    role: 'roles/secretmanager.secretAccessor',
-    project,
+	member: applicationServiceAccount.member,
+	role: 'roles/secretmanager.secretAccessor',
+	project,
 })
 
 new gcp.projects.IAMMember('storage-admin-binding', {
-    member: applicationServiceAccount.member,
-    role: 'roles/storage.admin',
-    project,
+	member: applicationServiceAccount.member,
+	role: 'roles/storage.admin',
+	project,
 })
 
 /**
@@ -93,9 +93,9 @@ new gcp.projects.IAMMember('storage-admin-binding', {
  * This repository is for the Core Server Application.
  */
 const coreServerDockerRepo = new gcp.artifactregistry.Repository('core-server-docker-repo', {
-    repositoryId: 'awaaz-core-server',
-    format: 'DOCKER',
-    location: region,
+	repositoryId: 'awaaz-core-server',
+	format: 'DOCKER',
+	location: region,
 })
 
 export const jwtSecret = jwtSecretGen.result
