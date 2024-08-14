@@ -23,6 +23,8 @@ const artifactRegistryName = coreStackReference.requireOutput('artifactRegistryN
 const OPENAI_API_KEY = config.requireSecret('OPENAI_API_KEY')
 const DATACRUNCH_API_KEY = config.requireSecret('DATACRUNCH_API_KEY')
 
+const DEFAULT_CLOUD_RUN_IMAGE = 'umernaeem/minimalistic-server'
+
 // Using the Stack Name as The Environment Name
 const environment = pulumi.getStack()
 
@@ -44,76 +46,87 @@ const database = new gcp.sql.Database('database', {
 /**
  * Host our Core Server On Cloud Run (Fully Managed Serverless Service)
  */
+const coreServerName = `core-server-${environment}`
 
-const coreServerService = new gcp.cloudrunv2.Service(
-    'core-server-service',
-    {
-        name: `core-server-${environment}`,
+/**
+ * Retrieve the latest image from cloud run to use
+ * This Way to getting the image of the latest cloud run revision
+ * safeguards us from reverting the image to default one and disruption
+ * our production workflow
+ */
+const imageInput = gcp.cloudrunv2
+    .getService({
+        name: coreServerName,
         location: region,
-        ingress: 'INGRESS_TRAFFIC_ALL',
-        template: {
-            serviceAccount: serviceAccountEmail,
-            volumes: [
-                {
-                    name: 'keyfile-volume',
-                    secret: {
-                        secret: appSAKeySecretId,
-                        defaultMode: 292,
-                        items: [
-                            {
-                                version: '1',
-                                path: 'keyfile.json',
-                            },
-                        ],
+    })
+    .then((res) => res.templates[0].containers[0].image)
+    // If there is an error, use default image
+    .catch(() => DEFAULT_CLOUD_RUN_IMAGE)
+    .finally(console.log)
+
+const coreServerService = new gcp.cloudrunv2.Service('core-server-service', {
+    name: coreServerName,
+    location: region,
+    ingress: 'INGRESS_TRAFFIC_ALL',
+    template: {
+        serviceAccount: serviceAccountEmail,
+        volumes: [
+            {
+                name: 'keyfile-volume',
+                secret: {
+                    secret: appSAKeySecretId,
+                    defaultMode: 292,
+                    items: [
+                        {
+                            version: '1',
+                            path: 'keyfile.json',
+                        },
+                    ],
+                },
+            },
+            // {
+            //     name: 'cloudsql',
+            //     cloudSqlInstance: {
+            //         instances: [cloudSqlInstanceConnectionName],
+            //     },
+            // },
+        ],
+        containers: [
+            {
+                image: imageInput,
+                volumeMounts: [
+                    {
+                        name: 'keyfile-volume',
+                        mountPath: '/secrets',
                     },
-                },
-                // {
-                //     name: 'cloudsql',
-                //     cloudSqlInstance: {
-                //         instances: [cloudSqlInstanceConnectionName],
-                //     },
-                // },
-            ],
-            containers: [
-                {
-                    image: 'umernaeem/minimalistic-server',
-                    volumeMounts: [
-                        {
-                            name: 'keyfile-volume',
-                            mountPath: '/secrets',
-                        },
-                        // {
-                        //     name: 'cloudsql',
-                        //     mountPath: '/cloudsql',
-                        // },
-                    ],
-                    ports: [
-                        {
-                            containerPort: 8000,
-                        },
-                    ],
-                    envs: [
-                        { name: 'DATABASE_HOST', value: databaseHost },
-                        { name: 'DATABASE_USERNAME', value: databaseUsername },
-                        { name: 'DATABASE_PASSWORD', value: databasePassword },
-                        { name: 'DATABASE_NAME', value: database.name },
-                        { name: 'JWT_SECRET', value: jwtSecret },
-                        { name: 'KEYFILE_PATH', value: '/secrets/keyfile.json' },
-                        { name: 'OPENAI_API_KEY', value: OPENAI_API_KEY },
-                        { name: 'DATACRUNCH_API_KEY', value: DATACRUNCH_API_KEY },
-                        { name: 'UPLOAD_BUCKET', value: uploadsBucket.name },
-                        { name: 'ENVIRONMENT_TYPE', value: environment },
-                        // PORT env is automatically provided by cloud run
-                        // { name: 'PORT', value: '8000' },
-                    ],
-                },
-            ],
-        },
+                    // {
+                    //     name: 'cloudsql',
+                    //     mountPath: '/cloudsql',
+                    // },
+                ],
+                ports: [
+                    {
+                        containerPort: 8000,
+                    },
+                ],
+                envs: [
+                    { name: 'DATABASE_HOST', value: databaseHost },
+                    { name: 'DATABASE_USERNAME', value: databaseUsername },
+                    { name: 'DATABASE_PASSWORD', value: databasePassword },
+                    { name: 'DATABASE_NAME', value: database.name },
+                    { name: 'JWT_SECRET', value: jwtSecret },
+                    { name: 'KEYFILE_PATH', value: '/secrets/keyfile.json' },
+                    { name: 'OPENAI_API_KEY', value: OPENAI_API_KEY },
+                    { name: 'DATACRUNCH_API_KEY', value: DATACRUNCH_API_KEY },
+                    { name: 'UPLOAD_BUCKET', value: uploadsBucket.name },
+                    { name: 'ENVIRONMENT_TYPE', value: environment },
+                    // PORT env is automatically provided by cloud run
+                    // { name: 'PORT', value: '8000' },
+                ],
+            },
+        ],
     },
-    {
-        ignoreChanges: ['template.containers[0].image'],
-    }
-)
+})
 
 // Allow Unauthenticated Access
 const noauth = gcp.organizations.getIAMPolicy({
