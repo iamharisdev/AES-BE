@@ -93,7 +93,7 @@ const loginHandler = app.openapi(route, async (c) => {
 		)
 	}
 
-	const token = await sign({ phone: details.phoneNumber }, process.env.JWT_SECRET!, 'HS256')
+	const token = await sign({ phone: details.phoneNumber }, env.JWT_SECRET!, 'HS256')
 	return c.json(
 		{
 			message: 'Login Successful',

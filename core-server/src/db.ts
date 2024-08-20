@@ -1,12 +1,13 @@
 import { schema } from '@/models'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
+import { env } from './env'
 
-const USERNAME = process.env.DATABASE_USERNAME
-const PASSWORD = process.env.DATABASE_PASSWORD
-const HOST = process.env.DATABASE_HOST
-const PORT = process.env.DATABASE_PORT || 5432
-const NAME = process.env.DATABASE_NAME
+const USERNAME = env.DATABASE_USERNAME
+const PASSWORD = env.DATABASE_PASSWORD
+const HOST = env.DATABASE_HOST
+const PORT = env.DATABASE_PORT || 5432
+const NAME = env.DATABASE_NAME
 
 const databaseConnectionString = `postgres://${USERNAME}:${PASSWORD}@${HOST}:${PORT}/${NAME}`
 

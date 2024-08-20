@@ -1,4 +1,5 @@
 import app from '@/app'
+import { env } from '@/env'
 import { currentPregnancyEmrSchema } from '@/schemas/current-pregnancy'
 import { familyHistoryEmrSchema } from '@/schemas/family-history'
 import { medicalHistoryEmrSchema } from '@/schemas/medical-history'
@@ -68,7 +69,7 @@ const route = createRoute({
 // Main handler
 const emrGenerationHandler = app.openapi(route, async (c) => {
 	const { fileID } = c.req.valid('json')
-	const bucket = process.env.UPLOAD_BUCKET || 'undefined'
+	const bucket = env.UPLOAD_BUCKET || 'undefined'
 	const fileExists = await doesFileExists({ bucket, key: fileID })
 
 	if (!fileExists) {

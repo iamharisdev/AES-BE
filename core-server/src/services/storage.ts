@@ -1,6 +1,6 @@
 import { Storage } from '@google-cloud/storage'
 
-const storage = new Storage({ keyFilename: process.env.KEYFILE_PATH })
+const storage = new Storage({ keyFilename: env.KEYFILE_PATH })
 
 export const createPresignedPutUrl = async ({ bucket, key }: { bucket: string; key: string }) => {
 	return storage

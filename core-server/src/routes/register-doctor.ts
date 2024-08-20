@@ -95,7 +95,7 @@ const handler = app.openapi(route, async (c) => {
 		maternityHomeName: details.maternityHomeName,
 	})
 
-	const token = await sign({ phone: details.phoneNumber }, process.env.JWT_SECRET!, 'HS256')
+	const token = await sign({ phone: details.phoneNumber }, env.JWT_SECRET!, 'HS256')
 
 	return c.json(
 		{

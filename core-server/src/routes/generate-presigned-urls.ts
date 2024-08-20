@@ -1,4 +1,5 @@
 import app from '@/app'
+import { env } from '@/env'
 import { createPresignedGetUrl, createPresignedPutUrl } from '@/services/storage'
 import { createRoute, z } from '@hono/zod-openapi'
 import { ulid } from 'ulidx'
@@ -52,7 +53,7 @@ const route = createRoute({
 const generatePresignedUrlsHandler = app.openapi(route, async (c) => {
 	const { extension } = c.req.valid('query')
 	const id = ulid()
-	const bucket = process.env.UPLOAD_BUCKET || 'undefined'
+	const bucket = env.UPLOAD_BUCKET || 'undefined'
 	const key = `${id}.${extension}`
 	const uploadUrl = await createPresignedPutUrl({ bucket, key })
 	const downloadUrl = await createPresignedGetUrl({ bucket, key })
