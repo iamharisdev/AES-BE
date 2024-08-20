@@ -2,7 +2,7 @@ import { doctorTable } from './doctor'
 import { emrRecordTable } from './emr'
 import { PatientInfoTable } from './patient-info'
 
-export const schema = {
+export const table = {
 	doctor: doctorTable,
 	emr: emrRecordTable,
 	patient: {

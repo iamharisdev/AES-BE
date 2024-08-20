@@ -2,7 +2,7 @@ import app from '@/app'
 import { db } from '@/db'
 import { env } from '@/env'
 import { JwtPayload } from '@/middleware/jwt'
-import { schema } from '@/models'
+import { table } from '@/models'
 import { createRoute, z } from '@hono/zod-openapi'
 import { eq } from 'drizzle-orm'
 import { sign } from 'hono/jwt'
@@ -71,8 +71,8 @@ const loginHandler = app.openapi(route, async (c) => {
 	// check if the user exists in the database
 	const user = await db
 		.select()
-		.from(schema.doctor)
-		.where(eq(schema.doctor.phone, details.phoneNumber))
+		.from(table.doctor)
+		.where(eq(table.doctor.phone, details.phoneNumber))
 		.then((user) => user.at(0))
 
 	if (!user) {

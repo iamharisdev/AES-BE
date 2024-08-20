@@ -1,4 +1,4 @@
-import { schema } from '@/models'
+import { table } from '@/models'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import { env } from './env'
@@ -13,4 +13,4 @@ const databaseConnectionString = `postgres://${USERNAME}:${PASSWORD}@${HOST}:${P
 
 const queryClient = postgres(databaseConnectionString)
 
-export const db = drizzle(queryClient, { schema })
+export const db = drizzle(queryClient, { schema: table })

@@ -40,7 +40,7 @@ We are Using:
 
 1. **src/models:** contains Database Models.
 
-2. **src/routes:** contains individual routes along with their openapi schema.
+2. **src/routes:** contains individual routes along with their openapi table.
 
 3. **src/services:** contains logic for Services like OpenAI etc, any reusable logic can be added here.
 
