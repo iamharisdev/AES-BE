@@ -1,5 +1,7 @@
 import app from '@/app'
 import { db } from '@/db'
+import { env } from '@/env'
+import { JwtPayload, User } from '@/middleware/jwt'
 import { schema } from '@/models'
 import { createRoute, z } from '@hono/zod-openapi'
 import { eq } from 'drizzle-orm'
@@ -93,7 +95,13 @@ const loginHandler = app.openapi(route, async (c) => {
 		)
 	}
 
-	const token = await sign({ phone: details.phoneNumber }, env.JWT_SECRET!, 'HS256')
+	const jwtPayload: JwtPayload = {
+		phoneNumber: details.phoneNumber,
+		name: '',
+		userType: 'doctor',
+	}
+
+	const token = await sign(jwtPayload, env.JWT_SECRET!, 'HS256')
 	return c.json(
 		{
 			message: 'Login Successful',

@@ -1,6 +1,11 @@
 import { OpenAPIHono } from '@hono/zod-openapi'
+import { JwtPayload } from './middleware/jwt'
 
-const app = new OpenAPIHono({
+type Variables = {
+	jwtPayload: JwtPayload
+}
+
+const app = new OpenAPIHono<{ Variables: Variables }>({
 	defaultHook: (result, c) => {
 		if (!result.success) {
 			return c.json(

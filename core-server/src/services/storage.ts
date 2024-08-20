@@ -1,3 +1,4 @@
+import { env } from '@/env'
 import { Storage } from '@google-cloud/storage'
 
 const storage = new Storage({ keyFilename: env.KEYFILE_PATH })

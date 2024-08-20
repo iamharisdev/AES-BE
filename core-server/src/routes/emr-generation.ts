@@ -1,6 +1,8 @@
 import app from '@/app'
 import { env } from '@/env'
+import { jwtMiddleware } from '@/middleware/jwt'
 import { currentPregnancyEmrSchema } from '@/schemas/current-pregnancy'
+import { EmrGenerationSchema } from '@/schemas/emr-combined'
 import { familyHistoryEmrSchema } from '@/schemas/family-history'
 import { medicalHistoryEmrSchema } from '@/schemas/medical-history'
 import { previousPregnancyEmrSchema } from '@/schemas/previous-pregnancy'
@@ -10,23 +12,23 @@ import { retryService } from '@/services/retryService'
 import { createPresignedGetUrl, doesFileExists } from '@/services/storage'
 import { getTranscription } from '@/services/transcription'
 import { createRoute, z } from '@hono/zod-openapi'
+import { ulid } from 'ulidx'
 
 // Request Schema
 const EmrGenerationRequestSchema = z.object({
 	fileID: z.string().openapi({ example: '01F8MECHZX3TBDSZ7XRADM79XE.mp3' }),
+	patientPhoneNumber: z.string().openapi({
+		example: '03001234567',
+	}),
 })
 
-// Response Schema
-const EmrGenerationResponseSchema = z.object({
-	currentPregnancy: currentPregnancyEmrSchema,
-	previousPregnancy: previousPregnancyEmrSchema,
-	familyHistory: familyHistoryEmrSchema,
-	socioEconomicHistory: socioEconomicHistoryEmrSchema,
-	medicalHistory: medicalHistoryEmrSchema,
+const ResponseSchema = z.object({
+	emrId: z.string(),
+	content: EmrGenerationSchema,
 })
 
 // Error Schema
-const audioNotFoundSchema = z.object({
+const NotFoundSchema = z.object({
 	error: z.string().openapi({ example: 'No File Exists with the Key' }),
 })
 
@@ -37,6 +39,8 @@ const route = createRoute({
 	tags: ['EMR'],
 	path: '/emr/generate',
 	summary: 'Generate multiple EMRs from audio file using Whisper on DataCrunch and OpenAI',
+	security: [{ jwt: [] }],
+	middleware: [jwtMiddleware],
 	request: {
 		body: {
 			content: {
@@ -50,7 +54,7 @@ const route = createRoute({
 		200: {
 			content: {
 				'application/json': {
-					schema: EmrGenerationResponseSchema,
+					schema: ResponseSchema,
 				},
 			},
 			description: 'EMR generated successfully',
@@ -58,10 +62,18 @@ const route = createRoute({
 		404: {
 			content: {
 				'application/json': {
-					schema: audioNotFoundSchema,
+					schema: NotFoundSchema,
 				},
 			},
 			description: 'File Not Found',
+		},
+		401: {
+			content: {
+				'text/plain': {
+					schema: z.string().openapi({ example: 'Unauthorized' }),
+				},
+			},
+			description: 'Unauthorized',
 		},
 	},
 })
@@ -71,6 +83,7 @@ const emrGenerationHandler = app.openapi(route, async (c) => {
 	const { fileID } = c.req.valid('json')
 	const bucket = env.UPLOAD_BUCKET || 'undefined'
 	const fileExists = await doesFileExists({ bucket, key: fileID })
+	const { phoneNumber } = c.get('jwtPayload')
 
 	if (!fileExists) {
 		// This will also handle the case where
@@ -135,16 +148,22 @@ const emrGenerationHandler = app.openapi(route, async (c) => {
 		])
 	console.timeEnd('gpt-structuring')
 
-	return c.json(
-		{
-			currentPregnancy,
-			previousPregnancy,
-			familyHistory,
-			socioEconomicHistory,
-			medicalHistory,
-		},
-		200,
-	)
+	const emrId = ulid()
+
+	const content = {
+		currentPregnancy,
+		previousPregnancy,
+		familyHistory,
+		socioEconomicHistory,
+		medicalHistory,
+	}
+
+	// use Phone Number to insert schema
+
+	return c.json({
+		emrId,
+		content,
+	}, 200)
 })
 
 export type EmrGenerationRoute = typeof emrGenerationHandler
