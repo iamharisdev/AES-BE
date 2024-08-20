@@ -1,7 +1,7 @@
 import app from '@/app'
 import { db } from '@/db'
 import { env } from '@/env'
-import { JwtPayload, User } from '@/middleware/jwt'
+import { JwtPayload } from '@/middleware/jwt'
 import { schema } from '@/models'
 import { createRoute, z } from '@hono/zod-openapi'
 import { eq } from 'drizzle-orm'
