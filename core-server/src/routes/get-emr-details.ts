@@ -2,20 +2,16 @@ import app from '@/app'
 import { db } from '@/db'
 import { jwtMiddleware } from '@/middleware/jwt'
 import { table } from '@/models'
+import { EmrGenerationSchema } from '@/schemas/emr-combined'
 import { getPatientInfo } from '@/services/patient'
 import { createRoute, z } from '@hono/zod-openapi'
 import { eq } from 'drizzle-orm'
 
 const SuccessResponseSchema = z.object({
-	name: z.string().openapi({
-		example: 'Nazia',
-	}),
-	phoneNumber: z.string().openapi({
-		example: '03001234567',
-	}),
-	location: z.string().openapi({
-		example: '45 A, Society, Main Road, Karachi',
-	}),
+	emrId: z.string(),
+	patientId: z.string(),
+	generationTime: z.date(),
+	content: EmrGenerationSchema,
 })
 
 const NotFoundSchema = z.object({
@@ -26,17 +22,15 @@ const NotFoundSchema = z.object({
 
 const route = createRoute({
 	method: 'get',
-	operationId: 'getPatientInfo',
-	tags: ['Patient'],
-	path: '/patient/info/{phoneNumber}',
-	summary: 'Allows the Heathcare Practitioner to Get Patient Info Such as Name and Location Based on their Phone',
+	operationId: 'getEmr',
+	tags: ['EMR'],
+	path: '/emr/id/{emrId}',
+	summary: 'Allows the Heathcare Practitioner to Get Emr Contents',
 	security: [{ jwt: [] }],
 	middleware: [jwtMiddleware],
 	request: {
 		params: z.object({
-			phoneNumber: z.string().openapi({
-				example: '03001234567',
-			}),
+			emrId: z.string(),
 		}),
 	},
 	responses: {
@@ -60,17 +54,27 @@ const route = createRoute({
 })
 
 const handler = app.openapi(route, async (c) => {
-	const { phoneNumber } = c.req.valid('param')
+	const { emrId } = c.req.valid('param')
 
-	// check if the patient record already exists
-	const patient = await getPatientInfo({ phoneNumber })
+	console.debug(emrId)
 
-	if (!patient) {
-		return c.json({ error: `No Patient Info Record found with phone number ${phoneNumber}` }, 404)
+	const emr = await db
+		.select()
+		.from(table.emr)
+		.where(
+			eq(table.emr.emrId, emrId),
+		)
+		.execute()
+		.then(res => res.at(0))
+
+	if (!emr) {
+		return c.json({ error: `No Emr Record Found With Id ${emrId}` }, 404)
 	}
-	return c.json(patient, 200)
+
+	const { doctorId, ...emrResponse } = emr
+	return c.json(emrResponse, 200)
 })
 
-export type GetPatientInfoRoute = typeof handler
+export type GetEmrRoute = typeof handler
 
 export default route

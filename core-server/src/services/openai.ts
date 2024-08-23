@@ -8,19 +8,21 @@ type GenerateStructuredOutputArgs<ConditionSchema> = {
 	schema: ZodSchema<ConditionSchema>
 	schemaName: string
 	transcription: string
+	useMini: boolean
 }
 
 export const generateStructuredOutput = async <ConditionSchema>({
 	schema,
 	schemaName,
 	transcription,
+	useMini,
 }: GenerateStructuredOutputArgs<ConditionSchema>) => {
 	// prettier-ignore
 	const prompt =
 		"You are a maternal healthcare expert proficient at understanding latin Urdu, which contains information in mixed Urdu and English. You are capable of creating accurate medical records from a given transcription, even if there are errors in it. You are able to fix those errors and use your own medical knowledge to understand the transcription and then create an electronic medical record from it. You will be provided with a transciption obtained from a maternal healthcare professional. This transcription will contain information about the patient and your job is to extract this information from the transcription. Your final output should be the EMR without any additional commentary. Any data not captured in the designated fields should be included under 'Additional Info'. Follow the JSON Schema provided to you exactly and only extract information available in the transcription. You will proceed with the available information."
 
 	const completion = await client.beta.chat.completions.parse({
-		model: 'gpt-4o-2024-08-06',
+		model: useMini ? 'gpt-4o-mini' : 'gpt-4o-2024-08-06',
 		messages: [
 			{
 				role: 'system',

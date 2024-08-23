@@ -1,6 +1,8 @@
 import app from '@/app'
+import { db } from '@/db'
 import { env } from '@/env'
 import { jwtMiddleware } from '@/middleware/jwt'
+import { table } from '@/models'
 import { currentPregnancyEmrSchema } from '@/schemas/current-pregnancy'
 import { EmrGenerationSchema } from '@/schemas/emr-combined'
 import { familyHistoryEmrSchema } from '@/schemas/family-history'
@@ -19,6 +21,9 @@ const EmrGenerationRequestSchema = z.object({
 	fileID: z.string().openapi({ example: '01F8MECHZX3TBDSZ7XRADM79XE.mp3' }),
 	patientPhoneNumber: z.string().openapi({
 		example: '03001234567',
+	}),
+	useMini: z.boolean().optional().default(false).openapi({
+		description: 'whether to use small gpt model, (for testing) defaults to false',
 	}),
 })
 
@@ -80,10 +85,10 @@ const route = createRoute({
 
 // Main handler
 const emrGenerationHandler = app.openapi(route, async (c) => {
-	const { fileID } = c.req.valid('json')
+	const { fileID, patientPhoneNumber, useMini } = c.req.valid('json')
 	const bucket = env.UPLOAD_BUCKET || 'undefined'
 	const fileExists = await doesFileExists({ bucket, key: fileID })
-	const { phoneNumber } = c.get('jwtPayload')
+	const doctorPhoneNumber = c.get('jwtPayload').phoneNumber
 
 	if (!fileExists) {
 		// This will also handle the case where
@@ -115,6 +120,7 @@ const emrGenerationHandler = app.openapi(route, async (c) => {
 					schema: currentPregnancyEmrSchema,
 					schemaName: 'current_pregnancy',
 					transcription,
+					useMini,
 				})
 			),
 			retryService(() =>
@@ -122,6 +128,7 @@ const emrGenerationHandler = app.openapi(route, async (c) => {
 					schema: previousPregnancyEmrSchema,
 					schemaName: 'previous_pregnancy',
 					transcription,
+					useMini,
 				})
 			),
 			retryService(() =>
@@ -129,6 +136,7 @@ const emrGenerationHandler = app.openapi(route, async (c) => {
 					schema: familyHistoryEmrSchema,
 					schemaName: 'family_history',
 					transcription,
+					useMini,
 				})
 			),
 			retryService(() =>
@@ -136,6 +144,7 @@ const emrGenerationHandler = app.openapi(route, async (c) => {
 					schema: socioEconomicHistoryEmrSchema,
 					schemaName: 'socioeconomic_history',
 					transcription,
+					useMini,
 				})
 			),
 			retryService(() =>
@@ -143,6 +152,7 @@ const emrGenerationHandler = app.openapi(route, async (c) => {
 					schema: medicalHistoryEmrSchema,
 					schemaName: 'medical_history',
 					transcription,
+					useMini,
 				})
 			),
 		])
@@ -158,7 +168,14 @@ const emrGenerationHandler = app.openapi(route, async (c) => {
 		medicalHistory,
 	}
 
-	// use Phone Number to insert schema
+	await db
+		.insert(table.emr)
+		.values({
+			doctorId: doctorPhoneNumber,
+			patientId: patientPhoneNumber,
+			emrId,
+			content,
+		})
 
 	return c.json({
 		emrId,

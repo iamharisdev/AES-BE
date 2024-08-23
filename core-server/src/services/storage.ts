@@ -37,3 +37,11 @@ export const doesFileExists = async ({ bucket, key }: { bucket: string; key: str
 		.then((arr) => arr[0])
 		.catch(() => false)
 }
+
+export const deleteFile = async ({ bucket, key }: { bucket: string; key: string }) => {
+	return storage
+		.bucket(bucket)
+		.file(key)
+		.delete({ ignoreNotFound: true })
+		.then(res => res[0].statusCode < 400)
+}
