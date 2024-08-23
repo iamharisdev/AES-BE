@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { bloodGroupEnum, educationEnum, nmcEnum, occupationEnum, yesNoEnum } from './enums'
+import { bloodGroupEnum, educationEnum, nmcEnum, occupationEnum, optionalNumber, yesNoEnum } from './enums'
 
 const personalDetails = z.object({
 	bloodGroupSelf: bloodGroupEnum,
@@ -16,12 +16,12 @@ const personalDetails = z.object({
 	contraceptives: yesNoEnum,
 	smokingHistory: yesNoEnum,
 	drugHistory: yesNoEnum,
-	presentMedication: z.union([z.string(), z.literal('Not provided')]),
+	presentMedication: optionalNumber,
 })
 
 const husbandDetails = z.object({
-	husband_name: z.union([z.string(), z.literal('Not provided')]),
-	husband_age: z.union([z.number(), z.literal('Not provided')]),
+	husband_name: optionalNumber,
+	husband_age: optionalNumber,
 	husband_education: educationEnum,
 	husband_bloodGroup: bloodGroupEnum,
 	husband_occupation: occupationEnum,

@@ -1,8 +1,8 @@
 import { z } from 'zod'
-import { familyTypeEnum, livingSituationEnum, relationshipQualityEnum, yesNoEnum } from './enums'
+import { familyTypeEnum, livingSituationEnum, optionalNumber, relationshipQualityEnum, yesNoEnum } from './enums'
 
 export const socioEconomicHistoryEmrSchema = z.object({
-	noOfFamilyMembers: z.union([z.number(), z.literal('Not provided')]),
+	noOfFamilyMembers: optionalNumber,
 	familyType: familyTypeEnum,
 	livingSituation: livingSituationEnum,
 	relationshipWithFamilyHusband: relationshipQualityEnum,

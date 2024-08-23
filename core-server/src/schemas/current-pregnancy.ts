@@ -1,8 +1,8 @@
 import { z } from 'zod'
-import { generalFoodIntakeEnum, presentationEnum, yesNoEnum } from './enums'
+import { generalFoodIntakeEnum, optionalNumber, presentationEnum, yesNoEnum } from './enums'
 
 export const currentPregnancyEmrSchema = z.object({
-	heightSymphysisPubis: z.union([z.number(), z.literal('Not provided')]),
+	heightSymphysisPubis: optionalNumber,
 	fetal_presentation: z.array(presentationEnum),
 	fetal_engagement: yesNoEnum,
 	fetalMovement: yesNoEnum,

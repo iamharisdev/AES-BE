@@ -12,4 +12,4 @@ export const EmrGenerationSchema = z.object({
 	familyHistory: familyHistoryEmrSchema,
 	socioEconomicHistory: socioEconomicHistoryEmrSchema,
 	medicalHistory: medicalHistoryEmrSchema,
-})
+}).openapi('EmrRecord')

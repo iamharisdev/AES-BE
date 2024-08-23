@@ -1,21 +1,21 @@
 import { z } from 'zod'
-import { durationOfLaborEnum, healthStatusEnum, modeOfDeliveryEnum, sexEnum, yesNoEnum } from './enums'
+import { durationOfLaborEnum, healthStatusEnum, modeOfDeliveryEnum, optionalNumber, sexEnum, yesNoEnum } from './enums'
 
 const pregnancyDetails = z.object({
-	yearOfBirth: z.union([z.number(), z.literal('Not provided')]),
-	placeOfBirth: z.union([z.string(), z.literal('Not provided')]),
+	yearOfBirth: optionalNumber,
+	placeOfBirth: optionalNumber,
 	spotInducedLabor: yesNoEnum,
 	durationOfLabor: durationOfLaborEnum,
 	modeOfDelivery: modeOfDeliveryEnum,
-	maturityInWeeks: z.union([z.number(), z.literal('Not provided')]),
+	maturityInWeeks: optionalNumber,
 	postnatalComplications: yesNoEnum,
 	puerperium: yesNoEnum,
 	cerclage: yesNoEnum,
 	pih: yesNoEnum,
 	fetalAnomaly: yesNoEnum,
 	rhIncompatibility: yesNoEnum,
-	weightOfBaby: z.union([z.number(), z.literal('Not provided')]),
-	ageOfBaby: z.union([z.number(), z.literal('Not provided')]),
+	weightOfBaby: optionalNumber,
+	ageOfBaby: optionalNumber,
 	sexOfBaby: sexEnum,
 	currentHealthStatusOfBaby: healthStatusEnum,
 	additionalInfo: z.string().optional(),
