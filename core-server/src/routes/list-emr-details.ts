@@ -4,7 +4,7 @@ import { jwtMiddleware } from '@/middleware/jwt'
 import { table } from '@/models'
 import { EmrGenerationSchema } from '@/schemas/emr-combined'
 import { createRoute, z } from '@hono/zod-openapi'
-import { and, eq, gt, lt } from 'drizzle-orm'
+import { and, eq, gt, lt, sql } from 'drizzle-orm'
 
 const SuccessResponseSchema = z.array(
 	z.object({
@@ -25,7 +25,7 @@ const route = createRoute({
 	middleware: [jwtMiddleware],
 	request: {
 		query: z.object({
-			patientId: z.string().openapi({
+			patientId: z.string().optional().openapi({
 				example: '03001234567',
 			}),
 			startTime: z.date().optional(),
@@ -58,8 +58,8 @@ const handler = app.openapi(route, async (c) => {
 		.from(table.emr)
 		.where(
 			and(
-				eq(table.emr.patientId, patientId),
 				eq(table.emr.doctorId, doctorId),
+				patientId ? eq(table.emr.patientId, patientId) : sql`true`,
 				startTime ? gt(table.emr.generationTime, startTime) : undefined,
 				endTime ? lt(table.emr.generationTime, endTime) : undefined,
 			),
