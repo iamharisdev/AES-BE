@@ -1,4 +1,5 @@
 import { type AddPatientInfoRoute } from '@/routes/add-patient-info'
+import { type DiagnosticsGenerationRoute } from '@/routes/diagnostics-generation'
 import { type EmrGenerationRoute } from '@/routes/emr-generation'
 import { type ExampleRoute } from '@/routes/example'
 import { type GeneratePresignedUrlsRoute } from '@/routes/generate-presigned-urls'
@@ -24,6 +25,7 @@ type Routes =
 	| EmrGenerationRoute
 	| HomeRoute
 	| ListEmrsRoute
+	| DiagnosticsGenerationRoute
 
 // Constructing a Type Safe Hono Client
 const client = hc<Routes>(URL)

@@ -1,4 +1,5 @@
 import addPatientInfoRoute from '@/routes/add-patient-info'
+import diagnosticGenerationRoute from '@/routes/diagnostics-generation'
 import emrGenerationRoute from '@/routes/emr-generation'
 import exampleRoute from '@/routes/example'
 import generatePresignedUrls from '@/routes/generate-presigned-urls'
@@ -21,4 +22,5 @@ export const registerRoutes = () => {
 	listEmrDetailsRoute.getRoutingPath()
 	addPatientInfoRoute.getRoutingPath()
 	getPatientInfoRoute.getRoutingPath()
+	diagnosticGenerationRoute.getRoutingPath()
 }

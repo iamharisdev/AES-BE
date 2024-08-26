@@ -217,4 +217,20 @@ describe('API Tests', () => {
 		expect(json).toHaveProperty('message', 'Login Successful')
 		expect(json).toHaveProperty('token')
 	})
+
+	it('should generate diagnostics', async () => {
+		const response = await api.diagnostics.$post({
+			json: {
+				phoneNumber: TEST_PATIENT_PHONE,
+				useMini: true,
+			},
+		}, {
+			headers: {
+				'Authorization': `Bearer ${authToken}`,
+			},
+		})
+		const json = await response.json()
+		expect(response.status).toBe(200)
+		expect(json).toHaveProperty('diagnostics')
+	})
 })

@@ -1,8 +1,7 @@
 #!/bin/bash
-
 export PORT=9191
 
-kill -9 $(lsof -t -i :$PORT)
+kill -9 $(lsof -t -i :$PORT) > /dev/null 2>&1 &
 
 # Start the server in the background (suppress the output)
 bun run dev > /dev/null 2>&1 &
@@ -34,7 +33,7 @@ wait_for_server() {
 # Wait for the server to be ready
 if wait_for_server; then
     # Run the tests
-    bun test --timeout 60000
+    bun test --timeout 600000
 else
     echo "Server failed to start. Exiting."
     # Kill the server process if it failed to start

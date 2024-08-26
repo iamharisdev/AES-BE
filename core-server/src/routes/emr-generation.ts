@@ -10,11 +10,17 @@ import { medicalHistoryEmrSchema } from '@/schemas/medical-history'
 import { previousPregnancyEmrSchema } from '@/schemas/previous-pregnancy'
 import { socioEconomicHistoryEmrSchema } from '@/schemas/socioeconomic-history'
 import { generateStructuredOutput } from '@/services/openai'
-import { retryService } from '@/services/retryService'
 import { createPresignedGetUrl, doesFileExists } from '@/services/storage'
 import { getTranscription } from '@/services/transcription'
 import { createRoute, z } from '@hono/zod-openapi'
+import { retry } from '@lifeomic/attempt'
 import { ulid } from 'ulidx'
+
+// Configuration for retry service
+const retryOptions = {
+	delay: 1000,
+	factor: 2,
+}
 
 // Request Schema
 const EmrGenerationRequestSchema = z.object({
@@ -103,7 +109,7 @@ const emrGenerationHandler = app.openapi(route, async (c) => {
 	const downloadUrl = await createPresignedGetUrl({ bucket, key: fileID })
 
 	console.time('transcription')
-	const transcription = await retryService(() => getTranscription({ downloadUrl }))
+	const transcription = await retry(() => getTranscription({ downloadUrl }))
 	console.timeEnd('transcription')
 
 	console.time('gpt-structuring')
@@ -115,46 +121,41 @@ const emrGenerationHandler = app.openapi(route, async (c) => {
 		medicalHistory,
 	] = await Promise
 		.all([
-			retryService(() =>
+			retry(() =>
 				generateStructuredOutput({
 					schema: currentPregnancyEmrSchema,
 					schemaName: 'current_pregnancy',
 					transcription,
 					useMini,
-				})
-			),
-			retryService(() =>
+				}), retryOptions),
+			retry(() =>
 				generateStructuredOutput({
 					schema: previousPregnancyEmrSchema,
 					schemaName: 'previous_pregnancy',
 					transcription,
 					useMini,
-				})
-			),
-			retryService(() =>
+				}), retryOptions),
+			retry(() =>
 				generateStructuredOutput({
 					schema: familyHistoryEmrSchema,
 					schemaName: 'family_history',
 					transcription,
 					useMini,
-				})
-			),
-			retryService(() =>
+				}), retryOptions),
+			retry(() =>
 				generateStructuredOutput({
 					schema: socioEconomicHistoryEmrSchema,
 					schemaName: 'socioeconomic_history',
 					transcription,
 					useMini,
-				})
-			),
-			retryService(() =>
+				}), retryOptions),
+			retry(() =>
 				generateStructuredOutput({
 					schema: medicalHistoryEmrSchema,
 					schemaName: 'medical_history',
 					transcription,
 					useMini,
-				})
-			),
+				}), retryOptions),
 		])
 	console.timeEnd('gpt-structuring')
 
