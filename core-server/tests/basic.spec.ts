@@ -48,13 +48,23 @@ describe('API Tests', () => {
 	afterAll(async () => {
 		// Clean up the database
 		await db.delete(table.doctor).where(eq(table.doctor.phone, TEST_DOCTOR_PHONE_MAIN))
+		const emrIdResult = await db.select().from(table.emr).where(eq(table.emr.patientId, TEST_PATIENT_PHONE))
+			.execute().then((res) => res.at(0))
+		const emrId = emrIdResult?.emrId
 		await db.delete(table.emr).where(eq(table.emr.patientId, TEST_PATIENT_PHONE))
 		await db.delete(table.patient.info).where(eq(table.patient.info.phoneNumber, TEST_PATIENT_PHONE))
+		if (emrId) {
+			await db.delete(table.diagnostics).where(eq(table.diagnostics.emrId, emrId))
+			await db.delete(table.redFlags).where(eq(table.redFlags.emrId, emrId))
+		}
 	})
 
 	describe('Emr Generation Flow', () => {
+		let emrList: any[]
 		let fileId: string
-		it('should perform the entire flow end-to-end', async () => {
+		let emrId: string
+
+		beforeAll(async () => {
 			// Add patient info
 			const patientResponse = await api.patient.info.$post({
 				json: {
@@ -136,9 +146,16 @@ describe('API Tests', () => {
 			expect(emrJson).toHaveProperty('content')
 			console.log('EMR Generated')
 
-			const emrId = emrJson.emrId
+			emrId = emrJson.emrId
+		})
 
-			// Get EMR details
+		afterAll(async () => {
+			if (fileId) {
+				await deleteFile({ bucket: env.UPLOAD_BUCKET, key: fileId })
+			}
+		})
+		// Get EMR details
+		it('should get EMR details', async () => {
 			const emrDetailsResponse = await api.emr.id[':emrId'].$get({
 				param: { emrId },
 			}, {
@@ -155,8 +172,10 @@ describe('API Tests', () => {
 			const emrDetailsJson = await emrDetailsResponse.json()
 			expect(emrDetailsJson).toHaveProperty('emrId', emrId)
 			expect(emrDetailsJson).toHaveProperty('content')
+		})
 
-			// List EMRs
+		// List EMRs
+		it('should list EMRs', async () => {
 			const listEmrResponse = await api.emr.$get({
 				query: {
 					patientId: TEST_PATIENT_PHONE,
@@ -173,13 +192,83 @@ describe('API Tests', () => {
 			}
 
 			const listEmrJson = await listEmrResponse.json()
+			emrList = listEmrJson
 			expect(Array.isArray(listEmrJson)).toBe(true)
+			expect(emrList.length).toBeGreaterThan(0)
+			console.log('EMR List Retrieved')
 		})
 
-		afterAll(async () => {
-			if (fileId) {
-				await deleteFile({ bucket: env.UPLOAD_BUCKET, key: fileId })
-			}
+		describe('Diagnostics, Red Flags, and EMR Retrieval Workflow', () => {
+			it('should generate diagnostics', async () => {
+				const response = await api.diagnostics.$post({
+					json: {
+						emrId: emrId,
+						useMini: true,
+					},
+				}, {
+					headers: {
+						'Authorization': `Bearer ${authToken}`,
+					},
+				})
+
+				if (response.status !== 200) {
+					await handleNonSuccessResponse('unable to generate diagnostics', response)
+					return
+				}
+				const diagnosticsJson = await response.json()
+				expect(diagnosticsJson).toHaveProperty('diagnostics')
+			})
+
+			it('should retrieve generated diagnostics', async () => {
+				const response = await api.diagnostics[':emrId'].$get({
+					param: { emrId },
+				}, {
+					headers: {
+						'Authorization': `Bearer ${authToken}`,
+					},
+				})
+				if (response.status !== 200) {
+					await handleNonSuccessResponse('unable to get diagnostics', response)
+					return
+				}
+				const diagnosticsJson = await response.json()
+				expect(diagnosticsJson).toHaveProperty('diagnostics')
+			})
+
+			it('should generate red flags', async () => {
+				const response = await api.redflags.$post({
+					json: {
+						emrId: emrId,
+						useMini: true,
+					},
+				}, {
+					headers: {
+						'Authorization': `Bearer ${authToken}`,
+					},
+				})
+				if (response.status !== 200) {
+					await handleNonSuccessResponse('unable to generate red flags', response)
+					return
+				}
+				const redFlagsJson = await response.json()
+				expect(redFlagsJson).toHaveProperty('redFlags')
+			})
+
+			it('should retrieve generated red flags', async () => {
+				const response = await api.redflags[':emrId'].$get({
+					param: { emrId },
+				}, {
+					headers: {
+						'Authorization': `Bearer ${authToken}`,
+					},
+				})
+				if (response.status !== 200) {
+					await handleNonSuccessResponse('unable to get red flags', response)
+					return
+				}
+				const redFlagsJson = await response.json()
+				expect(redFlagsJson).toHaveProperty('redFlags')
+			})
 		})
 	})
 
@@ -216,21 +305,5 @@ describe('API Tests', () => {
 		expect(response.status).toBe(200)
 		expect(json).toHaveProperty('message', 'Login Successful')
 		expect(json).toHaveProperty('token')
-	})
-
-	it('should generate diagnostics', async () => {
-		const response = await api.diagnostics.$post({
-			json: {
-				phoneNumber: TEST_PATIENT_PHONE,
-				useMini: true,
-			},
-		}, {
-			headers: {
-				'Authorization': `Bearer ${authToken}`,
-			},
-		})
-		const json = await response.json()
-		expect(response.status).toBe(200)
-		expect(json).toHaveProperty('diagnostics')
 	})
 })

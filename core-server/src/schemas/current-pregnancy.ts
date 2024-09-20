@@ -3,8 +3,8 @@ import { generalFoodIntakeEnum, optionalNumber, presentationEnum, yesNoEnum } fr
 
 export const currentPregnancyEmrSchema = z.object({
 	heightSymphysisPubis: optionalNumber,
-	fetal_presentation: z.array(presentationEnum),
-	fetal_engagement: yesNoEnum,
+	fetalPresentation: z.array(presentationEnum),
+	fetalEngagement: yesNoEnum,
 	fetalMovement: yesNoEnum,
 	edema: yesNoEnum,
 	burningMicturition: yesNoEnum,

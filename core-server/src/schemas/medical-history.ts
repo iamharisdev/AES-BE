@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { bloodGroupEnum, educationEnum, nmcEnum, occupationEnum, optionalNumber, yesNoEnum } from './enums'
 
-const personalDetails = z.object({
+export const personalDetails = z.object({
 	bloodGroupSelf: bloodGroupEnum,
 	educationSelf: educationEnum,
 	occupationSelf: occupationEnum,
@@ -17,24 +17,27 @@ const personalDetails = z.object({
 	smokingHistory: yesNoEnum,
 	drugHistory: yesNoEnum,
 	presentMedication: optionalNumber,
+	additionalInfo: z.string().optional(),
 })
 
-const husbandDetails = z.object({
-	husband_name: optionalNumber,
-	husband_age: optionalNumber,
-	husband_education: educationEnum,
-	husband_bloodGroup: bloodGroupEnum,
-	husband_occupation: occupationEnum,
+export const husbandDetails = z.object({
+	husbandName: optionalNumber,
+	husbandAge: optionalNumber,
+	husbandEducation: educationEnum,
+	husbandBloodGroup: bloodGroupEnum,
+	husbandOccupation: occupationEnum,
+	additionalInfo: z.string().optional(),
 })
 
-const surgicalHistory = z.object({
+export const surgicalHistory = z.object({
 	bloodTransfusion: yesNoEnum,
 	infertility: yesNoEnum,
 	anestheticProblem: yesNoEnum,
 	operationAllergies: yesNoEnum,
+	additionalInfo: z.string().optional(),
 })
 
-const medicalHistory = z.object({
+export const medicalHistoryEMR = z.object({
 	diabetes: yesNoEnum,
 	recurrentUti: yesNoEnum,
 	cardiacProblem: yesNoEnum,
@@ -43,12 +46,5 @@ const medicalHistory = z.object({
 	anemia: yesNoEnum,
 	hepatitis: yesNoEnum,
 	hypertension: yesNoEnum,
-})
-
-export const medicalHistoryEmrSchema = z.object({
-	personalDetails: personalDetails,
-	husbandDetails: husbandDetails,
-	medicalHistory: medicalHistory,
-	surgicalHistory: surgicalHistory,
 	additionalInfo: z.string().optional(),
 })

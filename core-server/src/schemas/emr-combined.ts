@@ -1,6 +1,6 @@
 import { currentPregnancyEmrSchema } from '@/schemas/current-pregnancy'
-import { familyHistoryEmrSchema } from '@/schemas/family-history'
-import { medicalHistoryEmrSchema } from '@/schemas/medical-history'
+import { husbandFamilyHistory, patientFamilyHistory } from '@/schemas/family-history'
+import { husbandDetails, medicalHistoryEMR, personalDetails, surgicalHistory } from '@/schemas/medical-history'
 import { previousPregnancyEmrSchema } from '@/schemas/previous-pregnancy'
 import { socioEconomicHistoryEmrSchema } from '@/schemas/socioeconomic-history'
 import { z } from '@hono/zod-openapi'
@@ -9,7 +9,11 @@ import { z } from '@hono/zod-openapi'
 export const EmrGenerationSchema = z.object({
 	currentPregnancy: currentPregnancyEmrSchema,
 	previousPregnancy: previousPregnancyEmrSchema,
-	familyHistory: familyHistoryEmrSchema,
+	patientFamilyHistory: patientFamilyHistory,
+	husbandFamilyHistory: husbandFamilyHistory,
 	socioEconomicHistory: socioEconomicHistoryEmrSchema,
-	medicalHistory: medicalHistoryEmrSchema,
+	medicalHistory: medicalHistoryEMR,
+	personalDetails: personalDetails,
+	surgicalHistory: surgicalHistory,
+	husbandDetails: husbandDetails,
 }).openapi('EmrRecord')

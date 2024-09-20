@@ -33,7 +33,7 @@ wait_for_server() {
 # Wait for the server to be ready
 if wait_for_server; then
     # Run the tests
-    bun test --timeout 600000
+    bun test --timeout 60000
 else
     echo "Server failed to start. Exiting."
     # Kill the server process if it failed to start

@@ -20,7 +20,7 @@ const route = createRoute({
 	operationId: 'listEmrs',
 	tags: ['EMR'],
 	path: '/emr',
-	summary: 'Allows the Heathcare Practitioner to List Emr Records',
+	summary: 'Allows the Heathcare Practitioner to List EMR Records for a particular patient',
 	security: [{ jwt: [] }],
 	middleware: [jwtMiddleware],
 	request: {
@@ -39,7 +39,7 @@ const route = createRoute({
 					schema: SuccessResponseSchema,
 				},
 			},
-			description: 'Register The User',
+			description: 'Returns the list of EMRs for all patients recorded by the requesting doctor',
 		},
 	},
 })

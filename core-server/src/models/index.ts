@@ -1,6 +1,8 @@
+import { diagnosticsTable } from './diagnostics'
 import { doctorTable } from './doctor'
 import { emrRecordTable } from './emr'
 import { PatientInfoTable } from './patient-info'
+import { redFlagsTable } from './red-flags'
 
 export const table = {
 	doctor: doctorTable,
@@ -9,4 +11,6 @@ export const table = {
 		info: PatientInfoTable,
 		// TODO: need to add auth table as well later on for patients to authenticate later on just like doctors
 	},
+	redFlags: redFlagsTable,
+	diagnostics: diagnosticsTable,
 }

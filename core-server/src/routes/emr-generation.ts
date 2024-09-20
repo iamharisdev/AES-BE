@@ -3,38 +3,28 @@ import { db } from '@/db'
 import { env } from '@/env'
 import { jwtMiddleware } from '@/middleware/jwt'
 import { table } from '@/models'
-import { currentPregnancyEmrSchema } from '@/schemas/current-pregnancy'
 import { EmrGenerationSchema } from '@/schemas/emr-combined'
-import { familyHistoryEmrSchema } from '@/schemas/family-history'
-import { medicalHistoryEmrSchema } from '@/schemas/medical-history'
-import { previousPregnancyEmrSchema } from '@/schemas/previous-pregnancy'
-import { socioEconomicHistoryEmrSchema } from '@/schemas/socioeconomic-history'
-import { generateStructuredOutput } from '@/services/openai'
+import { generateAllStructuredOutputs } from '@/services/openai'
 import { createPresignedGetUrl, doesFileExists } from '@/services/storage'
 import { getTranscription } from '@/services/transcription'
+import { retryOptions } from '@/utils/retryConfig'
 import { createRoute, z } from '@hono/zod-openapi'
 import { retry } from '@lifeomic/attempt'
 import { ulid } from 'ulidx'
 
-// Configuration for retry service
-const retryOptions = {
-	delay: 1000,
-	factor: 2,
-}
-
 // Request Schema
 const EmrGenerationRequestSchema = z.object({
 	fileID: z.string().openapi({ example: '01F8MECHZX3TBDSZ7XRADM79XE.mp3' }),
-	patientPhoneNumber: z.string().openapi({
+	patientPhoneNumber: z.string().regex(/^\d{11,13}$/, 'Invalid phone number format').openapi({
 		example: '03001234567',
 	}),
 	useMini: z.boolean().optional().default(false).openapi({
-		description: 'whether to use small gpt model, (for testing) defaults to false',
+		description: 'Whether to use smaller GPT model (for testing), defaults to false',
 	}),
 })
 
 const ResponseSchema = z.object({
-	emrId: z.string(),
+	emrId: z.string().openapi({ example: '01F8MECHZX3TBDSZ7XRADM79XE' }),
 	content: EmrGenerationSchema,
 })
 
@@ -109,65 +99,14 @@ const emrGenerationHandler = app.openapi(route, async (c) => {
 	const downloadUrl = await createPresignedGetUrl({ bucket, key: fileID })
 
 	console.time('transcription')
-	const transcription = await retry(() => getTranscription({ downloadUrl }))
+	const transcription = await retry(() => getTranscription({ downloadUrl }), retryOptions)
 	console.timeEnd('transcription')
 
 	console.time('gpt-structuring')
-	const [
-		currentPregnancy,
-		previousPregnancy,
-		familyHistory,
-		socioEconomicHistory,
-		medicalHistory,
-	] = await Promise
-		.all([
-			retry(() =>
-				generateStructuredOutput({
-					schema: currentPregnancyEmrSchema,
-					schemaName: 'current_pregnancy',
-					transcription,
-					useMini,
-				}), retryOptions),
-			retry(() =>
-				generateStructuredOutput({
-					schema: previousPregnancyEmrSchema,
-					schemaName: 'previous_pregnancy',
-					transcription,
-					useMini,
-				}), retryOptions),
-			retry(() =>
-				generateStructuredOutput({
-					schema: familyHistoryEmrSchema,
-					schemaName: 'family_history',
-					transcription,
-					useMini,
-				}), retryOptions),
-			retry(() =>
-				generateStructuredOutput({
-					schema: socioEconomicHistoryEmrSchema,
-					schemaName: 'socioeconomic_history',
-					transcription,
-					useMini,
-				}), retryOptions),
-			retry(() =>
-				generateStructuredOutput({
-					schema: medicalHistoryEmrSchema,
-					schemaName: 'medical_history',
-					transcription,
-					useMini,
-				}), retryOptions),
-		])
+	const content = await generateAllStructuredOutputs(transcription, useMini)
 	console.timeEnd('gpt-structuring')
 
 	const emrId = ulid()
-
-	const content = {
-		currentPregnancy,
-		previousPregnancy,
-		familyHistory,
-		socioEconomicHistory,
-		medicalHistory,
-	}
 
 	await db
 		.insert(table.emr)
@@ -175,12 +114,13 @@ const emrGenerationHandler = app.openapi(route, async (c) => {
 			doctorId: doctorPhoneNumber,
 			patientId: patientPhoneNumber,
 			emrId,
-			content,
+			content: content,
 		})
 
+
 	return c.json({
-		emrId,
-		content,
+		emrId: emrId,
+		content: content,
 	}, 200)
 })
 

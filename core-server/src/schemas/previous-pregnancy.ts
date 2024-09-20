@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { durationOfLaborEnum, healthStatusEnum, modeOfDeliveryEnum, optionalNumber, sexEnum, yesNoEnum } from './enums'
 
 const pregnancyDetails = z.object({
+	pregnancyNumber: z.number(),
 	yearOfBirth: optionalNumber,
 	placeOfBirth: optionalNumber,
 	spotInducedLabor: yesNoEnum,
