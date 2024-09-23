@@ -10,6 +10,7 @@ import { type GetRedFlagsRoute } from '@/routes/get-redflags'
 import { type HomeRoute } from '@/routes/home-page'
 import { type ListEmrsRoute } from '@/routes/list-emr-details'
 import { type LoginDoctorRoute } from '@/routes/login-doctor'
+import { type PatchEmrRoute } from '@/routes/patch-emr-details'
 import { type RedFlagsGenerationRoute } from '@/routes/redflags-generation'
 import { type RegisterDoctorRoute } from '@/routes/register-doctor'
 import { hc } from 'hono/client'
@@ -32,6 +33,7 @@ type Routes =
 	| GetDiagnosticsRoute
 	| RedFlagsGenerationRoute
 	| GetRedFlagsRoute
+	| PatchEmrRoute
 
 // Constructing a Type Safe Hono Client
 const client = hc<Routes>(URL)

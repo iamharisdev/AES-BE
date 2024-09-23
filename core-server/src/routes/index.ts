@@ -10,6 +10,7 @@ import getRedFlagsRoute from '@/routes/get-redflags'
 import homeRoute from '@/routes/home-page'
 import listEmrDetailsRoute from '@/routes/list-emr-details'
 import loginDoctorRoute from '@/routes/login-doctor'
+import patchEmrRoute from '@/routes/patch-emr-details'
 import redFlagsGenerationRoute from '@/routes/redflags-generation'
 import registerDoctorRoute from '@/routes/register-doctor'
 
@@ -29,4 +30,5 @@ export const registerRoutes = () => {
 	getDiagnosticRoute.getRoutingPath()
 	redFlagsGenerationRoute.getRoutingPath()
 	getRedFlagsRoute.getRoutingPath()
+	patchEmrRoute.getRoutingPath()
 }
