@@ -4,6 +4,7 @@ import emrGenerationRoute from '@/routes/emr-generation'
 import exampleRoute from '@/routes/example'
 import generatePresignedUrls from '@/routes/generate-presigned-urls'
 import getDiagnosticRoute from '@/routes/get-diagnostics'
+import getDoctorInfoRoute from '@/routes/get-doctor-info'
 import getEmrDetailsRoute from '@/routes/get-emr-details'
 import getPatientInfoRoute from '@/routes/get-patient-info'
 import getRedFlagsRoute from '@/routes/get-redflags'
@@ -31,4 +32,5 @@ export const registerRoutes = () => {
 	redFlagsGenerationRoute.getRoutingPath()
 	getRedFlagsRoute.getRoutingPath()
 	patchEmrRoute.getRoutingPath()
+	getDoctorInfoRoute.getRoutingPath()
 }
