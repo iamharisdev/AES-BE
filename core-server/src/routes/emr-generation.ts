@@ -60,6 +60,14 @@ const route = createRoute({
 			},
 			description: 'EMR generated successfully',
 		},
+		400: {
+			content: {
+				'application/json': {
+					schema: z.string().openapi({ example: 'Bad File Encoding' }),
+				},
+			},
+			description: 'File Not Found',
+		},
 		404: {
 			content: {
 				'application/json': {
@@ -102,8 +110,12 @@ const emrGenerationHandler = app.openapi(route, async (c) => {
 	const transcription = await retry(() => getTranscription({ downloadUrl }), retryOptions)
 	console.timeEnd('transcription')
 
+	if ('clientError' in transcription) {
+		return c.json('OPENAI: ' + transcription.clientError, 400)
+	}
+
 	console.time('gpt-structuring')
-	const content = await generateAllStructuredOutputs(transcription, useMini)
+	const content = await generateAllStructuredOutputs(transcription.text, useMini)
 	console.timeEnd('gpt-structuring')
 
 	const emrId = ulid()
@@ -116,7 +128,6 @@ const emrGenerationHandler = app.openapi(route, async (c) => {
 			emrId,
 			content: content,
 		})
-
 
 	return c.json({
 		emrId: emrId,
