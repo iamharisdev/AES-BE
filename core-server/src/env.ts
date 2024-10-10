@@ -8,7 +8,6 @@ export const envVariables = z.object({
 	PORT: z.coerce.number().default(8000),
 
 	UPLOAD_BUCKET: z.coerce.string(),
-	DATACRUNCH_API_KEY: z.coerce.string(),
 	OPENAI_API_KEY: z.coerce.string(),
 	JWT_SECRET: z.coerce.string(),
 

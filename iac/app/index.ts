@@ -21,7 +21,6 @@ const appSAKeySecretId = coreStackReference.requireOutput('appSAKeySecretId')
 const artifactRegistryName = coreStackReference.requireOutput('artifactRegistryName')
 
 const OPENAI_API_KEY = config.requireSecret('OPENAI_API_KEY')
-const DATACRUNCH_API_KEY = config.requireSecret('DATACRUNCH_API_KEY')
 
 const DEFAULT_CLOUD_RUN_IMAGE = 'umernaeem/minimalistic-server'
 
@@ -117,7 +116,6 @@ const coreServerService = new gcp.cloudrunv2.Service('core-server-service', {
 					{ name: 'JWT_SECRET', value: jwtSecret },
 					{ name: 'KEYFILE_PATH', value: '/secrets/keyfile.json' },
 					{ name: 'OPENAI_API_KEY', value: OPENAI_API_KEY },
-					{ name: 'DATACRUNCH_API_KEY', value: DATACRUNCH_API_KEY },
 					{ name: 'UPLOAD_BUCKET', value: uploadsBucket.name },
 					{ name: 'ENVIRONMENT_TYPE', value: environment },
 					// PORT env is automatically provided by cloud run

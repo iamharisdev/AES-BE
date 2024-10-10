@@ -1,8 +1,6 @@
 secretsprovider: gcpkms://projects/awaz-e-sehat/locations/asia-southeast1/keyRings/pulumi-key-ring/cryptoKeys/pulumi-iac-key
 encryptedkey: CiQAUCiXD8dIog2od8lkUKFItS0oOeQH0cT+fyjm8xvZqPrUCK0SSQCmRDKTiM+1+PvbJZWeh0BXM4foTc4eV8LleVE+vDidlVLjJmlnwYS6hGgczgscWvwbv3cnuOHJSQ8qwM+EbKadYyQQbyT41YE=
 config:
-  app-environment:DATACRUNCH_API_KEY:
-    secure: v1:9/zxQzYkmRsCzByO:WEbPoz4VBJfNkiKIQwoichv9v/CklktLhgQKI/K+Mh4aAm4iyug1hcHnXcBLgsME3i/4WByxfgJhoQquOyvgTgEv1lRsttx0IBYU24EEegcfSj8UAZWjpsFryAxNf4DtJUi+HUbKCAY/TT+iNbg4x3vFqA==
   app-environment:OPENAI_API_KEY:
     secure: v1:/QvtkbbO9boKqWVS:9XIzVfZIOWMPsm2tL5rT1n9ze3fbkWo4Nt1JmE2rpQGjwRxaYO8OYaIr9X+IDwqKRbQmPGvIlIUJx10sOEylPYvq5FB8bTelV23j7l1PQgYGppq1ywbCfm+QcFTgL9yT0uX+qm2K9dpHo3TNSOBV6Nu1MDXB64MDxMieSDQlqyX+4vUhOUJrJlB1sIgZPCV5iUzQ8X/ZpVude+DH0VY5QHRHT78Dvxq9QjTI
   gcp:project: awaz-e-sehat
