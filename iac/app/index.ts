@@ -35,6 +35,12 @@ const environment = pulumi.getStack()
 const uploadsBucket = new gcp.storage.Bucket('uploads-bucket', {
 	name: `awaaz-sehat-uploads-${environment}`,
 	location: region,
+	cors: [{
+		origins: ['*'],
+		methods: ['*'],
+		responseHeaders: ['*'],
+		maxAgeSeconds: 3600,
+	}],
 })
 
 const database = new gcp.sql.Database('database', {

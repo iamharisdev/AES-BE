@@ -63,7 +63,6 @@ const route = createRoute({
 
 const redFlagsGenerationHandler = app.openapi(route, async (c) => {
 	const { emrId, useMini } = c.req.valid('json')
-	console.log(`Got request for red flags generation for EMR ID: ${emrId}`)
 	const record = await db.select()
 		.from(table.emr)
 		.where(
@@ -74,6 +73,19 @@ const redFlagsGenerationHandler = app.openapi(route, async (c) => {
 
 	if (!record) {
 		return c.json({ error: 'No EMR record exists with the given EMR ID' }, 404)
+	}
+
+	const redFlagRow = await db
+		.select()
+		.from(table.redFlags)
+		.where(
+			eq(table.redFlags.emrId, emrId),
+		)
+		.execute()
+		.then(res => res.at(0))
+
+	if (redFlagRow) {
+		return c.json({ redFlags: redFlagRow.redFlags }, 200)
 	}
 
 	const redFlags = await retry(() =>
