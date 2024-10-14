@@ -2,12 +2,13 @@ import app from '@/app'
 import { env } from '@/env'
 import { registerRoutes } from '@/routes'
 import { swaggerUI } from '@hono/swagger-ui'
-import { createRoute, z } from '@hono/zod-openapi'
+import { cors } from 'hono/cors'
 import { logger } from 'hono/logger'
 
 registerRoutes()
 
 app.use(logger())
+app.use(cors())
 
 // The OpenAPI specification will be available at /docs.json
 
