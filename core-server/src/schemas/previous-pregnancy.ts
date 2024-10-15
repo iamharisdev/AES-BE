@@ -4,7 +4,7 @@ import { durationOfLaborEnum, healthStatusEnum, modeOfDeliveryEnum, optionalNumb
 const pregnancyDetails = z.object({
 	pregnancyNumber: z.number(),
 	yearOfBirth: optionalNumber,
-	placeOfBirth: optionalNumber,
+	placeOfBirth: z.string().nullable(),
 	spotInducedLabor: yesNoEnum,
 	durationOfLabor: durationOfLaborEnum,
 	modeOfDelivery: modeOfDeliveryEnum,

@@ -5,11 +5,11 @@ export const personalDetails = z.object({
 	bloodGroupSelf: bloodGroupEnum,
 	educationSelf: educationEnum,
 	occupationSelf: occupationEnum,
-	marriedSince: z.union([z.number(), z.literal('Not provided')]),
-	gravida: z.union([z.number(), z.literal('Not provided')]),
-	para: z.union([z.number(), z.literal('Not provided')]),
-	miscarriage: z.union([z.number(), z.literal('Not provided')]),
-	abortion: z.union([z.number(), z.literal('Not provided')]),
+	marriedSince: z.number().nullable(),
+	gravida: z.number().nullable(),
+	para: z.number().nullable(),
+	miscarriage: z.number().nullable(),
+	abortion: z.number().nullable(),
 	nmc: nmcEnum,
 	consanguinousMarriage: yesNoEnum,
 	vaginalBleedingSinceLastPeriod: yesNoEnum,
@@ -21,7 +21,7 @@ export const personalDetails = z.object({
 })
 
 export const husbandDetails = z.object({
-	husbandName: optionalNumber,
+	husbandName: z.string().nullable(),
 	husbandAge: optionalNumber,
 	husbandEducation: educationEnum,
 	husbandBloodGroup: bloodGroupEnum,

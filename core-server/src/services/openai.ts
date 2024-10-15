@@ -151,4 +151,3 @@ export const generateRedFlags = async ({ emr, useMini }: GenerateDiagnosticsArgs
 	}
 	return result.parsed
 }
-
