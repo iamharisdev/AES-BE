@@ -26,6 +26,7 @@ const EmrGenerationRequestSchema = z.object({
 const ResponseSchema = z.object({
 	emrId: z.string().openapi({ example: '01F8MECHZX3TBDSZ7XRADM79XE' }),
 	content: EmrGenerationSchema,
+	generationTime: z.string().openapi({ example: '2021-09-01T12:00:00.000Z' }),
 })
 
 // Error Schema
@@ -120,18 +121,19 @@ const emrGenerationHandler = app.openapi(route, async (c) => {
 
 	const emrId = ulid()
 
-	await db
+	const [insertedRecord] = await db
 		.insert(table.emr)
 		.values({
 			doctorId: doctorPhoneNumber,
 			patientId: patientPhoneNumber,
 			emrId,
 			content: content,
-		})
+		}).returning({ generationTime: table.emr.generationTime })
 
 	return c.json({
 		emrId: emrId,
 		content: content,
+		generationTime: insertedRecord.generationTime,
 	}, 200)
 })
 
