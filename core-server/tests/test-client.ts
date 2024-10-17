@@ -13,6 +13,7 @@ import { type LoginDoctorRoute } from '@/routes/login-doctor'
 import { type PatchEmrRoute } from '@/routes/patch-emr-details'
 import { type RedFlagsGenerationRoute } from '@/routes/redflags-generation'
 import { type RegisterDoctorRoute } from '@/routes/register-doctor'
+import { type GetDoctorsPatientsInfoRoute } from '@/routes/get-doctors-patients'
 import { hc } from 'hono/client'
 
 const PORT = process.env.PORT || '8000'
@@ -34,6 +35,7 @@ type Routes =
 	| RedFlagsGenerationRoute
 	| GetRedFlagsRoute
 	| PatchEmrRoute
+	| GetDoctorsPatientsInfoRoute
 
 // Constructing a Type Safe Hono Client
 const client = hc<Routes>(URL)

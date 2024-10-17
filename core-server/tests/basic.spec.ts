@@ -198,6 +198,35 @@ describe('API Tests', () => {
 			console.log('EMR List Retrieved')
 		})
 
+		it('should retrieve doctor’s patients details', async () => {
+			// Fetch the doctor’s patients
+			const patientDetailsResponse = await api.doctor.patients.$get({}, {
+				headers: {
+					'Authorization': `Bearer ${authToken}`,
+				},
+			})
+
+			if (patientDetailsResponse.status !== 200) {
+				await handleNonSuccessResponse('unable to retrieve doctor’s patients details', patientDetailsResponse)
+				return
+			}
+
+			const patientDetailsJson = await patientDetailsResponse.json()
+
+			// Assertions to check the structure of the response
+			expect(Array.isArray(patientDetailsJson.patients)).toBe(true)
+			expect(patientDetailsJson.patients.length).toBeGreaterThan(0)
+
+			// Validate the fields of one patient (you can check more depending on the use case)
+			const firstPatient = patientDetailsJson.patients[0]
+			expect(firstPatient).toHaveProperty('name')
+			expect(firstPatient).toHaveProperty('phoneNumber')
+			expect(firstPatient).toHaveProperty('location')
+
+			console.log('Doctor’s Patients Details Retrieved Successfully')
+		})
+
+
 		describe('Diagnostics, Red Flags, and EMR Retrieval Workflow', () => {
 			it('should generate diagnostics', async () => {
 				const response = await api.diagnostics.$post({
