@@ -226,7 +226,6 @@ describe('API Tests', () => {
 			console.log('Doctor’s Patients Details Retrieved Successfully')
 		})
 
-
 		describe('Diagnostics, Red Flags, and EMR Retrieval Workflow', () => {
 			it('should generate diagnostics', async () => {
 				const response = await api.diagnostics.$post({

@@ -85,8 +85,8 @@ const handler = app.openapi(route, async (c) => {
 	if (userType === 'patient') {
 		return c.json({ error: `Unauthorized. Only doctors can fetch patient information.` }, 403)
 	}
-    // Could have done a join here to get the patient details directly but that can become costly with larger datasets + lesser control on errors
-    
+	// Could have done a join here to get the patient details directly but that can become costly with larger datasets + lesser control on errors
+
 	const doctor = await db
 		.select()
 		.from(table.doctor)
