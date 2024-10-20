@@ -5,7 +5,6 @@ import exampleRoute from '@/routes/example'
 import generatePresignedUrls from '@/routes/generate-presigned-urls'
 import getDiagnosticRoute from '@/routes/get-diagnostics'
 import getDoctorInfoRoute from '@/routes/get-doctor-info'
-import getDoctorPatientsRoute from '@/routes/get-doctors-patients'
 import getEmrDetailsRoute from '@/routes/get-emr-details'
 import getPatientInfoRoute from '@/routes/get-patient-info'
 import getRedFlagsRoute from '@/routes/get-redflags'
@@ -36,5 +35,4 @@ export const registerRoutes = () => {
 	getRedFlagsRoute.getRoutingPath()
 	patchEmrRoute.getRoutingPath()
 	getDoctorInfoRoute.getRoutingPath()
-	getDoctorPatientsRoute.getRoutingPath()
 }

@@ -4,7 +4,6 @@ import { type EmrGenerationRoute } from '@/routes/emr-generation'
 import { type ExampleRoute } from '@/routes/example'
 import { type GeneratePresignedUrlsRoute } from '@/routes/generate-presigned-urls'
 import { type GetDiagnosticsRoute } from '@/routes/get-diagnostics'
-import { type GetDoctorsPatientsInfoRoute } from '@/routes/get-doctors-patients'
 import { type GetEmrRoute } from '@/routes/get-emr-details'
 import { type GetPatientInfoRoute } from '@/routes/get-patient-info'
 import { type GetRedFlagsRoute } from '@/routes/get-redflags'
@@ -35,7 +34,6 @@ type Routes =
 	| RedFlagsGenerationRoute
 	| GetRedFlagsRoute
 	| PatchEmrRoute
-	| GetDoctorsPatientsInfoRoute
 
 // Constructing a Type Safe Hono Client
 const client = hc<Routes>(URL)
