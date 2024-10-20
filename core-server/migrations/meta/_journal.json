@@ -29,6 +29,27 @@
       "when": 1726779318913,
       "tag": "0003_create_redflags_and_diagnostics_table",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1729457754446,
+      "tag": "0004_drop_patient_info",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1729457805752,
+      "tag": "0005_patient_with_doctorid",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1729457846699,
+      "tag": "0006_migrations_table",
+      "breakpoints": true
     }
   ]
 }

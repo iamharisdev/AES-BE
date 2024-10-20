@@ -68,6 +68,7 @@ const route = createRoute({
 })
 
 const handler = app.openapi(route, async (c) => {
+	const { phoneNumber } = c.get('jwtPayload')
 	const info = c.req.valid('json')
 
 	// check if the patient record already exists
@@ -77,7 +78,7 @@ const handler = app.openapi(route, async (c) => {
 		return c.json({ error: `Patient With Phone Number ${info.phoneNumber} Already Exists` }, 409)
 	}
 
-	await db.insert(table.patient.info).values(info)
+	await db.insert(table.patient.info).values({ ...info, doctorId: phoneNumber })
 
 	return c.json({ message: 'Patient Record Created' }, 200)
 })
