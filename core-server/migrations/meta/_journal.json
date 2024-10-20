@@ -50,6 +50,13 @@
       "when": 1729457846699,
       "tag": "0006_migrations_table",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1729458935537,
+      "tag": "0007_create_at_patient",
+      "breakpoints": true
     }
   ]
 }

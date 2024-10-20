@@ -17,6 +17,7 @@ const SuccessResponseSchema = z.object({
 			location: z.string().openapi({
 				example: '45 A, Society, Main Road, Karachi',
 			}),
+			createdAt: z.string(),
 		}),
 	),
 })
@@ -45,7 +46,12 @@ const handler = app.openapi(route, async (c) => {
 	const { phoneNumber } = c.get('jwtPayload')
 
 	const patients = await db
-		.select()
+		.select({
+			name: table.patient.info.name,
+			phoneNumber: table.patient.info.phoneNumber,
+			location: table.patient.info.location,
+			createdAt: table.patient.info.createdAt,
+		})
 		.from(table.patient.info)
 		.where(
 			eq(table.patient.info.doctorId, phoneNumber),

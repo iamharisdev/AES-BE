@@ -16,6 +16,7 @@ const SuccessResponseSchema = z.object({
 	location: z.string().openapi({
 		example: '45 A, Society, Main Road, Karachi',
 	}),
+	createdAt: z.string(),
 })
 
 const NotFoundSchema = z.object({
@@ -68,7 +69,10 @@ const handler = app.openapi(route, async (c) => {
 	if (!patient) {
 		return c.json({ error: `No Patient Info Record found with phone number ${phoneNumber}` }, 404)
 	}
-	return c.json(patient, 200)
+
+	const { doctorId, ...response } = patient
+
+	return c.json(response, 200)
 })
 
 export type GetPatientInfoRoute = typeof handler

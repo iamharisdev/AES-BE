@@ -1,0 +1,1 @@
+ALTER TABLE "patient_info" ADD COLUMN "generation_time" timestamp DEFAULT now() NOT NULL;

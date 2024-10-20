@@ -1,4 +1,4 @@
-import { pgTable, primaryKey, text } from 'drizzle-orm/pg-core'
+import { pgTable, primaryKey, text, timestamp } from 'drizzle-orm/pg-core'
 import { doctorTable } from './doctor'
 
 export const PatientInfoTable = pgTable('patient_info', {
@@ -7,6 +7,7 @@ export const PatientInfoTable = pgTable('patient_info', {
 	phoneNumber: text('phone').notNull(),
 	name: text('name').notNull(),
 	location: text('location').notNull(),
+	createdAt: timestamp('generation_time', { mode: 'string' }).notNull().defaultNow(),
 }, (table) => ({
 	pkWithCustomName: primaryKey({
 		name: 'global_id',
