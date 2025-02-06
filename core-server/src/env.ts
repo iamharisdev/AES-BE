@@ -18,6 +18,7 @@ export const envVariables = z.object({
 	DATABASE_HOST: z.coerce.string(),
 	DATABASE_NAME: z.coerce.string(),
 	DATABASE_PORT: z.coerce.number().default(5432),
+
 })
 
 export const env = envVariables.parse(process.env)
