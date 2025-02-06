@@ -16,7 +16,7 @@ import patchEmrRoute from '@/routes/patch-emr-details'
 import redFlagsGenerationRoute from '@/routes/redflags-generation'
 import registerDoctorRoute from '@/routes/register-doctor'
 import getAllEmrsFromPhone from '@/routes/get-erms-from-phone'
-
+import searchPatientsRoute from '@/routes/search-patients'
 export const registerRoutes = () => {
 	// hacky way to call the scripts and registering the routes
 	exampleRoute.getRoutingPath()
@@ -37,4 +37,5 @@ export const registerRoutes = () => {
 	patchEmrRoute.getRoutingPath()
 	getDoctorInfoRoute.getRoutingPath()
 	getAllEmrsFromPhone.getRoutingPath()	
+	searchPatientsRoute.getRoutingPath()
 }

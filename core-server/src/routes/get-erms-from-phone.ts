@@ -42,7 +42,7 @@ const route = createRoute({
 	method: 'get',
 	operationId: 'getAllEmrsFromPhone',
 	tags: ['EMR'],
-	path: '/emr/getAllEmrsFromPhone',
+	path: '/emr/getAllEmrsFromPhone/{phoneNumber}',
 	summary: 'Allows the Healthcare Practitioner to Get All EMRs for a Patient',
 	security: [{ jwt: [] }],
 	middleware: [jwtMiddleware],

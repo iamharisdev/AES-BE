@@ -26,8 +26,8 @@ const NotFoundSchema = z.object({
 const route = createRoute({
   method: 'get',
   operationId: 'searchPatients',
-  tags: ['Patients'],
-  path: '/patients/search',
+  tags: ['Patient'],
+  path: '/patient/search/{searchKey}',
   summary: 'Search patients by name, phone number, or CNIC',
   security: [{ jwt: [] }],
   middleware: [jwtMiddleware],
