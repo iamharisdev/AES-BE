@@ -13,6 +13,16 @@ CREATE TABLE "doctor" (
 	"maternity_home_name" text NOT NULL
 );
 
+CREATE TABLE "patient" (
+	"patient_id" uuid PRIMARY KEY NOT NULL,
+	"phone" text NOT NULL,
+	"name" text NOT NULL,
+	"location" text NOT NULL,
+	"cnic" text NOT NULL,
+	"generation_time" timestamp DEFAULT now() NOT NULL,
+  "prev_pregnancies" JSONB DEFAULT NULL
+);
+
 CREATE TABLE "turn_emr" (
   "phone" TEXT NOT NULL,
   "visit" INTEGER NOT NULL,
@@ -30,7 +40,7 @@ CREATE TABLE "turn_emr" (
   "personal_history" JSONB NOT NULL,
   "socio_economic_history" JSONB NOT NULL,
   "emr_id" UUID NOT NULL PRIMARY KEY,
-  "patient_id" UUID NOT NULL REFERENCES patient(patient_id),
+  "patient_id" UUID NOT NULL REFERENCES patient(patient_id)
 );
 
 CREATE TABLE "examination_details" (
@@ -40,13 +50,6 @@ CREATE TABLE "examination_details" (
   "doctor_id" UUID NOT NULL REFERENCES doctor(doctor_id)
 )
 
-CREATE TABLE "patient" (
-	"patient_id" uuid PRIMARY KEY NOT NULL,
-	"phone" text NOT NULL,
-	"name" text NOT NULL,
-	"location" text NOT NULL,
-	"cnic" text NOT NULL,
-	"generation_time" timestamp DEFAULT now() NOT NULL,
-  "prev_pregnancies" JSONB DEFAULT NULL
-);
+
+
 
