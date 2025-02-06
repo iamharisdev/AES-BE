@@ -7,7 +7,7 @@ import { createRoute, z } from '@hono/zod-openapi'
 import { eq } from 'drizzle-orm'
 import { sign } from 'hono/jwt'
 import { sha256 } from 'hono/utils/crypto'
-
+import { randomUUID } from 'crypto'
 const RequestBodySchema = z.object({
 	name: z.string().openapi({
 		example: 'Nazia',
@@ -78,7 +78,7 @@ const handler = app.openapi(route, async (c) => {
 	const user = await db
 		.select()
 		.from(table.doctor)
-		.where(eq(table.doctor.phone, details.phoneNumber))
+		.where(eq(table.doctor.phoneNumber, details.phoneNumber))
 		.then((user) => user.at(0))
 
 	if (user) {
@@ -91,8 +91,9 @@ const handler = app.openapi(route, async (c) => {
 	}
 
 	await db.insert(table.doctor).values({
+		doctorId: randomUUID(),
 		name: details.name,
-		phone: details.phoneNumber,
+		phoneNumber: details.phoneNumber,
 		encryptedPassword: (await sha256(details.password)) ?? '',
 		maternityHomeName: details.maternityHomeName,
 	})

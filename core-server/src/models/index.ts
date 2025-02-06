@@ -1,8 +1,8 @@
 import { bigint, pgTable, serial, text } from 'drizzle-orm/pg-core'
 import { diagnosticsTable } from './diagnostics'
 import { doctorTable } from './doctor'
-import { emrRecordTable } from './emr'
-import { PatientInfoTable } from './patient-info'
+import { turnEmrTable } from './turn-emr'
+import { patientTable } from './patient'
 import { redFlagsTable } from './red-flags'
 
 export const __migrations = pgTable('migrations', {
@@ -13,9 +13,9 @@ export const __migrations = pgTable('migrations', {
 
 export const table = {
 	doctor: doctorTable,
-	emr: emrRecordTable,
+	emr: turnEmrTable,
 	patient: {
-		info: PatientInfoTable,
+		info: patientTable,
 		// TODO: need to add auth table as well later on for patients to authenticate later on just like doctors
 	},
 	redFlags: redFlagsTable,
