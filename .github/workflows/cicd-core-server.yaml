@@ -51,7 +51,7 @@ jobs:
         SERVICE_NAME=core-server-${{ github.ref_name }}
         gcloud run deploy $SERVICE_NAME \
           --image $REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE_NAME:$SHORT_SHA \
-          --region $REGION
+          --region $REGION \
           --platform managed \
           --service-account cicdpipeline@awaz-e-sehat.iam.gserviceaccount.com \
           --allow-unauthenticated
