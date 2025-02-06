@@ -1,22 +1,19 @@
 # Stage 1: Build the web server binary
-FROM oven/bun:1.2.2 as builder
+FROM oven/bun:latest as builder
 
 WORKDIR /app
 
-# Copy dependencies for installation
 COPY package.json bun.lockb /app/
-
-# Install dependencies using Bun
 RUN bun install
 
-# Copy the source code to the container
 COPY . .
+RUN bun build src/index.ts --minify --sourcemap --target=bun --outfile index.js 
 
-# Build the project
-RUN bun build src/index.ts --minify --sourcemap --target=bun --outfile server.js
+# Stage 2: Serve the application
+FROM oven/bun:latest as final
 
-# Set the PORT environment variable (required by Cloud Run)
+WORKDIR /app
+COPY --from=builder /app/src/index.js /app/
+
 ENV PORT=3000
-
-# Command to run the application
-CMD ["bun", "run", "server.js"]
+CMD ["bun", "index.js"]
