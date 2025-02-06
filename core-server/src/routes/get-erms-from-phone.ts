@@ -14,23 +14,21 @@ const SuccessResponseSchema = z.object({
 			generationTime: z.date(),
 			lastModifiedTime: z.date(),
 			patientProfile: z.record(z.unknown()), // JSON structure
-			presentingComplaint: z.record(z.unknown()), 
-			currentPregnancy: z.record(z.unknown()), 
-			secondThirdTrimesters: z.record(z.unknown()), 
-			obsHistory: z.record(z.unknown()), 
-			gynecologicalHistory: z.record(z.unknown()), 
-			pastMedicalHistory: z.record(z.unknown()), 
-			surgicalHistory: z.record(z.unknown()), 
-			familyHistory: z.record(z.unknown()), 
-			personalHistory: z.record(z.unknown()), 
-			socioEconomicHistory: z.record(z.unknown()), 
+			presentingComplaint: z.record(z.unknown()),
+			currentPregnancy: z.record(z.unknown()),
+			secondThirdTrimesters: z.record(z.unknown()),
+			obsHistory: z.record(z.unknown()),
+			gynecologicalHistory: z.record(z.unknown()),
+			pastMedicalHistory: z.record(z.unknown()),
+			surgicalHistory: z.record(z.unknown()),
+			familyHistory: z.record(z.unknown()),
+			personalHistory: z.record(z.unknown()),
+			socioEconomicHistory: z.record(z.unknown()),
 			emrId: z.string().uuid(),
-		  })
+		}),
 	),
-	prevPregnancies: z.array(z.record(z.unknown())), 
+	prevPregnancies: z.array(z.record(z.unknown())),
 })
-
-
 
 const NotFoundSchema = z.object({
 	error: z.string().openapi({
@@ -90,15 +88,14 @@ const handler = app.openapi(route, async (c) => {
 		.from(table.patient.info)
 		.where(eq(table.patient.info.phone, phoneNumber))
 		.execute()
-	
+
 	if (!patientInfo || patientInfo.length === 0) {
 		return c.json({ error: `No Patient records found for phone number ${phoneNumber}` }, 404)
 	}
 
 	const prevPregnancies = patientInfo[0].prevPregnancies
 
-	return c.json({emrs, prevPregnancies}, 200)
-
+	return c.json({ emrs, prevPregnancies }, 200)
 })
 
 export type GetAllEmrsFromPhone = typeof handler

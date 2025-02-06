@@ -12,9 +12,8 @@ const NAME = env.DATABASE_NAME
 const databaseConnectionString = `postgres://${USERNAME}:${PASSWORD}@${HOST}:${PORT}/${NAME}`
 
 const queryClient = postgres(databaseConnectionString, {
-    idle_timeout: 20,  // Increase idle timeout
-  connect_timeout: 30, // Increase connection timeout
+	idle_timeout: 20, // Increase idle timeout
+	connect_timeout: 30, // Increase connection timeout
 })
-
 
 export const db = drizzle(queryClient, { schema: table })

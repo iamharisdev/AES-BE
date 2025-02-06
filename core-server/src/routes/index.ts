@@ -6,6 +6,7 @@ import generatePresignedUrls from '@/routes/generate-presigned-urls'
 import getDiagnosticRoute from '@/routes/get-diagnostics'
 import getDoctorInfoRoute from '@/routes/get-doctor-info'
 import getEmrDetailsRoute from '@/routes/get-emr-details'
+import getAllEmrsFromPhone from '@/routes/get-erms-from-phone'
 import getPatientInfoRoute from '@/routes/get-patient-info'
 import getRedFlagsRoute from '@/routes/get-redflags'
 import homeRoute from '@/routes/home-page'
@@ -15,7 +16,6 @@ import loginDoctorRoute from '@/routes/login-doctor'
 import patchEmrRoute from '@/routes/patch-emr-details'
 import redFlagsGenerationRoute from '@/routes/redflags-generation'
 import registerDoctorRoute from '@/routes/register-doctor'
-import getAllEmrsFromPhone from '@/routes/get-erms-from-phone'
 import searchPatientsRoute from '@/routes/search-patients'
 import updateEmr from '@/routes/update-emr'
 export const registerRoutes = () => {
@@ -37,7 +37,7 @@ export const registerRoutes = () => {
 	getRedFlagsRoute.getRoutingPath()
 	patchEmrRoute.getRoutingPath()
 	getDoctorInfoRoute.getRoutingPath()
-	getAllEmrsFromPhone.getRoutingPath()	
+	getAllEmrsFromPhone.getRoutingPath()
 	searchPatientsRoute.getRoutingPath()
 	updateEmr.getRoutingPath()
 }

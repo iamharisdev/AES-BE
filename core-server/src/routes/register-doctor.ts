@@ -4,10 +4,10 @@ import { env } from '@/env'
 import { JwtPayload } from '@/middleware/jwt'
 import { table } from '@/models'
 import { createRoute, z } from '@hono/zod-openapi'
+import { randomUUID } from 'crypto'
 import { eq } from 'drizzle-orm'
 import { sign } from 'hono/jwt'
 import { sha256 } from 'hono/utils/crypto'
-import { randomUUID } from 'crypto'
 const RequestBodySchema = z.object({
 	name: z.string().openapi({
 		example: 'Nazia',

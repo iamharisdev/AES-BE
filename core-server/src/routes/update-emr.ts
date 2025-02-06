@@ -29,7 +29,7 @@ const UpdateEmrRequestSchema = z.object({
 					message: 'Invalid section name',
 				}),
 				content: z.object({}), // Content must be a valid JSON object
-			})
+			}),
 		)
 		.min(1)
 		.refine((updates) => {
@@ -103,8 +103,8 @@ const handler = app.openapi(route, async (c) => {
 	// Construct update object dynamically
 	const updateData: Record<string, any> = {}
 	updates.forEach((upd: any) => {
-        updateData[upd.section] = upd.content
-    })
+		updateData[upd.section] = upd.content
+	})
 	// Always update lastModifiedTime
 	updateData['lastModifiedTime'] = new Date()
 
@@ -116,7 +116,7 @@ const handler = app.openapi(route, async (c) => {
 			message: 'EMR updated successfully',
 			updatedFields: updates.map((u: any) => u.section),
 		},
-		200
+		200,
 	)
 })
 

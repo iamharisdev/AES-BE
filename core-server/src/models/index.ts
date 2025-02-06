@@ -1,9 +1,9 @@
 import { bigint, pgTable, serial, text } from 'drizzle-orm/pg-core'
 import { diagnosticsTable } from './diagnostics'
 import { doctorTable } from './doctor'
-import { turnEmrTable } from './turn-emr'
 import { patientTable } from './patient'
 import { redFlagsTable } from './red-flags'
+import { turnEmrTable } from './turn-emr'
 
 export const __migrations = pgTable('migrations', {
 	id: serial('id').primaryKey().notNull(),
