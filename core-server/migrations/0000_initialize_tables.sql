@@ -16,9 +16,9 @@ CREATE TABLE "doctor" (
 CREATE TABLE "patient" (
 	"patient_id" uuid PRIMARY KEY NOT NULL,
 	"phone" text NOT NULL,
-	"name" text NOT NULL,
-	"location" text NOT NULL,
-	"cnic" text NOT NULL,
+	"name" text,
+	"location" text,
+	"cnic" text,
 	"generation_time" timestamp DEFAULT now() NOT NULL,
   "prev_pregnancies" JSONB DEFAULT NULL
 );
@@ -26,25 +26,25 @@ CREATE TABLE "patient" (
 CREATE TABLE "turn_emr" (
   "phone" TEXT NOT NULL,
   "visit" INTEGER NOT NULL,
-  "generation_time" TIMESTAMP NOT NULL,
-  "last_modified_time" TIMESTAMP NOT NULL,
-  "patient_profile" JSONB NOT NULL,
-  "presenting_complaint" JSONB NOT NULL,
-  "current_pregnancy" JSONB NOT NULL,
-  "second_third_trimesters" JSONB NOT NULL,
-  "obs_history" JSONB NOT NULL,
-  "gynecological_history" JSONB NOT NULL,
-  "past_medical_history" JSONB NOT NULL,
-  "surgical_history" JSONB NOT NULL,
-  "family_history" JSONB NOT NULL,
-  "personal_history" JSONB NOT NULL,
-  "socio_economic_history" JSONB NOT NULL,
+  "generation_time" TIMESTAMP DEFAULT now() NOT NULL,
+  "last_modified_time" TIMESTAMP DEFAULT now() NOT NULL,
+  "patient_profile" JSONB,
+  "presenting_complaint" JSONB,
+  "current_pregnancy" JSONB,
+  "second_third_trimesters" JSONB,
+  "obs_history" JSONB,
+  "gynecological_history" JSONB,
+  "past_medical_history" JSONB,
+  "surgical_history" JSONB,
+  "family_history" JSONB,
+  "personal_history" JSONB,
+  "socio_economic_history" JSONB,
   "emr_id" UUID NOT NULL PRIMARY KEY,
   "patient_id" UUID NOT NULL REFERENCES patient(patient_id)
 );
 
 CREATE TABLE "examination_details" (
-  "generation_time" TIMESTAMP NOT NULL,
+  "generation_time" TIMESTAMP DEFAULT now() NOT NULL,
   "emr_id" UUID NOT NULL PRIMARY KEY REFERENCES turn_emr(emr_id),
   "content" JSONB NOT NULL,
   "doctor_id" UUID NOT NULL REFERENCES doctor(doctor_id)
