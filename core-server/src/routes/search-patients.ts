@@ -27,7 +27,7 @@ const route = createRoute({
 	method: 'get',
 	operationId: 'searchPatients',
 	tags: ['Patient'],
-	path: '/patient/search/{searchKey}',
+	path: '/patient/search',
 	summary: 'Search patients by name, phone number, or CNIC',
 	security: [{ jwt: [] }],
 	middleware: [jwtMiddleware],
