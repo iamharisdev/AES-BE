@@ -72,7 +72,7 @@ const loginHandler = app.openapi(route, async (c) => {
 	const user = await db
 		.select()
 		.from(table.doctor)
-		.where(eq(table.doctor.phone, details.phoneNumber))
+		.where(eq(table.doctor.phoneNumber, details.phoneNumber))
 		.then((user) => user.at(0))
 
 	if (!user) {
