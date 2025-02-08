@@ -1,7 +1,6 @@
-import { EmrGenerationRoute } from '@/routes/emr-generation'
 import { currentPregnancyEmrSchema } from '@/schemas/current-pregnancy'
 import { DiagnosticsSchema } from '@/schemas/diagnostics'
-import { EmrGenerationSchema } from '@/schemas/emr-combined'
+import { EMR } from '@/schemas/emr-combined'
 import { husbandFamilyHistory, patientFamilyHistory } from '@/schemas/family-history'
 import { husbandDetails, medicalHistoryEMR, personalDetails, surgicalHistory } from '@/schemas/medical-history'
 import { previousPregnancyEmrSchema } from '@/schemas/previous-pregnancy'
@@ -36,7 +35,7 @@ const schemaMap: Record<string, GenerateStructuredOutputArgs<any>['schema']> = {
 }
 
 type GenerateDiagnosticsArgs = {
-	emr: z.infer<typeof EmrGenerationSchema>
+	emr: z.infer<typeof EMR>
 	useMini: boolean
 }
 

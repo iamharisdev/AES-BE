@@ -2,7 +2,7 @@ import app from '@/app'
 import { db } from '@/db'
 import { jwtMiddleware } from '@/middleware/jwt'
 import { table } from '@/models'
-import { EmrGenerationSchema } from '@/schemas/emr-combined'
+import { EMR } from '@/schemas/emr-combined'
 import { createRoute, z } from '@hono/zod-openapi'
 import { eq } from 'drizzle-orm'
 
