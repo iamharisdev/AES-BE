@@ -39,6 +39,9 @@ CREATE TABLE "turn_emr" (
   "family_history" JSONB,
   "personal_history" JSONB,
   "socio_economic_history" JSONB,
+  "vitals" JSONB,
+  "red_flags" JSONB,
+  "followup_questions" JSONB,
   "emr_id" UUID NOT NULL PRIMARY KEY,
   "patient_id" UUID NOT NULL REFERENCES patient(patient_id)
 );
