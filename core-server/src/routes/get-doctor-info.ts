@@ -61,7 +61,7 @@ const handler = app.openapi(route, async (c) => {
 		.select()
 		.from(table.doctor)
 		.where(
-			eq(table.doctor.phone, phoneNumber),
+			eq(table.doctor.phoneNumber, phoneNumber),
 		)
 		.execute()
 		.then(res => res.at(0))

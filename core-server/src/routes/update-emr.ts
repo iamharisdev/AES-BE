@@ -42,10 +42,15 @@ const UpdateEmrRequestSchema = z.object({
 const SuccessResponseSchema = z.object({
 	message: z.string(),
 	updatedFields: z.array(z.string()),
+	lastmodified: z.string().datetime(),
 })
 
 const NotFoundSchema = z.object({
 	error: z.string().openapi({ example: 'No EMR record found with this ID' }),
+})
+
+const InternalServerErrorSchema = z.object({
+	error: z.string().openapi({ example: 'Internal server error' }),
 })
 
 const route = createRoute({
@@ -82,6 +87,14 @@ const route = createRoute({
 			},
 			description: 'Not Found',
 		},
+		500: {
+			content: {
+				'application/json': {
+					schema: InternalServerErrorSchema,
+				},
+			},
+			description: 'Internal Server Error',
+		},
 	},
 })
 
@@ -108,13 +121,29 @@ const handler = app.openapi(route, async (c) => {
 	// Always update lastModifiedTime
 	updateData['lastModifiedTime'] = new Date()
 
-	// Perform update
-	await db.update(table.emr).set(updateData).where(eq(table.emr.emrId, emrId)).execute()
+	// Perform update and get the last modified time
+	const lastmodified = await db
+		.update(table.emr)
+		.set(updateData)
+		.where(eq(table.emr.emrId, emrId))
+		.returning({
+			lastModifiedTime: table.emr.lastModifiedTime,
+		})
+		.execute()
+		.then((res) => res.at(0)?.lastModifiedTime?.toISOString()) // Convert to ISO string
+
+	if (!lastmodified) {
+		return c.json(
+			{ error: 'Failed to retrieve updated lastModifiedTime' },
+			500,
+		)
+	}
 
 	return c.json(
 		{
 			message: 'EMR updated successfully',
 			updatedFields: updates.map((u: any) => u.section),
+			lastmodified: lastmodified,
 		},
 		200,
 	)

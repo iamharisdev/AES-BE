@@ -2,7 +2,7 @@ import app from '@/app'
 import { db } from '@/db'
 import { jwtMiddleware } from '@/middleware/jwt'
 import { table } from '@/models'
-import { EmrGenerationSchema } from '@/schemas/emr-combined'
+import { EMR } from '@/schemas/emr-combined'
 import { createRoute, z } from '@hono/zod-openapi'
 import { eq } from 'drizzle-orm'
 
@@ -10,7 +10,7 @@ const SuccessResponseSchema = z.object({
 	emrId: z.string(),
 	patientId: z.string(),
 	generationTime: z.date(),
-	content: EmrGenerationSchema,
+	content: EMR,
 })
 
 const NotFoundSchema = z.object({
@@ -70,7 +70,7 @@ const handler = app.openapi(route, async (c) => {
 		return c.json({ error: `No Emr Record Found With Id ${emrId}` }, 404)
 	}
 
-	const { doctorId, ...emrResponse } = emr
+	const { ...emrResponse } = emr
 	return c.json(emrResponse, 200)
 })
 

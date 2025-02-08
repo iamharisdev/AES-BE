@@ -70,7 +70,7 @@ const handler = app.openapi(route, async (c) => {
 		return c.json({ error: `No Patient Info Record found with phone number ${phoneNumber}` }, 404)
 	}
 
-	const { doctorId, ...response } = patient
+	const { ...response } = patient
 
 	return c.json(response, 200)
 })
