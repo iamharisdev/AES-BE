@@ -1,16 +1,16 @@
-import app from '@/app';
-import { db } from '@/db';
-import { JwtPayload, jwtMiddleware } from '@/middleware/jwt';
-import { table } from '@/models';
-import { createRoute, z } from '@hono/zod-openapi';
-import { eq } from 'drizzle-orm';
+import app from "@/app";
+import { db } from "@/db";
+import { JwtPayload, jwtMiddleware } from "@/middleware/jwt";
+import { table } from "@/models";
+import { createRoute, z } from "@hono/zod-openapi";
+import { eq } from "drizzle-orm";
 
 const ExaminationSchema = z.object({
   vitals: z.object({
     bloodPressure: z.string().optional(),
     pr: z.string().optional(),
     rr: z.string().optional(),
-    temperature: z.string().optional()
+    temperature: z.string().optional(),
   }),
   generalExam: z.object({
     bilateralPedalEdema: z.string().optional(),
@@ -19,13 +19,13 @@ const ExaminationSchema = z.object({
     koilonychia: z.string().optional(),
     lymphNodes: z.string().optional(),
     pallor: z.string().optional(),
-    spine: z.string().optional()
+    spine: z.string().optional(),
   }),
   breast: z.object({
     nippleDeformity: z.string().optional(),
     nippleDischarge: z.string().optional(),
     sizeComparison: z.string().optional(),
-    swelling: z.string().optional()
+    swelling: z.string().optional(),
   }),
   abdominalExam: z.object({
     abdominalWallEdema: z.string().optional(),
@@ -41,92 +41,92 @@ const ExaminationSchema = z.object({
     scarTenderness: z.string().optional(),
     shapeOfAbdomen: z.string().optional(),
     striae: z.string().optional(),
-    umbilicus: z.string().optional()
+    umbilicus: z.string().optional(),
   }),
   perVaginalFindings: z.string().optional(),
   perSpeculumFindings: z.string().optional(),
   systematicExam: z.object({
     cns: z.string().optional(),
-    cvs: z.string().optional()
-  })
+    cvs: z.string().optional(),
+  }),
 });
 
 const RequestSchema = z.object({
-  emrId: z.string().min(1).openapi({ example: 'emr-123456' }),
-  examination: ExaminationSchema
+  emrId: z.string().min(1).openapi({ example: "emr-123456" }),
+  examination: ExaminationSchema,
 });
 
 const SuccessResponseSchema = z.object({
   message: z.string().openapi({
-    example: 'Examination details updated successfully'
-  })
+    example: "Examination details updated successfully",
+  }),
 });
 
 const NotFoundSchema = z.object({
   error: z.string().openapi({
-    example: 'Failed to update examination details'
-  })
+    example: "Failed to update examination details",
+  }),
 });
 
 const route = createRoute({
-  method: 'put',
-  operationId: 'updateExamination',
-  tags: ['Examination'],
-  path: '/examination-detail/emr/{emrId}',
-  summary: 'Update examination details for a patient EMR',
+  method: "put",
+  operationId: "updateExamination",
+  tags: ["Examination"],
+  path: "/examination-detail/emr/{emrId}",
+  summary: "Update examination details for a patient EMR",
   security: [{ jwt: [] }],
   middleware: [jwtMiddleware],
   request: {
     body: {
       content: {
-        'application/json': {
-          schema: RequestSchema
-        }
-      }
-    }
+        "application/json": {
+          schema: RequestSchema,
+        },
+      },
+    },
   },
   responses: {
     200: {
-      description: 'Examination updated successfully',
+      description: "Examination updated successfully",
       content: {
-        'application/json': {
-          schema: SuccessResponseSchema
-        }
-      }
+        "application/json": {
+          schema: SuccessResponseSchema,
+        },
+      },
     },
     404: {
-      description: 'Not Found - Examination does not exist',
+      description: "Not Found - Examination does not exist",
       content: {
-        'application/json': {
-          schema: NotFoundSchema
-        }
-      }
+        "application/json": {
+          schema: NotFoundSchema,
+        },
+      },
     },
     401: {
-      description: 'Unauthorized - Doctor not authenticated',
+      description: "Unauthorized - Doctor not authenticated",
       content: {
-        'application/json': {
+        "application/json": {
           schema: z.object({
-            error: z.string().openapi({ example: 'Unauthorized' })
-          })
-        }
-      }
-    }
-  }
+            error: z.string().openapi({ example: "Unauthorized" }),
+          }),
+        },
+      },
+    },
+  },
 });
 
-const handler = app.openapi(route, async c => {
-  const body = c.req.valid('json');
-  const jwtPayload = c.get('jwtPayload') as JwtPayload;
+const handler = app.openapi(route, async (c) => {
+  const body = c.req.valid("json");
+  const jwtPayload = c.get("jwtPayload") as JwtPayload;
 
   const doctor = await db
     .select()
     .from(table.doctor)
     .where(eq(table.doctor.phoneNumber, jwtPayload.phoneNumber))
-    .then(d => d.at(0));
+    .then((d) => d.at(0));
 
   if (!doctor) {
-    return c.json({ error: 'Unauthorized - Doctor not found' }, 401);
+    return c.json({ error: "Unauthorized - Doctor not found" }, 401);
   }
 
   // Check if examination exists
@@ -134,10 +134,10 @@ const handler = app.openapi(route, async c => {
     .select()
     .from(table.examinationDetails)
     .where(eq(table.examinationDetails.emrId, body.emrId))
-    .then(res => res.at(0));
+    .then((res) => res.at(0));
 
   if (!existingExam) {
-    return c.json({ error: 'Examination details not found for this EMR' }, 404);
+    return c.json({ error: "Examination details not found for this EMR" }, 404);
   }
 
   await db
@@ -190,11 +190,11 @@ const handler = app.openapi(route, async c => {
 
       // Systematic
       cns: body.examination.systematicExam.cns,
-      cvs: body.examination.systematicExam.cvs
+      cvs: body.examination.systematicExam.cvs,
     })
     .where(eq(table.examinationDetails.emrId, body.emrId));
 
-  return c.json({ message: 'Examination updated successfully' }, 200);
+  return c.json({ message: "Examination updated successfully" }, 200);
 });
 
 export type UpdateExaminationRoute = typeof handler;
