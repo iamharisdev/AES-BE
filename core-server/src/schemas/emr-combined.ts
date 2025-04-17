@@ -1,34 +1,34 @@
-import { z } from "zod";
+import { createRoute, z } from '@hono/zod-openapi';
 
-export const YesNoEnum = z.enum(["Yes", "No", "I don’t know"]);
+export const YesNoEnum = z.enum(['Yes', 'No', 'I don’t know']);
 
-export const BirthMethodEnum = z.enum(["Normal", "Operation", "I don’t know"]);
+export const BirthMethodEnum = z.enum(['Normal', 'Operation', 'I don’t know']);
 
 export const BloodGroupEnum = z.enum([
-  "A+",
-  "A-",
-  "B+",
-  "B-",
-  "AB+",
-  "AB-",
-  "O+",
-  "O-",
-  "I don’t know",
+  'A+',
+  'A-',
+  'B+',
+  'B-',
+  'AB+',
+  'AB-',
+  'O+',
+  'O-',
+  'I don’t know'
 ]);
 
 export const FamilyTypeEnum = z.enum([
-  "Nuclear",
-  "Joint",
-  "Extended",
-  "I don’t know",
+  'Nuclear',
+  'Joint',
+  'Extended',
+  'I don’t know'
 ]);
 
 export const ChildGenderEnum = z.enum([
-  "Female",
-  "Male",
-  "Intersex",
-  "Prefer not to say",
-  "I don't know",
+  'Female',
+  'Male',
+  'Intersex',
+  'Prefer not to say',
+  "I don't know"
 ]);
 
 export const PatientProfileDataSchema = z
@@ -46,17 +46,17 @@ export const PatientProfileDataSchema = z
     miscarriage: YesNoEnum.optional().nullable(),
     first_pregnancy: YesNoEnum.optional().nullable(),
     family_marriage: YesNoEnum.optional().nullable(),
-    additional_info: z.string().nullable(),
+    additional_info: z.string().nullable()
   })
-  .openapi("PatientProfile");
+  .openapi('PatientProfile');
 
 export const PresentingComplaintDataSchema = z
   .object({
     patient_problem: z.string().nullable(),
     patient_problem_detailed: z.string().nullable(),
-    additional_info: z.string().nullable(),
+    additional_info: z.string().nullable()
   })
-  .openapi("PresentingComplaint");
+  .openapi('PresentingComplaint');
 
 export const CurrentPregnancyDataSchema = z
   .object({
@@ -69,9 +69,9 @@ export const CurrentPregnancyDataSchema = z
     blood_urine_test: YesNoEnum.optional().nullable(),
     blood_urine_test_types: z.string().nullable(),
     early_preg_problems: z.string().nullable(),
-    additional_info: z.string().nullable(),
+    additional_info: z.string().nullable()
   })
-  .openapi("CurrentPregnancy");
+  .openapi('CurrentPregnancy');
 
 export const SecondThirdTrimestersDataSchema = z
   .object({
@@ -83,41 +83,41 @@ export const SecondThirdTrimestersDataSchema = z
     sugar_blood_pressure: z.string().nullable(),
     strength_meds: z.string().nullable(),
     preg_problems: z.string().nullable(),
-    additional_info: z.string().nullable(),
+    additional_info: z.string().nullable()
   })
-  .openapi("SecondThirdTrimesters");
+  .openapi('SecondThirdTrimesters');
 
 export const GynecologicalHistoryDataSchema = z
   .object({
     family_planning: YesNoEnum.optional().nullable(),
     family_planning_method: z.string().nullable(),
     pap_smear_test: z.string().nullable(),
-    additional_info: z.string().nullable(),
+    additional_info: z.string().nullable()
   })
-  .openapi("GynecologicalHistory");
+  .openapi('GynecologicalHistory');
 
 export const PastMedicalHistoryDataSchema = z
   .object({
     current_meds: z.string().nullable(),
     sugar_blood_pressure: z.string().nullable(),
-    additional_info: z.string().nullable(),
+    additional_info: z.string().nullable()
   })
-  .openapi("PastMedicalHistory");
+  .openapi('PastMedicalHistory');
 
 export const SurgicalHistoryDataSchema = z
   .object({
     past_surgeries: z.string().nullable(),
-    additional_info: z.string().nullable(),
+    additional_info: z.string().nullable()
   })
-  .openapi("SurgicalHistory");
+  .openapi('SurgicalHistory');
 
 export const FamilyHistoryDataSchema = z
   .object({
     family_medical_conditions: z.string().nullable(),
     twins_family_history: YesNoEnum.optional().nullable(),
-    additional_info: z.string().nullable(),
+    additional_info: z.string().nullable()
   })
-  .openapi("FamilyHistory");
+  .openapi('FamilyHistory');
 
 export const PersonalHistoryDataSchema = z
   .object({
@@ -130,9 +130,9 @@ export const PersonalHistoryDataSchema = z
     sleep_and_hunger: z.string().nullable(),
     diet: z.string().nullable(),
     domestic_abuse: YesNoEnum.optional().nullable(),
-    additional_info: z.string().nullable(),
+    additional_info: z.string().nullable()
   })
-  .openapi("PersonalHistory");
+  .openapi('PersonalHistory');
 
 export const SocioEconomicHistoryDataSchema = z
   .object({
@@ -140,9 +140,9 @@ export const SocioEconomicHistoryDataSchema = z
     // family_type: FamilyTypeEnum.nullable(),
     living_situation: z.string().nullable(),
     more_info: z.string().nullable(),
-    additional_info: z.string().nullable(),
+    additional_info: z.string().nullable()
   })
-  .openapi("SocioEconomicHistory");
+  .openapi('SocioEconomicHistory');
 
 export const PreviousPregnancyDataSchema = z.object({
   child_age: z.string().nullable(),
@@ -156,14 +156,14 @@ export const PreviousPregnancyDataSchema = z.object({
   post_delivery_problems: z.string().nullable(),
   child_condition: z.string().nullable(),
   pregnancy_problems: z.string().nullable(),
-  additional_info: z.string().nullable(),
+  additional_info: z.string().nullable()
 });
 
 export const PreviousPregnancySchema = z
   .object({
-    pregnancies: z.array(PreviousPregnancyDataSchema).nullable(),
+    pregnancies: z.array(PreviousPregnancyDataSchema).nullable()
   })
-  .openapi("PreviousPregnancy");
+  .openapi('PreviousPregnancy');
 
 export const EMR = z
   .object({
@@ -178,6 +178,6 @@ export const EMR = z
     familyHistory: FamilyHistoryDataSchema.optional().nullable(),
     personalHistory: PersonalHistoryDataSchema.optional().nullable(),
     socioEconomicHistory: SocioEconomicHistoryDataSchema.optional().nullable(),
-    previousPregnancy: PreviousPregnancySchema.optional().nullable(),
+    previousPregnancy: PreviousPregnancySchema.optional().nullable()
   })
-  .openapi("EMR");
+  .openapi('EMR');
