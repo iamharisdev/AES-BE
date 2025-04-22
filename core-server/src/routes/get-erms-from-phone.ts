@@ -4,7 +4,7 @@ import { jwtMiddleware } from '@/middleware/jwt'
 import { table } from '@/models'
 import { EMR } from '@/schemas/emr-combined'
 import { createRoute, z } from '@hono/zod-openapi'
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 
 const SuccessResponseSchema = z.object({
 	emrs: z.array(
@@ -73,11 +73,33 @@ const handler = app.openapi(route, async (c) => {
 	const { phoneNumber } = c.req.valid('param')
 
 	// Fetch all EMRs for the given phone number
-	const emrs = await db
-		.select()
-		.from(table.emr)
-		.where(eq(table.emr.phone, phoneNumber))
-		.execute()
+	  const emrs = await db
+    .select({
+      phone: table.emr.phone,
+      visit: table.emr.visit,
+      generationTime: table.emr.generationTime,
+      lastModifiedTime: table.emr.lastModifiedTime,
+      patientProfile: table.emr.patientProfile,
+      presentingComplaint: table.emr.presentingComplaint,
+      currentPregnancy: table.emr.currentPregnancy,
+      secondThirdTrimesters: table.emr.secondThirdTrimesters,
+      obsHistory: table.emr.obsHistory,
+      gynecologicalHistory: table.emr.gynecologicalHistory,
+      pastMedicalHistory: table.emr.pastMedicalHistory,
+      surgicalHistory: table.emr.surgicalHistory,
+      familyHistory: table.emr.familyHistory,
+      personalHistory: table.emr.personalHistory,
+      socioEconomicHistory: table.emr.socioEconomicHistory,
+      emrId: table.emr.emrId,
+      hasExamination: sql<boolean>`CASE WHEN ${table.examinationDetails.emrId} IS NOT NULL THEN TRUE ELSE FALSE END`,
+    })
+    .from(table.emr)
+    .leftJoin(
+      table.examinationDetails,
+      eq(table.emr.emrId, table.examinationDetails.emrId)
+    )
+    .where(eq(table.emr.phone, phoneNumber))
+    .execute();
 
 	if (!emrs || emrs.length === 0) {
 		return c.json({ error: `No EMR records found for phone number ${phoneNumber}` }, 404)
