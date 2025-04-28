@@ -147,8 +147,8 @@ const handler = app.openapi(route, async c => {
       }
     });
 
-    // Make the file publicly accessible
-    await file.makePublic();
+    // // Make the file publicly accessible
+    // await file.makePublic();
 
     // Get the public URL
     const publicUrl = `https://storage.googleapis.com/${bucketName}/${fileName}`;
