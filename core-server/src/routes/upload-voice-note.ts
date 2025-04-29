@@ -151,7 +151,7 @@ const handler = app.openapi(route, async c => {
     // await file.makePublic();
 
     // Get the public URL
-    const publicUrl = `https://storage.googleapis.com/${bucketName}/${fileName}`;
+    const publicUrl = `https://storage.cloud.google.com/${bucketName}/${fileName}`;
 
     // Add the new voice note URL to the array
     const updatedVoiceNotes = [...(patient.voiceNotes || []), publicUrl];
