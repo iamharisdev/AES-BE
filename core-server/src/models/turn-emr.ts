@@ -1,28 +1,36 @@
+// turn-emr.ts
 import {
-  integer,
   jsonb,
   pgTable,
   text,
   timestamp,
-  uuid
+  uuid,
+  integer
 } from 'drizzle-orm/pg-core';
+import { patientTable } from './patient';
 
 export const turnEmrTable = pgTable('turn_emr', {
   phone: text('phone').notNull(),
   visit: integer('visit').notNull(),
-  generationTime: timestamp('generation_time').notNull(),
-  lastModifiedTime: timestamp('last_modified_time').notNull(),
-  patientProfile: jsonb('patient_profile').notNull(),
-  presentingComplaint: jsonb('presenting_complaint').notNull(),
-  currentPregnancy: jsonb('current_pregnancy').notNull(),
-  secondThirdTrimesters: jsonb('second_third_trimesters').notNull(),
-  obsHistory: jsonb('obs_history').notNull(),
-  gynecologicalHistory: jsonb('gynecological_history').notNull(),
-  pastMedicalHistory: jsonb('past_medical_history').notNull(),
-  surgicalHistory: jsonb('surgical_history').notNull(),
-  familyHistory: jsonb('family_history').notNull(),
-  personalHistory: jsonb('personal_history').notNull(),
-  socioEconomicHistory: jsonb('socio_economic_history').notNull(),
-  files: jsonb('files').notNull().default('[]'),
-  emrId: uuid('emr_id').primaryKey().notNull()
+  generationTime: timestamp('generation_time').defaultNow(),
+  lastModifiedTime: timestamp('last_modified_time'),
+  patientProfile: jsonb('patient_profile'),
+  presentingComplaint: jsonb('presenting_complaint'),
+  currentPregnancy: jsonb('current_pregnancy'),
+  secondThirdTrimesters: jsonb('second_third_trimesters'),
+  obsHistory: jsonb('obs_history'),
+  gynecologicalHistory: jsonb('gynecological_history'),
+  pastMedicalHistory: jsonb('past_medical_history'),
+  surgicalHistory: jsonb('surgical_history'),
+  familyHistory: jsonb('family_history'),
+  personalHistory: jsonb('personal_history'),
+  socioEconomicHistory: jsonb('socio_economic_history'),
+  vitals: jsonb('vitals'),
+  redFlags: jsonb('red_flags'),
+  followupQuestions: jsonb('followup_questions'),
+  emrId: uuid('emr_id').primaryKey().notNull(),
+  patientId: uuid('patient_id')
+    .notNull()
+    .references(() => patientTable.patientId),
+  files: jsonb('files').default('[]')
 });
