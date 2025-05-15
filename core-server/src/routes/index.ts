@@ -14,6 +14,7 @@ import updateEmr from '@/routes/update-emr';
 import updateExaminationDetailsRoute from '@/routes/update-examination-details';
 import createExaminationDetailsRoute from '@/routes/create-examination-details';
 import uploadVoiceNoteRoute from '@/routes/upload-voice-note';
+import GetDoctorsRoute from '@/routes/get-doctors';
 
 export const registerRoutes = () => {
   // hacky way to call the scripts and registering the routes
@@ -33,4 +34,5 @@ export const registerRoutes = () => {
   updateExaminationDetailsRoute.getRoutingPath();
   createExaminationDetailsRoute.getRoutingPath();
   uploadVoiceNoteRoute.getRoutingPath();
+  GetDoctorsRoute.getRoutingPath()
 };
