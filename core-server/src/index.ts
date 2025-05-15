@@ -8,16 +8,27 @@ import { logger } from 'hono/logger'
 
 
 
-app.use(cors({
-  origin: 'https://awaz-e-sehat.an.r.appspot.com', // ✅ Only allow your frontend
-  allowHeaders: ['Content-Type', 'Authorization'], // ✅ Allow auth headers
-  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // ✅ All HTTP verbs
-  maxAge: 600, // Optional: cache preflight for 10 mins
-}));
 
 registerRoutes()
 
 app.use(logger())
+
+app.use(
+  '*',
+  cors({
+    origin: (origin) => {
+      const allowedOrigins = ['http://localhost:3000', 'https://awaz-e-sehat.an.r.appspot.com']
+      return allowedOrigins.includes(origin ?? '') ? origin : ''
+    },
+    allowHeaders: ['Content-Type', 'Authorization'],
+    allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    credentials: true,
+  })
+)
+
+app.options('*', (c) => c.text('', 204))
+
+
 
 // app.use(cors({ origin: "https://core-server-development-1036152259123.asia-southeast1.run.app" }));
 
