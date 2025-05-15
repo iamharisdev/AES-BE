@@ -1,103 +1,103 @@
-import app from '@/app';
-import { db } from '@/db';
-import { jwtMiddleware } from '@/middleware/jwt';
-import { table } from '@/models';
-import { createRoute, z } from '@hono/zod-openapi';
-import { eq } from 'drizzle-orm';
-import { Storage } from '@google-cloud/storage';
-import { ulid } from 'ulidx';
+import app from "@/app";
+import { db } from "@/db";
+import { jwtMiddleware } from "@/middleware/jwt";
+import { table } from "@/models";
+import { createRoute, z } from "@hono/zod-openapi";
+import { eq } from "drizzle-orm";
+import { Storage } from "@google-cloud/storage";
+import { ulid } from "ulidx";
 
 // Initialize Google Cloud Storage
 const storage = new Storage();
 const bucketName = process.env.VOICE_NOTES_BUCKET;
 if (!bucketName) {
-  throw new Error('GCS_BUCKET_NAME environment variable is required');
+  throw new Error("GCS_BUCKET_NAME environment variable is required");
 }
 const bucket = storage.bucket(bucketName);
 
 const SuccessResponseSchema = z.object({
-  voiceNoteUrl: z.string().url()
+  voiceNoteUrl: z.string().url(),
 });
 
 const ErrorResponseSchema = z.object({
-  error: z.string()
+  error: z.string(),
 });
 
 const route = createRoute({
-  method: 'post',
-  operationId: 'uploadVoiceNote',
-  tags: ['Patient'],
-  path: '/patient/{patientId}/voice-note',
-  summary: 'Upload a voice note for a specific patient and store the link',
+  method: "post",
+  operationId: "uploadVoiceNote",
+  tags: ["Patient"],
+  path: "/patient/{patientId}/voice-note",
+  summary: "Upload a voice note for a specific patient and store the link",
   security: [{ jwt: [] }],
   middleware: [jwtMiddleware],
   request: {
     params: z.object({
-      patientId: z.string().uuid()
+      patientId: z.string().uuid(),
     }),
     body: {
       content: {
-        'multipart/form-data': {
+        "multipart/form-data": {
           schema: z.object({
-            voiceNote: z.any() // This will be a file upload
-          })
-        }
-      }
-    }
+            voiceNote: z.any(), // This will be a file upload
+          }),
+        },
+      },
+    },
   },
   responses: {
     200: {
       content: {
-        'application/json': {
-          schema: SuccessResponseSchema
-        }
+        "application/json": {
+          schema: SuccessResponseSchema,
+        },
       },
-      description: 'Voice note uploaded successfully'
+      description: "Voice note uploaded successfully",
     },
     400: {
       content: {
-        'application/json': {
-          schema: ErrorResponseSchema
-        }
+        "application/json": {
+          schema: ErrorResponseSchema,
+        },
       },
-      description: 'Bad Request'
+      description: "Bad Request",
     },
     403: {
       content: {
-        'application/json': {
-          schema: ErrorResponseSchema
-        }
+        "application/json": {
+          schema: ErrorResponseSchema,
+        },
       },
       description:
-        'Forbidden - User does not have permission to upload for this patient'
+        "Forbidden - User does not have permission to upload for this patient",
     },
     404: {
       content: {
-        'application/json': {
-          schema: ErrorResponseSchema
-        }
+        "application/json": {
+          schema: ErrorResponseSchema,
+        },
       },
-      description: 'Patient Not Found'
+      description: "Patient Not Found",
     },
     500: {
       content: {
-        'application/json': {
-          schema: ErrorResponseSchema
-        }
+        "application/json": {
+          schema: ErrorResponseSchema,
+        },
       },
-      description: 'Internal Server Error'
-    }
-  }
+      description: "Internal Server Error",
+    },
+  },
 });
 
-const handler = app.openapi(route, async c => {
+const handler = app.openapi(route, async (c) => {
   try {
-    const { patientId } = c.req.valid('param');
+    const { patientId } = c.req.valid("param");
     const formData = await c.req.formData();
-    const voiceNote = formData.get('voiceNote');
+    const voiceNote = formData.get("voiceNote");
 
     if (!voiceNote || !(voiceNote instanceof File)) {
-      return c.json({ error: 'No voice note file provided' }, 400);
+      return c.json({ error: "No voice note file provided" }, 400);
     }
 
     // Get the patient by ID
@@ -106,33 +106,33 @@ const handler = app.openapi(route, async c => {
       .from(table.patient.info)
       .where(eq(table.patient.info.patientId, patientId))
       .execute()
-      .then(res => res[0]);
+      .then((res) => res[0]);
 
     if (!patient) {
-      return c.json({ error: 'Patient not found' }, 404);
+      return c.json({ error: "Patient not found" }, 404);
     }
 
     // Check if the user has permission to upload for this patient
-    const { userType, phoneNumber } = c.get('jwtPayload');
+    const { userType, phoneNumber } = c.get("jwtPayload");
 
     // If user is a doctor, they can upload for any patient
     // If user is a patient, they can only upload for themselves
-    if (userType === 'patient' && patient.phone !== phoneNumber) {
+    if (userType === "patient" && patient.phone !== phoneNumber) {
       return c.json(
         {
           error:
-            'You do not have permission to upload voice notes for this patient'
+            "You do not have permission to upload voice notes for this patient",
         },
         403
       );
     }
 
     // Generate a unique filename with patient ID as folder and date-time
-    const fileExtension = voiceNote.name.split('.').pop();
+    const fileExtension = voiceNote.name.split(".").pop();
     const now = new Date();
     const dateTimeStr = now
       .toISOString()
-      .replace(/[:.]/g, '-')
+      .replace(/[:.]/g, "-")
       .substring(0, 19);
     const fileName = `${
       patient.patientId
@@ -143,15 +143,15 @@ const handler = app.openapi(route, async c => {
     const buffer = await voiceNote.arrayBuffer();
     await file.save(Buffer.from(buffer), {
       metadata: {
-        contentType: voiceNote.type
-      }
+        contentType: voiceNote.type,
+      },
     });
 
     // Make the file publicly accessible
     await file.makePublic();
 
     // Get the public URL
-    const publicUrl = `https://storage.googleapis.com/${bucketName}/${fileName}`;
+    const publicUrl = `https://storage.cloud.google.com/${bucketName}/${fileName}`;
 
     // Add the new voice note URL to the array
     const updatedVoiceNotes = [...(patient.voiceNotes || []), publicUrl];
@@ -163,8 +163,8 @@ const handler = app.openapi(route, async c => {
 
     return c.json({ voiceNoteUrl: publicUrl }, 200);
   } catch (error) {
-    console.error('Error uploading voice note:', error);
-    return c.json({ error: 'Failed to upload voice note' }, 500);
+    console.error("Error uploading voice note:", error);
+    return c.json({ error: "Failed to upload voice note" }, 500);
   }
 });
 
