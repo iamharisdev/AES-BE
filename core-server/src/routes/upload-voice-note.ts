@@ -143,12 +143,12 @@ const handler = app.openapi(route, async (c) => {
     const buffer = await voiceNote.arrayBuffer();
     await file.save(Buffer.from(buffer), {
       metadata: {
-        contentType: voiceNote.type,
-      },
+        contentType: voiceNote.type
+      }
     });
 
-    // Make the file publicly accessible
-    await file.makePublic();
+    // // Make the file publicly accessible
+    // await file.makePublic();
 
     // Get the public URL
     const publicUrl = `https://storage.cloud.google.com/${bucketName}/${fileName}`;
