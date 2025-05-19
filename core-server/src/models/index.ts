@@ -12,13 +12,10 @@ export const __migrations = pgTable('migrations', {
   createdAt: bigint('created_at', { mode: 'number' })
 });
 
-export const table = {
+export const tables = {
   doctor: doctorTable,
   emr: turnEmrTable,
-  patient: {
-    info: patientTable
-    // TODO: need to add auth table as well later on for patients to authenticate later on just like doctors
-  },
+  patient: patientTable,
   redFlags: redFlagsTable,
   diagnostics: diagnosticsTable,
   examinationDetails: examinationDetailsTable

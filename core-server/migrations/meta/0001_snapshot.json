@@ -1,0 +1,632 @@
+{
+  "id": "7483d70d-25cf-41f4-8923-6960b1588c60",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.diagnostics": {
+      "name": "diagnostics",
+      "schema": "",
+      "columns": {
+        "emr_id": {
+          "name": "emr_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "generation_time": {
+          "name": "generation_time",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "diagnostics": {
+          "name": "diagnostics",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "public.doctor": {
+      "name": "doctor",
+      "schema": "",
+      "columns": {
+        "doctor_id": {
+          "name": "doctor_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "phone_number": {
+          "name": "phone_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "encrypted_password": {
+          "name": "encrypted_password",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "maternity_home_name": {
+          "name": "maternity_home_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "public.examination_details": {
+      "name": "examination_details",
+      "schema": "",
+      "columns": {
+        "generation_time": {
+          "name": "generation_time",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "emr_id": {
+          "name": "emr_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "doctor_id": {
+          "name": "doctor_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "modified_doctor_id": {
+          "name": "modified_doctor_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "blood_pressure": {
+          "name": "blood_pressure",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pr": {
+          "name": "pr",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rr": {
+          "name": "rr",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "temperature": {
+          "name": "temperature",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "bilateral_pedal_edema": {
+          "name": "bilateral_pedal_edema",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "clubbing": {
+          "name": "clubbing",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "jaundice": {
+          "name": "jaundice",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "koilonychia": {
+          "name": "koilonychia",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lymph_nodes": {
+          "name": "lymph_nodes",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pallor": {
+          "name": "pallor",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "spine": {
+          "name": "spine",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "nipple_deformity": {
+          "name": "nipple_deformity",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "nipple_discharge": {
+          "name": "nipple_discharge",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "size_comparison": {
+          "name": "size_comparison",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "swelling": {
+          "name": "swelling",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "abdominal_wall_edema": {
+          "name": "abdominal_wall_edema",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "estimated_fetal_weight": {
+          "name": "estimated_fetal_weight",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fetal_heart_rate": {
+          "name": "fetal_heart_rate",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fundal_height": {
+          "name": "fundal_height",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hernial_orfices": {
+          "name": "hernial_orfices",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lie": {
+          "name": "lie",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "liquor": {
+          "name": "liquor",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "presentation": {
+          "name": "presentation",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "prominent_veins": {
+          "name": "prominent_veins",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pulsations": {
+          "name": "pulsations",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "scar_tenderness": {
+          "name": "scar_tenderness",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "shape_of_abdomen": {
+          "name": "shape_of_abdomen",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "striae": {
+          "name": "striae",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "umbilicus": {
+          "name": "umbilicus",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "per_speculum_findings": {
+          "name": "per_speculum_findings",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "per_vaginal_findings": {
+          "name": "per_vaginal_findings",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cns": {
+          "name": "cns",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cvs": {
+          "name": "cvs",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "examination_details_emr_id_turn_emr_emr_id_fk": {
+          "name": "examination_details_emr_id_turn_emr_emr_id_fk",
+          "tableFrom": "examination_details",
+          "tableTo": "turn_emr",
+          "columnsFrom": [
+            "emr_id"
+          ],
+          "columnsTo": [
+            "emr_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "examination_details_doctor_id_doctor_doctor_id_fk": {
+          "name": "examination_details_doctor_id_doctor_doctor_id_fk",
+          "tableFrom": "examination_details",
+          "tableTo": "doctor",
+          "columnsFrom": [
+            "doctor_id"
+          ],
+          "columnsTo": [
+            "doctor_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "examination_details_modified_doctor_id_doctor_doctor_id_fk": {
+          "name": "examination_details_modified_doctor_id_doctor_doctor_id_fk",
+          "tableFrom": "examination_details",
+          "tableTo": "doctor",
+          "columnsFrom": [
+            "modified_doctor_id"
+          ],
+          "columnsTo": [
+            "doctor_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "public.migrations": {
+      "name": "migrations",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "hash": {
+          "name": "hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "public.patient": {
+      "name": "patient",
+      "schema": "",
+      "columns": {
+        "patient_id": {
+          "name": "patient_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "phone": {
+          "name": "phone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "location": {
+          "name": "location",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cnic": {
+          "name": "cnic",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "generation_time": {
+          "name": "generation_time",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "prev_pregnancies": {
+          "name": "prev_pregnancies",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "voice_notes": {
+          "name": "voice_notes",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'[]'"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "public.red_flags": {
+      "name": "red_flags",
+      "schema": "",
+      "columns": {
+        "emr_id": {
+          "name": "emr_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "generation_time": {
+          "name": "generation_time",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "red_flags": {
+          "name": "red_flags",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "public.turn_emr": {
+      "name": "turn_emr",
+      "schema": "",
+      "columns": {
+        "phone": {
+          "name": "phone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "visit": {
+          "name": "visit",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "generation_time": {
+          "name": "generation_time",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "last_modified_time": {
+          "name": "last_modified_time",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "patient_profile": {
+          "name": "patient_profile",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "presenting_complaint": {
+          "name": "presenting_complaint",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "current_pregnancy": {
+          "name": "current_pregnancy",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "second_third_trimesters": {
+          "name": "second_third_trimesters",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "obs_history": {
+          "name": "obs_history",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "gynecological_history": {
+          "name": "gynecological_history",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "past_medical_history": {
+          "name": "past_medical_history",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "surgical_history": {
+          "name": "surgical_history",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "family_history": {
+          "name": "family_history",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "personal_history": {
+          "name": "personal_history",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "socio_economic_history": {
+          "name": "socio_economic_history",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vitals": {
+          "name": "vitals",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "red_flags": {
+          "name": "red_flags",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "followup_questions": {
+          "name": "followup_questions",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "emr_id": {
+          "name": "emr_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "patient_id": {
+          "name": "patient_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "files": {
+          "name": "files",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'[]'"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "turn_emr_patient_id_patient_patient_id_fk": {
+          "name": "turn_emr_patient_id_patient_patient_id_fk",
+          "tableFrom": "turn_emr",
+          "tableTo": "patient",
+          "columnsFrom": [
+            "patient_id"
+          ],
+          "columnsTo": [
+            "patient_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

@@ -1,0 +1,10 @@
+{
+    "version": "5",
+    "dialect": "pg",
+    "entries": [{
+        "idx": 0,
+        "name": "true_stick",
+        "checksum": "0001_true_stick.sql",
+        "applied": false
+    }]
+}
