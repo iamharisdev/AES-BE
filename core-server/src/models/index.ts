@@ -1,10 +1,11 @@
-import { bigint, pgTable, serial, text } from 'drizzle-orm/pg-core';
-import { diagnosticsTable } from './diagnostics';
-import { doctorTable } from './doctor';
-import { examinationDetailsTable } from './examination-details';
-import { patientTable } from './patient';
-import { redFlagsTable } from './red-flags';
-import { turnEmrTable } from './turn-emr';
+import { bigint, pgTable, serial, text, uuid } from 'drizzle-orm/pg-core';
+import { diagnostics } from './diagnostics';
+import { user } from './user';
+import { examination } from './examination';
+import { patient } from './patient';
+import { redFlags } from './red-flags';
+import { emr } from './emr';
+import { hospital } from './hospital';
 
 export const __migrations = pgTable('migrations', {
   id: serial('id').primaryKey().notNull(),
@@ -13,10 +14,11 @@ export const __migrations = pgTable('migrations', {
 });
 
 export const tables = {
-  doctor: doctorTable,
-  emr: turnEmrTable,
-  patient: patientTable,
-  redFlags: redFlagsTable,
-  diagnostics: diagnosticsTable,
-  examinationDetails: examinationDetailsTable
+  user,
+  hospital,
+  emr,
+  patient,
+  redFlags,
+  diagnostics,
+  examination
 };

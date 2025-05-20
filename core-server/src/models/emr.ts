@@ -1,4 +1,3 @@
-// turn-emr.ts
 import {
   jsonb,
   pgTable,
@@ -7,13 +6,12 @@ import {
   uuid,
   integer
 } from 'drizzle-orm/pg-core';
-import { patientTable } from './patient';
+import { patient } from './patient';
 
-export const turnEmrTable = pgTable('turn_emr', {
+export const emr = pgTable('emr', {
+  id: uuid('id').primaryKey().defaultRandom(),
   phone: text('phone').notNull(),
   visit: integer('visit').notNull(),
-  generationTime: timestamp('generation_time').defaultNow(),
-  lastModifiedTime: timestamp('last_modified_time'),
   patientProfile: jsonb('patient_profile'),
   presentingComplaint: jsonb('presenting_complaint'),
   currentPregnancy: jsonb('current_pregnancy'),
@@ -28,9 +26,10 @@ export const turnEmrTable = pgTable('turn_emr', {
   vitals: jsonb('vitals'),
   redFlags: jsonb('red_flags'),
   followupQuestions: jsonb('followup_questions'),
-  emrId: uuid('emr_id').primaryKey().notNull(),
   patientId: uuid('patient_id')
     .notNull()
-    .references(() => patientTable.patientId),
-  files: jsonb('files').default('[]')
+    .references(() => patient.id),
+  files: jsonb('files').default('[]'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow()
 });

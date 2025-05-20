@@ -1,6 +1,6 @@
 import { db } from '@/db'
 import { env } from '@/env'
-import { table } from '@/models'
+import { tables } from '@/models'
 import { deleteFile } from '@/services/storage'
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
 import { eq } from 'drizzle-orm'
@@ -47,15 +47,15 @@ describe('API Tests', () => {
 
 	afterAll(async () => {
 		// Clean up the database
-		await db.delete(table.doctor).where(eq(table.doctor.phone, TEST_DOCTOR_PHONE_MAIN))
-		const emrIdResult = await db.select().from(table.emr).where(eq(table.emr.patientId, TEST_PATIENT_PHONE))
+		await db.delete(tables.doctor).where(eq(tables.doctor.phone, TEST_DOCTOR_PHONE_MAIN))
+		const emrIdResult = await db.select().from(tables.emr).where(eq(tables.emr.patientId, TEST_PATIENT_PHONE))
 			.execute().then((res) => res.at(0))
 		const emrId = emrIdResult?.emrId
-		await db.delete(table.emr).where(eq(table.emr.patientId, TEST_PATIENT_PHONE))
-		await db.delete(table.patient.info).where(eq(table.patient.info.phoneNumber, TEST_PATIENT_PHONE))
+		await db.delete(tables.emr).where(eq(tables.emr.patientId, TEST_PATIENT_PHONE))
+		await db.delete(tables.patient.info).where(eq(tables.patient.info.phoneNumber, TEST_PATIENT_PHONE))
 		if (emrId) {
-			await db.delete(table.diagnostics).where(eq(table.diagnostics.emrId, emrId))
-			await db.delete(table.redFlags).where(eq(table.redFlags.emrId, emrId))
+			await db.delete(tables.diagnostics).where(eq(tables.diagnostics.emrId, emrId))
+			await db.delete(tables.redFlags).where(eq(tables.redFlags.emrId, emrId))
 		}
 	})
 
@@ -291,7 +291,7 @@ describe('API Tests', () => {
 		expect(json).toHaveProperty('message', 'Account Created')
 
 		// Cleanup
-		await db.delete(table.doctor).where(eq(table.doctor.phone, TEST_DOCTOR_PHONE2))
+		await db.delete(tables.doctor).where(eq(tables.doctor.phone, TEST_DOCTOR_PHONE2))
 	})
 
 	it('should login a doctor', async () => {

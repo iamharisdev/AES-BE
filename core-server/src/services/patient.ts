@@ -1,13 +1,13 @@
 import { db } from '@/db'
-import { table } from '@/models'
+import { tables } from '@/models'
 import { eq } from 'drizzle-orm'
 
 export const getPatientInfo = async ({ phoneNumber }: { phoneNumber: string }) => {
 	return db
 		.select()
-		.from(table.patient.info)
+		.from(tables.patient)
 		.where(
-			eq(table.patient.info.phoneNumber, phoneNumber),
+			eq(tables.patient.phoneNumber, phoneNumber),
 		)
 		.execute()
 		.then(res => res.at(0))

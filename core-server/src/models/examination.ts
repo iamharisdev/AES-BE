@@ -1,20 +1,16 @@
 import { jsonb, pgTable, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
-import { doctorTable } from './doctor';
-import { turnEmrTable } from './turn-emr';
+import { user } from './user';
+import { emr } from './emr';
 
-export const examinationDetailsTable = pgTable('examination_details', {
-  generationTime: timestamp('generation_time').notNull(),
+export const examination = pgTable('examination', {
+  id: uuid('id').primaryKey().defaultRandom(),
   emrId: uuid('emr_id')
-    .primaryKey()
     .notNull()
-    .references(() => turnEmrTable.emrId),
-  doctorId: uuid('doctor_id')
+    .references(() => emr.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id')
     .notNull()
-    .references(() => doctorTable.doctorId),
-  modifiedDoctorId: uuid('modified_doctor_id').references(
-    () => doctorTable.doctorId
-  ),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+    .references(() => user.id),
+  updatedByUserId: uuid('updated_by_user_id').references(() => user.id),
   bloodPressure: varchar('blood_pressure'),
   pr: varchar('pr'),
   rr: varchar('rr'),
@@ -47,5 +43,7 @@ export const examinationDetailsTable = pgTable('examination_details', {
   perSpeculumFindings: varchar('per_speculum_findings'),
   perVaginalFindings: varchar('per_vaginal_findings'),
   cns: varchar('cns'),
-  cvs: varchar('cvs')
+  cvs: varchar('cvs'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow()
 });

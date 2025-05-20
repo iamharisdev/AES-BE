@@ -13,6 +13,8 @@ import { type LoginDoctorRoute } from '@/routes/login-doctor'
 import { type PatchEmrRoute } from '@/routes/patch-emr-details'
 import { type RedFlagsGenerationRoute } from '@/routes/redflags-generation'
 import { type RegisterDoctorRoute } from '@/routes/register-doctor'
+import { type LoginUserRoute } from '@/routes/login-user'
+import { type RegisterUserRoute } from '@/routes/register-user'
 import { hc } from 'hono/client'
 
 const PORT = process.env.PORT || '8000'

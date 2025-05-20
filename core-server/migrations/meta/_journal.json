@@ -1,10 +1,13 @@
 {
-    "version": "5",
-    "dialect": "pg",
-    "entries": [{
-        "idx": 0,
-        "name": "true_stick",
-        "checksum": "0001_true_stick.sql",
-        "applied": false
-    }]
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1747737272638,
+      "tag": "0000_tiresome_praxagora",
+      "breakpoints": true
+    }
+  ]
 }
