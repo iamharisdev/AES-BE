@@ -9,9 +9,9 @@ export const patient = pgTable('patient', {
   cnic: text('cnic'),
   prevPregnancies: jsonb('prev_pregnancies'),
   voiceNotes: jsonb('voice_notes').default('[]'),
-  doctorId: uuid('doctor_id')
-    .notNull()
-    .references(() => user.id, { onDelete: 'cascade' }), // FK to user (doctor role)
+  doctorId: uuid('doctor_id').references(() => user.id, {
+    onDelete: 'cascade'
+  }), // FK to user (doctor role)
   hospitalId: uuid('hospital_id'), // Optional, can be inferred from user
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow()
