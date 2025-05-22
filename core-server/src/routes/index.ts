@@ -6,7 +6,8 @@ import getExaminationDetailsRoute from '@/routes/get-examination-details';
 import getPatientInfoRoute from '@/routes/get-patient-info';
 import getRedFlagsRoute from '@/routes/get-redflags';
 import homeRoute from '@/routes/home-page';
-import loginDoctorRoute from '@/routes/login-doctor';
+import { registerLoginDoctorRoute } from '@/routes/login-doctor';
+
 import patchEmrRoute from '@/routes/patch-emr-details';
 import registerDoctorRoute from '@/routes/register-doctor';
 import searchPatientsRoute from '@/routes/search-patients';
@@ -18,8 +19,11 @@ import GetDoctorsRoute from '@/routes/get-doctors';
 
 export const registerRoutes = () => {
   // hacky way to call the scripts and registering the routes
+
+  registerLoginDoctorRoute()
   homeRoute.getRoutingPath();
-  loginDoctorRoute.getRoutingPath();
+  // loginDoctorRoute.getRoutingPath();
+
   registerDoctorRoute.getRoutingPath();
   generatePresignedUrls.getRoutingPath();
   getEmrDetailsRoute.getRoutingPath();
