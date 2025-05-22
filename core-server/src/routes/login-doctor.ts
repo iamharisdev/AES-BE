@@ -61,7 +61,7 @@ export const registerLoginDoctorRoute = () => {
 // ✅ Mount the route
 app.openapi(route, async (c, r) => {
   const details = c.req.valid('json')
-  console.log(details, 'DDD')
+
 
   const user = await db
     .select()
@@ -85,11 +85,9 @@ app.openapi(route, async (c, r) => {
   }
 
   const token = await sign(jwtPayload, env.JWT_SECRET!, 'HS256')
-  console.log(token, 'DDD')
+
 
   return c.json({ message: 'Login Successful', token }, 200)
 })
 }
 
-// ✅ Export a function to ensure route gets registered
-// export const registerLoginDoctorRoute = () => {} // dummy to execute file on import

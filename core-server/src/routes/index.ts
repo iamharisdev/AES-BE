@@ -18,12 +18,8 @@ import uploadVoiceNoteRoute from '@/routes/upload-voice-note';
 import GetDoctorsRoute from '@/routes/get-doctors';
 
 export const registerRoutes = () => {
-  // hacky way to call the scripts and registering the routes
-
   registerLoginDoctorRoute()
   homeRoute.getRoutingPath();
-  // loginDoctorRoute.getRoutingPath();
-
   registerDoctorRoute.getRoutingPath();
   generatePresignedUrls.getRoutingPath();
   getEmrDetailsRoute.getRoutingPath();
