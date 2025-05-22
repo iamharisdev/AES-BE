@@ -11,7 +11,7 @@ const allowedOrigins = [
   'http://localhost:3000',
   'https://awaz-e-sehat.an.r.appspot.com',
   'https://core-server-development-1036152259123.asia-southeast1.run.app',
-  'https://aes-admin-1036152259123.us-central1.run.app/',
+  'https://aes-admin-1036152259123.us-central1.run.app',
   // add more here as needed
 ]
 
