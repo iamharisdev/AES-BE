@@ -1,10 +1,22 @@
-import { jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import {
+  jsonb,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+  integer
+} from 'drizzle-orm/pg-core';
 import { user } from './user';
 
 export const patient = pgTable('patient', {
   id: uuid('id').primaryKey().defaultRandom(),
-  phoneNumber: text('phone_number'),
+  phoneNumber: text('phone_number').notNull(),
   name: text('name'),
+  age: integer('age'),
+  gender: text('gender'),
+  maritalStatus: text('marital_status'),
+  occupation: text('occupation'),
+  address: text('address'),
   location: text('location'),
   cnic: text('cnic'),
   prevPregnancies: jsonb('prev_pregnancies'),

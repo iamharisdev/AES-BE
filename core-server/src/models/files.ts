@@ -1,14 +1,14 @@
 import { pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { emr } from './emr';
 
-export const redFlags = pgTable('red_flags', {
+export const files = pgTable('files', {
   id: uuid('id').primaryKey().defaultRandom(),
   emrId: uuid('emr_id')
     .notNull()
     .references(() => emr.id),
-  symptoms: text('symptoms'),
-  severity: text('severity'),
-  actionTaken: text('action_taken'),
+  fileName: text('file_name').notNull(),
+  fileType: text('file_type').notNull(),
+  fileUrl: text('file_url').notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow()
 });

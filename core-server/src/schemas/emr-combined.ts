@@ -1,8 +1,8 @@
 import { createRoute, z } from '@hono/zod-openapi';
 
-export const YesNoEnum = z.enum(['Yes', 'No', 'I don’t know']);
+export const YesNoEnum = z.enum(['Yes', 'No', "I don't know"]);
 
-export const BirthMethodEnum = z.enum(['Normal', 'Operation', 'I don’t know']);
+export const BirthMethodEnum = z.enum(['Normal', 'Operation', "I don't know"]);
 
 export const BloodGroupEnum = z.enum([
   'A+',
@@ -13,14 +13,14 @@ export const BloodGroupEnum = z.enum([
   'AB-',
   'O+',
   'O-',
-  'I don’t know'
+  "I don't know"
 ]);
 
 export const FamilyTypeEnum = z.enum([
   'Nuclear',
   'Joint',
   'Extended',
-  'I don’t know'
+  "I don't know"
 ]);
 
 export const ChildGenderEnum = z.enum([
@@ -73,19 +73,14 @@ export const CurrentPregnancyDataSchema = z
   })
   .openapi('CurrentPregnancy');
 
-export const SecondThirdTrimestersDataSchema = z
+export const TrimesterDataSchema = z
   .object({
-    fetus_movement: z.string().nullable(),
-    ultrasound_5thMonth: YesNoEnum.optional().nullable(),
-    checkup_regularity: z.string().nullable(),
-    hb_level: z.number().nullable(),
-    trimester_problems: z.string().nullable(),
-    sugar_blood_pressure: z.string().nullable(),
-    strength_meds: z.string().nullable(),
-    preg_problems: z.string().nullable(),
-    additional_info: z.string().nullable()
+    fetalMovement: z.string().optional(),
+    fetalHeartRate: z.number().optional(),
+    fundalHeight: z.number().optional(),
+    presentation: z.string().optional()
   })
-  .openapi('SecondThirdTrimesters');
+  .openapi('Trimester');
 
 export const GynecologicalHistoryDataSchema = z
   .object({
@@ -96,13 +91,19 @@ export const GynecologicalHistoryDataSchema = z
   })
   .openapi('GynecologicalHistory');
 
-export const PastMedicalHistoryDataSchema = z
+export const MedicalHistoryDataSchema = z
   .object({
     current_meds: z.string().nullable(),
     sugar_blood_pressure: z.string().nullable(),
-    additional_info: z.string().nullable()
+    additional_info: z.string().nullable(),
+    diabetes: z.string().optional(),
+    hypertension: z.string().optional(),
+    heartDisease: z.string().optional(),
+    asthma: z.string().optional(),
+    thyroid: z.string().optional(),
+    other: z.string().optional()
   })
-  .openapi('PastMedicalHistory');
+  .openapi('MedicalHistory');
 
 export const SurgicalHistoryDataSchema = z
   .object({
@@ -170,10 +171,9 @@ export const EMR = z
     patientProfile: PatientProfileDataSchema.optional().nullable(),
     presentingComplaint: PresentingComplaintDataSchema.optional().nullable(),
     currentPregnancy: CurrentPregnancyDataSchema.optional().nullable(),
-    secondThirdTrimesters:
-      SecondThirdTrimestersDataSchema.optional().nullable(),
+    trimester: TrimesterDataSchema.optional().nullable(),
     gynecologicalHistory: GynecologicalHistoryDataSchema.optional().nullable(),
-    pastMedicalHistory: PastMedicalHistoryDataSchema.optional().nullable(),
+    medicalHistory: MedicalHistoryDataSchema.optional().nullable(),
     surgicalHistory: SurgicalHistoryDataSchema.optional().nullable(),
     familyHistory: FamilyHistoryDataSchema.optional().nullable(),
     personalHistory: PersonalHistoryDataSchema.optional().nullable(),
@@ -181,3 +181,4 @@ export const EMR = z
     previousPregnancy: PreviousPregnancySchema.optional().nullable()
   })
   .openapi('EMR');
+

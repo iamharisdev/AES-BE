@@ -1,5 +1,5 @@
 import { pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
-
+import { hospital } from './hospital';
 export enum UserRole {
   Doctor = 'doctor',
   Admin = 'admin',
@@ -13,8 +13,10 @@ export const user = pgTable('user', {
   phoneNumber: text('phone_number').notNull(),
   name: text('name').notNull(),
   encryptedPassword: text('encrypted_password').notNull(),
-  role: text('role').notNull().default(UserRole.Doctor), // Use enum for type safety
-  hospitalId: uuid('hospital_id').notNull(),
+  role: text('role').notNull().default(UserRole.Doctor),
+  hospitalId: uuid('hospital_id')
+    .references(() => hospital.id)
+    .notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow()
 });

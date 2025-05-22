@@ -41,7 +41,7 @@ export const ExaminationSchema = z.object({
   musculoskeletal: z.object({
     joints: z.string().optional(),
     muscles: z.string().optional(),
-    spine: z.string().optional(),
+  spine: z.string().optional(),
     gait: z.string().optional(),
   }).optional(),
   neurological: z.object({

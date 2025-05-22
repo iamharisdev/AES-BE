@@ -1,14 +1,15 @@
-import { pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, uuid, boolean } from 'drizzle-orm/pg-core';
 import { emr } from './emr';
 
-export const redFlags = pgTable('red_flags', {
+export const personalHistory = pgTable('personal_history', {
   id: uuid('id').primaryKey().defaultRandom(),
   emrId: uuid('emr_id')
     .notNull()
     .references(() => emr.id),
-  symptoms: text('symptoms'),
-  severity: text('severity'),
-  actionTaken: text('action_taken'),
+  smoking: boolean('smoking'),
+  alcohol: boolean('alcohol'),
+  diet: text('diet'),
+  exercise: text('exercise'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow()
 });
