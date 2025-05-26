@@ -24,5 +24,7 @@ export const turnEmrTable = pgTable('turn_emr', {
   personalHistory: jsonb('personal_history').notNull(),
   socioEconomicHistory: jsonb('socio_economic_history').notNull(),
   files: jsonb('files').notNull().default('[]'),
-  emrId: uuid('emr_id').primaryKey().notNull()
+  emrId: uuid('emr_id').primaryKey().notNull(),
+  redFlags:jsonb('red_flags').notNull().default('[]'),
+  followups: jsonb('followup_questions').notNull().default('[]'),
 });

@@ -18,7 +18,7 @@ const allowedOrigins = [
 // ✅ Apply CORS
 app.use('*', cors({
   origin: (origin) => {
-    console.log(origin,"OOOOO")
+
     if (!origin) return ''; // For non-browser requests like curl
     return allowedOrigins.includes(origin) ? origin : '';
   },
@@ -27,6 +27,8 @@ app.use('*', cors({
   credentials: true,
   maxAge: 600,
 }))
+
+
 
 // ✅ Optional logger
 app.use('*', logger())
