@@ -46,8 +46,10 @@ const route = createRoute({
 		},
 	},
 })
+export const getRedFlagsRoute = () => {
 
-const handler = app.openapi(route, async (c) => {
+
+app.openapi(route, async (c) => {
 	const { emrId } = c.req.valid('param')
 	const record = await db.select()
 		.from(table.redFlags)
@@ -65,5 +67,4 @@ const handler = app.openapi(route, async (c) => {
 	return c.json({ redFlags }, 200)
 })
 
-export type GetRedFlagsRoute = typeof handler
-export default route
+}

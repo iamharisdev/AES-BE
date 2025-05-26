@@ -60,7 +60,11 @@ const route = createRoute({
 	},
 })
 
-const handler = app.openapi(route, async (c) => {
+export const getPatientInfoRoute = () =>{
+
+
+
+app.openapi(route, async (c) => {
 	const { phoneNumber } = c.req.valid('param')
 
 	// check if the patient record already exists
@@ -74,7 +78,6 @@ const handler = app.openapi(route, async (c) => {
 
 	return c.json(response, 200)
 })
+}
 
-export type GetPatientInfoRoute = typeof handler
 
-export default route

@@ -61,7 +61,11 @@ const route = createRoute({
   },
 });
 
-const handler = app.openapi(route, async (c) => {
+export const searchPatients = ()=>{
+
+
+
+app.openapi(route, async (c) => {
   const { searchKey } = c.req.valid("query");
   let patients;
 
@@ -97,8 +101,7 @@ const handler = app.openapi(route, async (c) => {
   }
 
   return c.json(patients, 200);
-});
+})
+}
 
-export type SearchPatientsRoute = typeof handler;
 
-export default route;

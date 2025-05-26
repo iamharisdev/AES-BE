@@ -71,7 +71,11 @@ const route = createRoute({
 	},
 })
 
-const handler = app.openapi(route, async (c) => {
+export const RegisterDoctorRoute = () =>{
+
+
+
+app.openapi(route, async (c) => {
 	const details = c.req.valid('json')
 
 	// check if the user exists in the database
@@ -114,7 +118,6 @@ const handler = app.openapi(route, async (c) => {
 		200,
 	)
 })
+}
 
-export type RegisterDoctorRoute = typeof handler
 
-export default route
