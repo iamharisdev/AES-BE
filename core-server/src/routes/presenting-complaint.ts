@@ -3,16 +3,14 @@ import { db } from '@/db';
 import { jwtMiddleware } from '@/middleware/jwt';
 import { tables } from '@/models';
 import { createRoute, z } from '@hono/zod-openapi';
-import { eq, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 // Schema for presenting complaint
 const PresentingComplaintSchema = z.object({
   id: z.string().uuid(),
   emrId: z.string().uuid(),
-  symptom: z.string(),
-  symptomDuration: z.string().optional(),
-  symptomSeverity: z.string().optional(),
-  relatedSymptoms: z.string().optional(),
+  problem: z.string(),
+  detail: z.string().nullable(),
   createdAt: z.date(),
   updatedAt: z.date()
 });
@@ -20,15 +18,12 @@ const PresentingComplaintSchema = z.object({
 // Create presenting complaint schema
 const CreatePresentingComplaintSchema = z.object({
   emrId: z.string().uuid(),
-  symptom: z.string(),
-  symptomDuration: z.string().optional(),
-  symptomSeverity: z.string().optional(),
-  relatedSymptoms: z.string().optional()
+  problem: z.string(),
+  detail: z.string().optional()
 });
 
 // Update presenting complaint schema
-const UpdatePresentingComplaintSchema =
-  CreatePresentingComplaintSchema.partial();
+const UpdatePresentingComplaintSchema = CreatePresentingComplaintSchema.partial();
 
 // Create route
 const createPresentingComplaintRoute = createRoute({
@@ -174,7 +169,7 @@ const presentingComplaintRoute = {
     });
 
     app.openapi(getPresentingComplaintRoute, async c => {
-      const { id } = c.req.valid('params');
+      const { id } = c.req.valid('param');
       const [complaint] = await db
         .select()
         .from(tables.presentingComplaint)
@@ -185,11 +180,11 @@ const presentingComplaintRoute = {
         return c.json({ error: 'Presenting complaint not found' }, 404);
       }
 
-      return c.json(complaint);
+      return c.json(complaint, 200);
     });
 
     app.openapi(updatePresentingComplaintRoute, async c => {
-      const { id } = c.req.valid('params');
+      const { id } = c.req.valid('param');
       const data = c.req.valid('json');
 
       const [complaint] = await db
@@ -202,11 +197,11 @@ const presentingComplaintRoute = {
         return c.json({ error: 'Presenting complaint not found' }, 404);
       }
 
-      return c.json(complaint);
+      return c.json(complaint, 200);
     });
 
     app.openapi(deletePresentingComplaintRoute, async c => {
-      const { id } = c.req.valid('params');
+      const { id } = c.req.valid('param');
       const [complaint] = await db
         .delete(tables.presentingComplaint)
         .where(eq(tables.presentingComplaint.id, id))

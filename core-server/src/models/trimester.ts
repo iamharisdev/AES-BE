@@ -13,10 +13,15 @@ export const trimester = pgTable('trimester', {
   emrId: uuid('emr_id')
     .notNull()
     .references(() => emr.id),
-  fetalMovement: text('fetal_movement'),
-  fetalHeartRate: integer('fetal_heart_rate'),
-  fundalHeight: numeric('fundal_height'),
-  presentation: text('presentation'),
+  fetusMovement: text('fetus_movement'),
+  ultrasound5thMonth: text('ultrasound_5thMonth'),
+  checkupRegularity: text('checkup_regularity'),
+  hbLevel: text('hb_level'),
+  trimesterProblems: text('trimester_problems'),
+  sugarBloodPressure: text('sugar_blood_pressure'),
+  strengthMeds: text('strength_meds'),
+  pregProblems: text('preg_problems'),
+  additionalInfo: text('additional_info'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow()
 });

@@ -9,10 +9,15 @@ import { eq } from 'drizzle-orm';
 const TrimesterSchema = z.object({
   id: z.string().uuid(),
   emrId: z.string().uuid(),
-  fetalMovement: z.string().optional(),
-  fetalHeartRate: z.number().optional(),
-  fundalHeight: z.number().optional(),
-  presentation: z.string().optional(),
+  fetusMovement: z.string().nullable(),
+  ultrasound5thMonth: z.string().nullable(),
+  checkupRegularity: z.string().nullable(),
+  hbLevel: z.string().nullable(),
+  trimesterProblems: z.string().nullable(),
+  sugarBloodPressure: z.string().nullable(),
+  strengthMeds: z.string().nullable(),
+  pregProblems: z.string().nullable(),
+  additionalInfo: z.string().nullable(),
   createdAt: z.date(),
   updatedAt: z.date()
 });
@@ -20,10 +25,15 @@ const TrimesterSchema = z.object({
 // Create trimester schema
 const CreateTrimesterSchema = z.object({
   emrId: z.string().uuid(),
-  fetalMovement: z.string().optional(),
-  fetalHeartRate: z.number().optional(),
-  fundalHeight: z.number().optional(),
-  presentation: z.string().optional()
+  fetusMovement: z.string().nullable(),
+  ultrasound5thMonth: z.string().nullable(),
+  checkupRegularity: z.string().nullable(),
+  hbLevel: z.string().nullable(),
+  trimesterProblems: z.string().nullable(),
+  sugarBloodPressure: z.string().nullable(),
+  strengthMeds: z.string().nullable(),
+  pregProblems: z.string().nullable(),
+  additionalInfo: z.string().nullable()
 });
 
 // Update trimester schema
@@ -173,7 +183,7 @@ const trimesterRoute = {
     });
 
     app.openapi(getTrimesterRoute, async c => {
-      const { id } = c.req.valid('params');
+      const { id } = c.req.valid('param');
       const [record] = await db
         .select()
         .from(tables.trimester)
@@ -188,7 +198,7 @@ const trimesterRoute = {
     });
 
     app.openapi(updateTrimesterRoute, async c => {
-      const { id } = c.req.valid('params');
+      const { id } = c.req.valid('param');
       const data = c.req.valid('json');
 
       const [record] = await db
@@ -205,7 +215,7 @@ const trimesterRoute = {
     });
 
     app.openapi(deleteTrimesterRoute, async c => {
-      const { id } = c.req.valid('params');
+      const { id } = c.req.valid('param');
       const [record] = await db
         .delete(tables.trimester)
         .where(eq(tables.trimester.id, id))

@@ -6,10 +6,8 @@ export const presentingComplaint = pgTable('presenting_complaint', {
   emrId: uuid('emr_id')
     .notNull()
     .references(() => emr.id),
-  symptom: text('primary_symptom').notNull(),
-  symptomDuration: text('symptom_duration'),
-  symptomSeverity: text('symptom_severity'),
-  relatedSymptoms: text('related_symptoms'),
+  problem: text('problem').notNull(),
+  detail: text('detail'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow()
 });

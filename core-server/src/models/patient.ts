@@ -19,11 +19,18 @@ export const patient = pgTable('patient', {
   address: text('address'),
   location: text('location'),
   cnic: text('cnic'),
-  prevPregnancies: jsonb('prev_pregnancies'),
+  education: text('education'),
+  marriedYears: integer('married_years'),
+  pregnancyMonths: integer('pregnancy_months'),
+  lastMenstruation: text('last_menstruation'),
+  regularMenstruation: text('regular_menstruation'),
+  miscarriage: text('miscarriage'),
+  firstPregnancy: text('first_pregnancy'),
+  familyMarriage: text('family_marriage'),
   voiceNotes: jsonb('voice_notes').default('[]'),
   doctorId: uuid('doctor_id').references(() => user.id, {
     onDelete: 'cascade'
-  }), // FK to user (doctor role)
+  }), // FK to user (doctor role) - nullable by default
   hospitalId: uuid('hospital_id'), // Optional, can be inferred from user
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow()

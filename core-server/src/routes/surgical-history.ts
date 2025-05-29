@@ -9,9 +9,8 @@ import { eq } from 'drizzle-orm';
 const SurgicalHistorySchema = z.object({
   id: z.string().uuid(),
   emrId: z.string().uuid(),
-  previousSurgeries: z.string().optional(),
-  complications: z.string().optional(),
-  anesthesiaReactions: z.string().optional(),
+  pastSurgeries: z.string().nullable(),
+  additionalInfo: z.string().nullable(),
   createdAt: z.date(),
   updatedAt: z.date()
 });
@@ -19,9 +18,8 @@ const SurgicalHistorySchema = z.object({
 // Create schema
 const CreateSurgicalHistorySchema = z.object({
   emrId: z.string().uuid(),
-  previousSurgeries: z.string().optional(),
-  complications: z.string().optional(),
-  anesthesiaReactions: z.string().optional()
+  pastSurgeries: z.string().nullable(),
+  additionalInfo: z.string().nullable()
 });
 
 // Update schema
@@ -159,67 +157,9 @@ const deleteSurgicalHistoryRoute = createRoute({
   }
 });
 
-// Create handler
-app.openapi(createSurgicalHistoryRoute, async c => {
-  const data = c.req.valid('json');
-  const [record] = await db
-    .insert(tables.surgicalHistory)
-    .values(data)
-    .returning();
-  return c.json(record, 201);
-});
-
-// Get handler
-app.openapi(getSurgicalHistoryRoute, async c => {
-  const { id } = c.req.valid('param');
-  const [record] = await db
-    .select()
-    .from(tables.surgicalHistory)
-    .where(eq(tables.surgicalHistory.id, id))
-    .execute();
-
-  if (!record) {
-    return c.json({ error: 'Surgical history record not found' }, 404);
-  }
-
-  return c.json(record);
-});
-
-// Update handler
-app.openapi(updateSurgicalHistoryRoute, async c => {
-  const { id } = c.req.valid('param');
-  const data = c.req.valid('json');
-
-  const [record] = await db
-    .update(tables.surgicalHistory)
-    .set({ ...data, updatedAt: new Date() })
-    .where(eq(tables.surgicalHistory.id, id))
-    .returning();
-
-  if (!record) {
-    return c.json({ error: 'Surgical history record not found' }, 404);
-  }
-
-  return c.json(record);
-});
-
-// Delete handler
-app.openapi(deleteSurgicalHistoryRoute, async c => {
-  const { id } = c.req.valid('param');
-  const [record] = await db
-    .delete(tables.surgicalHistory)
-    .where(eq(tables.surgicalHistory.id, id))
-    .returning();
-
-  if (!record) {
-    return c.json({ error: 'Surgical history record not found' }, 404);
-  }
-
-  return c.body(null, 204);
-});
-
 const surgicalHistoryRoute = {
   getRoutingPath: () => {
+    // Create handler
     app.openapi(createSurgicalHistoryRoute, async c => {
       const data = c.req.valid('json');
       const [record] = await db
@@ -229,6 +169,7 @@ const surgicalHistoryRoute = {
       return c.json(record, 201);
     });
 
+    // Get handler
     app.openapi(getSurgicalHistoryRoute, async c => {
       const { id } = c.req.valid('param');
       const [record] = await db
@@ -244,6 +185,7 @@ const surgicalHistoryRoute = {
       return c.json(record);
     });
 
+    // Update handler
     app.openapi(updateSurgicalHistoryRoute, async c => {
       const { id } = c.req.valid('param');
       const data = c.req.valid('json');
@@ -261,6 +203,7 @@ const surgicalHistoryRoute = {
       return c.json(record);
     });
 
+    // Delete handler
     app.openapi(deleteSurgicalHistoryRoute, async c => {
       const { id } = c.req.valid('param');
       const [record] = await db

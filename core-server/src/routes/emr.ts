@@ -153,8 +153,20 @@ const getAllEmrsFromPhoneHandler = app.openapi(
         404
       );
     }
-    const prevPregnancies = patientInfo[0].prevPregnancies;
-    return c.json({ emrs, prevPregnancies }, 200);
+
+    // Get previous pregnancies for each EMR
+    const previousPregnancies = await Promise.all(
+      emrs.map(async (emr) => {
+        const pregnancies = await db
+          .select()
+          .from(tables.previousPregnancy)
+          .where(eq(tables.previousPregnancy.emrId, emr.id))
+          .execute();
+        return pregnancies;
+      })
+    );
+
+    return c.json({ emrs, previousPregnancies }, 200);
   }
 );
 

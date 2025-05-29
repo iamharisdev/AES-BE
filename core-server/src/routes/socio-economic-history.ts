@@ -5,15 +5,14 @@ import { tables } from '@/models';
 import { createRoute, z } from '@hono/zod-openapi';
 import { eq } from 'drizzle-orm';
 
-// Schema for socio-economic history
+// Schema for socio economic history
 const SocioEconomicHistorySchema = z.object({
   id: z.string().uuid(),
   emrId: z.string().uuid(),
-  education: z.string().optional(),
-  income: z.string().optional(),
-  housing: z.string().optional(),
-  accessToHealthcare: z.string().optional(),
-  socialSupport: z.string().optional(),
+  noFamilyMembers: z.string().nullable(),
+  familyType: z.string().nullable(),
+  livingSituation: z.string().nullable(),
+  moreInfo: z.string().nullable(),
   createdAt: z.date(),
   updatedAt: z.date()
 });
@@ -21,22 +20,20 @@ const SocioEconomicHistorySchema = z.object({
 // Create schema
 const CreateSocioEconomicHistorySchema = z.object({
   emrId: z.string().uuid(),
-  education: z.string().optional(),
-  income: z.string().optional(),
-  housing: z.string().optional(),
-  accessToHealthcare: z.string().optional(),
-  socialSupport: z.string().optional()
+  noFamilyMembers: z.string().nullable(),
+  familyType: z.string().nullable(),
+  livingSituation: z.string().nullable(),
+  moreInfo: z.string().nullable()
 });
 
 // Update schema
-const UpdateSocioEconomicHistorySchema =
-  CreateSocioEconomicHistorySchema.partial();
+const UpdateSocioEconomicHistorySchema = CreateSocioEconomicHistorySchema.partial();
 
 // Create route
 const createSocioEconomicHistoryRoute = createRoute({
   method: 'post',
   path: '/socio-economic-history',
-  tags: ['Socio-Economic History'],
+  tags: ['Socio Economic History'],
   security: [{ jwt: [] }],
   middleware: [jwtMiddleware],
   request: {
@@ -55,7 +52,7 @@ const createSocioEconomicHistoryRoute = createRoute({
           schema: SocioEconomicHistorySchema
         }
       },
-      description: 'Socio-economic history record created successfully'
+      description: 'Socio economic history record created successfully'
     }
   }
 });
@@ -64,7 +61,7 @@ const createSocioEconomicHistoryRoute = createRoute({
 const getSocioEconomicHistoryRoute = createRoute({
   method: 'get',
   path: '/socio-economic-history/:id',
-  tags: ['Socio-Economic History'],
+  tags: ['Socio Economic History'],
   security: [{ jwt: [] }],
   middleware: [jwtMiddleware],
   request: {
@@ -79,7 +76,7 @@ const getSocioEconomicHistoryRoute = createRoute({
           schema: SocioEconomicHistorySchema
         }
       },
-      description: 'Socio-economic history record retrieved successfully'
+      description: 'Socio economic history record retrieved successfully'
     },
     404: {
       content: {
@@ -89,7 +86,7 @@ const getSocioEconomicHistoryRoute = createRoute({
           })
         }
       },
-      description: 'Socio-economic history record not found'
+      description: 'Socio economic history record not found'
     }
   }
 });
@@ -98,7 +95,7 @@ const getSocioEconomicHistoryRoute = createRoute({
 const updateSocioEconomicHistoryRoute = createRoute({
   method: 'put',
   path: '/socio-economic-history/:id',
-  tags: ['Socio-Economic History'],
+  tags: ['Socio Economic History'],
   security: [{ jwt: [] }],
   middleware: [jwtMiddleware],
   request: {
@@ -120,7 +117,7 @@ const updateSocioEconomicHistoryRoute = createRoute({
           schema: SocioEconomicHistorySchema
         }
       },
-      description: 'Socio-economic history record updated successfully'
+      description: 'Socio economic history record updated successfully'
     },
     404: {
       content: {
@@ -130,7 +127,7 @@ const updateSocioEconomicHistoryRoute = createRoute({
           })
         }
       },
-      description: 'Socio-economic history record not found'
+      description: 'Socio economic history record not found'
     }
   }
 });
@@ -139,7 +136,7 @@ const updateSocioEconomicHistoryRoute = createRoute({
 const deleteSocioEconomicHistoryRoute = createRoute({
   method: 'delete',
   path: '/socio-economic-history/:id',
-  tags: ['Socio-Economic History'],
+  tags: ['Socio Economic History'],
   security: [{ jwt: [] }],
   middleware: [jwtMiddleware],
   request: {
@@ -149,7 +146,7 @@ const deleteSocioEconomicHistoryRoute = createRoute({
   },
   responses: {
     204: {
-      description: 'Socio-economic history record deleted successfully'
+      description: 'Socio economic history record deleted successfully'
     },
     404: {
       content: {
@@ -159,72 +156,14 @@ const deleteSocioEconomicHistoryRoute = createRoute({
           })
         }
       },
-      description: 'Socio-economic history record not found'
+      description: 'Socio economic history record not found'
     }
   }
 });
 
-// Create handler
-app.openapi(createSocioEconomicHistoryRoute, async c => {
-  const data = c.req.valid('json');
-  const [record] = await db
-    .insert(tables.socioEconomicHistory)
-    .values(data)
-    .returning();
-  return c.json(record, 201);
-});
-
-// Get handler
-app.openapi(getSocioEconomicHistoryRoute, async c => {
-  const { id } = c.req.valid('param');
-  const [record] = await db
-    .select()
-    .from(tables.socioEconomicHistory)
-    .where(eq(tables.socioEconomicHistory.id, id))
-    .execute();
-
-  if (!record) {
-    return c.json({ error: 'Socio-economic history record not found' }, 404);
-  }
-
-  return c.json(record);
-});
-
-// Update handler
-app.openapi(updateSocioEconomicHistoryRoute, async c => {
-  const { id } = c.req.valid('param');
-  const data = c.req.valid('json');
-
-  const [record] = await db
-    .update(tables.socioEconomicHistory)
-    .set({ ...data, updatedAt: new Date() })
-    .where(eq(tables.socioEconomicHistory.id, id))
-    .returning();
-
-  if (!record) {
-    return c.json({ error: 'Socio-economic history record not found' }, 404);
-  }
-
-  return c.json(record);
-});
-
-// Delete handler
-app.openapi(deleteSocioEconomicHistoryRoute, async c => {
-  const { id } = c.req.valid('param');
-  const [record] = await db
-    .delete(tables.socioEconomicHistory)
-    .where(eq(tables.socioEconomicHistory.id, id))
-    .returning();
-
-  if (!record) {
-    return c.json({ error: 'Socio-economic history record not found' }, 404);
-  }
-
-  return c.body(null, 204);
-});
-
 const socioEconomicHistoryRoute = {
   getRoutingPath: () => {
+    // Create handler
     app.openapi(createSocioEconomicHistoryRoute, async c => {
       const data = c.req.valid('json');
       const [record] = await db
@@ -234,6 +173,7 @@ const socioEconomicHistoryRoute = {
       return c.json(record, 201);
     });
 
+    // Get handler
     app.openapi(getSocioEconomicHistoryRoute, async c => {
       const { id } = c.req.valid('param');
       const [record] = await db
@@ -243,15 +183,13 @@ const socioEconomicHistoryRoute = {
         .execute();
 
       if (!record) {
-        return c.json(
-          { error: 'Socio-economic history record not found' },
-          404
-        );
+        return c.json({ error: 'Socio economic history record not found' }, 404);
       }
 
       return c.json(record);
     });
 
+    // Update handler
     app.openapi(updateSocioEconomicHistoryRoute, async c => {
       const { id } = c.req.valid('param');
       const data = c.req.valid('json');
@@ -263,15 +201,13 @@ const socioEconomicHistoryRoute = {
         .returning();
 
       if (!record) {
-        return c.json(
-          { error: 'Socio-economic history record not found' },
-          404
-        );
+        return c.json({ error: 'Socio economic history record not found' }, 404);
       }
 
       return c.json(record);
     });
 
+    // Delete handler
     app.openapi(deleteSocioEconomicHistoryRoute, async c => {
       const { id } = c.req.valid('param');
       const [record] = await db
@@ -280,10 +216,7 @@ const socioEconomicHistoryRoute = {
         .returning();
 
       if (!record) {
-        return c.json(
-          { error: 'Socio-economic history record not found' },
-          404
-        );
+        return c.json({ error: 'Socio economic history record not found' }, 404);
       }
 
       return c.body(null, 204);

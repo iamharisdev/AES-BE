@@ -6,9 +6,8 @@ export const surgicalHistory = pgTable('surgical_history', {
   emrId: uuid('emr_id')
     .notNull()
     .references(() => emr.id),
-  previousSurgeries: text('previous_surgeries'),
-  surgeryDates: text('surgery_dates'),
-  complications: text('complications'),
+  pastSurgeries: text('past_surgeries'),
+  additionalInfo: text('additional_info'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow()
 });

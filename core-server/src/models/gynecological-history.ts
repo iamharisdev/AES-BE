@@ -6,9 +6,10 @@ export const gynecologicalHistory = pgTable('gynecological_history', {
   emrId: uuid('emr_id')
     .notNull()
     .references(() => emr.id),
-  menstrualHistory: text('menstrual_history'),
-  contraceptiveUse: text('contraceptive_use'),
-  previousGynecologicalConditions: text('previous_gynecological_conditions'),
+  section: text('section'),
+  familyPlanning: text('family_planning'),
+  familyPlanningMethod: text('family_planning_method'),
+  papSmearTest: text('pap_smear_test'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow()
 });

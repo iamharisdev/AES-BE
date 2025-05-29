@@ -9,10 +9,10 @@ import { eq } from 'drizzle-orm';
 const FamilyHistorySchema = z.object({
   id: z.string().uuid(),
   emrId: z.string().uuid(),
-  geneticDisorders: z.string().optional(),
-  chronicDiseases: z.string().optional(),
-  cancerHistory: z.string().optional(),
-  otherConditions: z.string().optional(),
+  currentMeds: z.string().nullable(),
+  sugarBloodPressure: z.string().nullable(),
+  familyMedicalConditions: z.string().nullable(),
+  twinsFamilyHistory: z.string().nullable(),
   createdAt: z.date(),
   updatedAt: z.date()
 });
@@ -20,10 +20,10 @@ const FamilyHistorySchema = z.object({
 // Create schema
 const CreateFamilyHistorySchema = z.object({
   emrId: z.string().uuid(),
-  geneticDisorders: z.string().optional(),
-  chronicDiseases: z.string().optional(),
-  cancerHistory: z.string().optional(),
-  otherConditions: z.string().optional()
+  currentMeds: z.string().nullable(),
+  sugarBloodPressure: z.string().nullable(),
+  familyMedicalConditions: z.string().nullable(),
+  twinsFamilyHistory: z.string().nullable()
 });
 
 // Update schema
@@ -161,67 +161,9 @@ const deleteFamilyHistoryRoute = createRoute({
   }
 });
 
-// Create handler
-app.openapi(createFamilyHistoryRoute, async c => {
-  const data = c.req.valid('json');
-  const [record] = await db
-    .insert(tables.familyHistory)
-    .values(data)
-    .returning();
-  return c.json(record, 201);
-});
-
-// Get handler
-app.openapi(getFamilyHistoryRoute, async c => {
-  const { id } = c.req.valid('param');
-  const [record] = await db
-    .select()
-    .from(tables.familyHistory)
-    .where(eq(tables.familyHistory.id, id))
-    .execute();
-
-  if (!record) {
-    return c.json({ error: 'Family history record not found' }, 404);
-  }
-
-  return c.json(record);
-});
-
-// Update handler
-app.openapi(updateFamilyHistoryRoute, async c => {
-  const { id } = c.req.valid('param');
-  const data = c.req.valid('json');
-
-  const [record] = await db
-    .update(tables.familyHistory)
-    .set({ ...data, updatedAt: new Date() })
-    .where(eq(tables.familyHistory.id, id))
-    .returning();
-
-  if (!record) {
-    return c.json({ error: 'Family history record not found' }, 404);
-  }
-
-  return c.json(record);
-});
-
-// Delete handler
-app.openapi(deleteFamilyHistoryRoute, async c => {
-  const { id } = c.req.valid('param');
-  const [record] = await db
-    .delete(tables.familyHistory)
-    .where(eq(tables.familyHistory.id, id))
-    .returning();
-
-  if (!record) {
-    return c.json({ error: 'Family history record not found' }, 404);
-  }
-
-  return c.body(null, 204);
-});
-
 const familyHistoryRoute = {
   getRoutingPath: () => {
+    // Create handler
     app.openapi(createFamilyHistoryRoute, async c => {
       const data = c.req.valid('json');
       const [record] = await db
@@ -231,6 +173,7 @@ const familyHistoryRoute = {
       return c.json(record, 201);
     });
 
+    // Get handler
     app.openapi(getFamilyHistoryRoute, async c => {
       const { id } = c.req.valid('param');
       const [record] = await db
@@ -246,6 +189,7 @@ const familyHistoryRoute = {
       return c.json(record);
     });
 
+    // Update handler
     app.openapi(updateFamilyHistoryRoute, async c => {
       const { id } = c.req.valid('param');
       const data = c.req.valid('json');
@@ -263,6 +207,7 @@ const familyHistoryRoute = {
       return c.json(record);
     });
 
+    // Delete handler
     app.openapi(deleteFamilyHistoryRoute, async c => {
       const { id } = c.req.valid('param');
       const [record] = await db

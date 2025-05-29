@@ -19,6 +19,7 @@ import { vitals } from './vitals';
 import { redFlags } from './red-flags';
 import { followupQuestions } from './followup-questions';
 import { files } from './files';
+import { previousPregnancy } from './previous-pregnancy';
 
 export const __migrations = pgTable('migrations', {
   id: serial('id').primaryKey().notNull(),
@@ -46,5 +47,6 @@ export const tables = {
   vitals,
   redFlags,
   followupQuestions,
-  files
+  files,
+  previousPregnancy
 } as const;

@@ -15,6 +15,34 @@
       "when": 1747742798891,
       "tag": "0001_groovy_gamora",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1747910373753,
+      "tag": "0002_confused_micromacro",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1748262465170,
+      "tag": "0003_great_alice",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1748340788528,
+      "tag": "0004_brief_silhouette",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1748512782022,
+      "tag": "0005_whole_justice",
+      "breakpoints": true
     }
   ]
 }

@@ -9,13 +9,15 @@ import { eq } from 'drizzle-orm';
 const PersonalHistorySchema = z.object({
   id: z.string().uuid(),
   emrId: z.string().uuid(),
-  smoking: z.string().optional(),
-  alcohol: z.string().optional(),
-  drugUse: z.string().optional(),
-  diet: z.string().optional(),
-  exercise: z.string().optional(),
-  sleepPatterns: z.string().optional(),
-  occupation: z.string().optional(),
+  allergyStatus: z.string().nullable(),
+  allergyType: z.string().nullable(),
+  bloodGroup: z.string().nullable(),
+  currentWeight: z.string().nullable(),
+  substanceUse: z.string().nullable(),
+  maritalStatus: z.string().nullable(),
+  sleepAndHunger: z.string().nullable(),
+  diet: z.string().nullable(),
+  domesticAbuse: z.string().nullable(),
   createdAt: z.date(),
   updatedAt: z.date()
 });
@@ -23,13 +25,15 @@ const PersonalHistorySchema = z.object({
 // Create schema
 const CreatePersonalHistorySchema = z.object({
   emrId: z.string().uuid(),
-  smoking: z.string().optional(),
-  alcohol: z.string().optional(),
-  drugUse: z.string().optional(),
-  diet: z.string().optional(),
-  exercise: z.string().optional(),
-  sleepPatterns: z.string().optional(),
-  occupation: z.string().optional()
+  allergyStatus: z.string().nullable(),
+  allergyType: z.string().nullable(),
+  bloodGroup: z.string().nullable(),
+  currentWeight: z.string().nullable(),
+  substanceUse: z.string().nullable(),
+  maritalStatus: z.string().nullable(),
+  sleepAndHunger: z.string().nullable(),
+  diet: z.string().nullable(),
+  domesticAbuse: z.string().nullable()
 });
 
 // Update schema
@@ -167,67 +171,9 @@ const deletePersonalHistoryRoute = createRoute({
   }
 });
 
-// Create handler
-app.openapi(createPersonalHistoryRoute, async c => {
-  const data = c.req.valid('json');
-  const [record] = await db
-    .insert(tables.personalHistory)
-    .values(data)
-    .returning();
-  return c.json(record, 201);
-});
-
-// Get handler
-app.openapi(getPersonalHistoryRoute, async c => {
-  const { id } = c.req.valid('param');
-  const [record] = await db
-    .select()
-    .from(tables.personalHistory)
-    .where(eq(tables.personalHistory.id, id))
-    .execute();
-
-  if (!record) {
-    return c.json({ error: 'Personal history record not found' }, 404);
-  }
-
-  return c.json(record);
-});
-
-// Update handler
-app.openapi(updatePersonalHistoryRoute, async c => {
-  const { id } = c.req.valid('param');
-  const data = c.req.valid('json');
-
-  const [record] = await db
-    .update(tables.personalHistory)
-    .set({ ...data, updatedAt: new Date() })
-    .where(eq(tables.personalHistory.id, id))
-    .returning();
-
-  if (!record) {
-    return c.json({ error: 'Personal history record not found' }, 404);
-  }
-
-  return c.json(record);
-});
-
-// Delete handler
-app.openapi(deletePersonalHistoryRoute, async c => {
-  const { id } = c.req.valid('param');
-  const [record] = await db
-    .delete(tables.personalHistory)
-    .where(eq(tables.personalHistory.id, id))
-    .returning();
-
-  if (!record) {
-    return c.json({ error: 'Personal history record not found' }, 404);
-  }
-
-  return c.body(null, 204);
-});
-
 const personalHistoryRoute = {
   getRoutingPath: () => {
+    // Create handler
     app.openapi(createPersonalHistoryRoute, async c => {
       const data = c.req.valid('json');
       const [record] = await db
@@ -237,6 +183,7 @@ const personalHistoryRoute = {
       return c.json(record, 201);
     });
 
+    // Get handler
     app.openapi(getPersonalHistoryRoute, async c => {
       const { id } = c.req.valid('param');
       const [record] = await db
@@ -252,6 +199,7 @@ const personalHistoryRoute = {
       return c.json(record);
     });
 
+    // Update handler
     app.openapi(updatePersonalHistoryRoute, async c => {
       const { id } = c.req.valid('param');
       const data = c.req.valid('json');
@@ -269,6 +217,7 @@ const personalHistoryRoute = {
       return c.json(record);
     });
 
+    // Delete handler
     app.openapi(deletePersonalHistoryRoute, async c => {
       const { id } = c.req.valid('param');
       const [record] = await db

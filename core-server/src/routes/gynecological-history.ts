@@ -9,9 +9,10 @@ import { eq } from 'drizzle-orm';
 const GynecologicalHistorySchema = z.object({
   id: z.string().uuid(),
   emrId: z.string().uuid(),
-  menstrualHistory: z.string().optional(),
-  contraceptiveUse: z.string().optional(),
-  previousGynecologicalConditions: z.string().optional(),
+  section: z.string().nullable(),
+  familyPlanning: z.string().nullable(),
+  familyPlanningMethod: z.string().nullable(),
+  papSmearTest: z.string().nullable(),
   createdAt: z.date(),
   updatedAt: z.date()
 });
@@ -19,14 +20,14 @@ const GynecologicalHistorySchema = z.object({
 // Create schema
 const CreateGynecologicalHistorySchema = z.object({
   emrId: z.string().uuid(),
-  menstrualHistory: z.string().optional(),
-  contraceptiveUse: z.string().optional(),
-  previousGynecologicalConditions: z.string().optional()
+  section: z.string().nullable(),
+  familyPlanning: z.string().nullable(),
+  familyPlanningMethod: z.string().nullable(),
+  papSmearTest: z.string().nullable()
 });
 
 // Update schema
-const UpdateGynecologicalHistorySchema =
-  CreateGynecologicalHistorySchema.partial();
+const UpdateGynecologicalHistorySchema = CreateGynecologicalHistorySchema.partial();
 
 // Create route
 const createGynecologicalHistoryRoute = createRoute({
@@ -160,67 +161,9 @@ const deleteGynecologicalHistoryRoute = createRoute({
   }
 });
 
-// Create handler
-app.openapi(createGynecologicalHistoryRoute, async c => {
-  const data = c.req.valid('json');
-  const [record] = await db
-    .insert(tables.gynecologicalHistory)
-    .values(data)
-    .returning();
-  return c.json(record, 201);
-});
-
-// Get handler
-app.openapi(getGynecologicalHistoryRoute, async c => {
-  const { id } = c.req.valid('param');
-  const [record] = await db
-    .select()
-    .from(tables.gynecologicalHistory)
-    .where(eq(tables.gynecologicalHistory.id, id))
-    .execute();
-
-  if (!record) {
-    return c.json({ error: 'Gynecological history record not found' }, 404);
-  }
-
-  return c.json(record);
-});
-
-// Update handler
-app.openapi(updateGynecologicalHistoryRoute, async c => {
-  const { id } = c.req.valid('param');
-  const data = c.req.valid('json');
-
-  const [record] = await db
-    .update(tables.gynecologicalHistory)
-    .set({ ...data, updatedAt: new Date() })
-    .where(eq(tables.gynecologicalHistory.id, id))
-    .returning();
-
-  if (!record) {
-    return c.json({ error: 'Gynecological history record not found' }, 404);
-  }
-
-  return c.json(record);
-});
-
-// Delete handler
-app.openapi(deleteGynecologicalHistoryRoute, async c => {
-  const { id } = c.req.valid('param');
-  const [record] = await db
-    .delete(tables.gynecologicalHistory)
-    .where(eq(tables.gynecologicalHistory.id, id))
-    .returning();
-
-  if (!record) {
-    return c.json({ error: 'Gynecological history record not found' }, 404);
-  }
-
-  return c.body(null, 204);
-});
-
 const gynecologicalHistoryRoute = {
   getRoutingPath: () => {
+    // Create handler
     app.openapi(createGynecologicalHistoryRoute, async c => {
       const data = c.req.valid('json');
       const [record] = await db
@@ -230,6 +173,7 @@ const gynecologicalHistoryRoute = {
       return c.json(record, 201);
     });
 
+    // Get handler
     app.openapi(getGynecologicalHistoryRoute, async c => {
       const { id } = c.req.valid('param');
       const [record] = await db
@@ -245,6 +189,7 @@ const gynecologicalHistoryRoute = {
       return c.json(record);
     });
 
+    // Update handler
     app.openapi(updateGynecologicalHistoryRoute, async c => {
       const { id } = c.req.valid('param');
       const data = c.req.valid('json');
@@ -262,6 +207,7 @@ const gynecologicalHistoryRoute = {
       return c.json(record);
     });
 
+    // Delete handler
     app.openapi(deleteGynecologicalHistoryRoute, async c => {
       const { id } = c.req.valid('param');
       const [record] = await db
