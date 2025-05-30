@@ -16,30 +16,26 @@ import { updateExaminationDetailsRoute } from './update-examination-details';
 import { createExaminationDetailsRoute } from './create-examination-details';
 import { uploadVoiceNoteRoute } from './upload-voice-note';
 import { getDoctorsRoute } from './get-doctors';
-
-
+import { postProposedPlan } from './post-proposed-plan';
 
 export const registerRoutes = () => {
-
-
- registerLoginDoctorRoute();
- getMajorRedFlags();
- searchPatients();
- RegisterDoctorRoute();
- generatePresignedUrlsHandler()
- getEmrRoute();
- getPatientInfoRoute();
- getRedFlagsRoute();
- patchEmrRoute()
- getDoctorInfoRoute();
- getAllEmrsFromPhone();
- updateEmr();
- getExaminationDetailsRoute();
- updateExaminationDetailsRoute();
- createExaminationDetailsRoute();
- uploadVoiceNoteRoute();
- getDoctorsRoute();
-homeRoute.getRoutingPath();
-
-
+  registerLoginDoctorRoute();
+  getMajorRedFlags();
+  searchPatients();
+  RegisterDoctorRoute();
+  generatePresignedUrlsHandler()
+  getEmrRoute();
+  getPatientInfoRoute();
+  getRedFlagsRoute();
+  patchEmrRoute()
+  getDoctorInfoRoute();
+  getAllEmrsFromPhone();
+  updateEmr();
+  getExaminationDetailsRoute();
+  updateExaminationDetailsRoute();
+  createExaminationDetailsRoute();
+  uploadVoiceNoteRoute();
+  getDoctorsRoute();
+  postProposedPlan();
+  homeRoute.getRoutingPath();
 };

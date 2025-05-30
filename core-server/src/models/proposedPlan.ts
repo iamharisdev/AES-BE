@@ -1,7 +1,7 @@
 // drizzle/schema.ts
 import { pgTable, serial, text, timestamp, jsonb ,   uuid} from "drizzle-orm/pg-core";
 
-export const followups = pgTable("proposed_plan", {
+export const proposedPlanTable = pgTable("proposed_plan", {
   id: serial("id").primaryKey(),
   emrId: uuid('emr_id').notNull(),
   followupDate: timestamp("followup_date").notNull(),
