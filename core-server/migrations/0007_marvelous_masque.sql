@@ -1,0 +1,1 @@
+ALTER TABLE "gynecological_history" DROP COLUMN IF EXISTS "section";

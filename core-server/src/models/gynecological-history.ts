@@ -6,7 +6,6 @@ export const gynecologicalHistory = pgTable('gynecological_history', {
   emrId: uuid('emr_id')
     .notNull()
     .references(() => emr.id),
-  section: text('section'),
   familyPlanning: text('family_planning'),
   familyPlanningMethod: text('family_planning_method'),
   papSmearTest: text('pap_smear_test'),

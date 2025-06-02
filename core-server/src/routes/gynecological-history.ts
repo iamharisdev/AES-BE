@@ -9,7 +9,6 @@ import { eq } from 'drizzle-orm';
 const GynecologicalHistorySchema = z.object({
   id: z.string().uuid(),
   emrId: z.string().uuid(),
-  section: z.string().nullable(),
   familyPlanning: z.string().nullable(),
   familyPlanningMethod: z.string().nullable(),
   papSmearTest: z.string().nullable(),
@@ -20,7 +19,6 @@ const GynecologicalHistorySchema = z.object({
 // Create schema
 const CreateGynecologicalHistorySchema = z.object({
   emrId: z.string().uuid(),
-  section: z.string().nullable(),
   familyPlanning: z.string().nullable(),
   familyPlanningMethod: z.string().nullable(),
   papSmearTest: z.string().nullable()

@@ -10,7 +10,7 @@ const TrimesterSchema = z.object({
   id: z.string().uuid(),
   emrId: z.string().uuid(),
   fetusMovement: z.string().nullable(),
-  ultrasound5thMonth: z.string().nullable(),
+  ultrasound: z.string().nullable(),
   checkupRegularity: z.string().nullable(),
   hbLevel: z.string().nullable(),
   trimesterProblems: z.string().nullable(),
@@ -26,7 +26,7 @@ const TrimesterSchema = z.object({
 const CreateTrimesterSchema = z.object({
   emrId: z.string().uuid(),
   fetusMovement: z.string().nullable(),
-  ultrasound5thMonth: z.string().nullable(),
+  ultrasound: z.string().nullable(),
   checkupRegularity: z.string().nullable(),
   hbLevel: z.string().nullable(),
   trimesterProblems: z.string().nullable(),
