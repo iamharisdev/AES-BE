@@ -14,7 +14,7 @@ export const trimester = pgTable('trimester', {
     .notNull()
     .references(() => emr.id),
   fetusMovement: text('fetus_movement'),
-  ultrasound5thMonth: text('ultrasound_5thMonth'),
+  ultrasound: text('ultrasound'),
   checkupRegularity: text('checkup_regularity'),
   hbLevel: text('hb_level'),
   trimesterProblems: text('trimester_problems'),

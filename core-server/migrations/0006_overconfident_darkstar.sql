@@ -1,0 +1,1 @@
+ALTER TABLE "trimester" RENAME COLUMN "ultrasound_5thMonth" TO "ultrasound";
