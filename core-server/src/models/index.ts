@@ -5,6 +5,7 @@ import { examinationDetailsTable } from './examination-details';
 import { patientTable } from './patient';
 import { redFlagsTable } from './red-flags';
 import { turnEmrTable } from './turn-emr';
+import { proposedPlanTable } from './proposedPlan';
 
 export const __migrations = pgTable('migrations', {
   id: serial('id').primaryKey().notNull(),
@@ -21,5 +22,6 @@ export const table = {
   },
   redFlags: redFlagsTable,
   diagnostics: diagnosticsTable,
-  examinationDetails: examinationDetailsTable
+  examinationDetails: examinationDetailsTable,
+  proposedPlan: proposedPlanTable
 };

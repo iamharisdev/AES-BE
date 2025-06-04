@@ -1,4 +1,5 @@
-CREATE TABLE "followups" (
+
+CREATE TABLE "proposed_plan" (
   "id" serial PRIMARY KEY,
   "followup_date" timestamp NOT NULL,
   "doctor_notes" text NOT NULL,

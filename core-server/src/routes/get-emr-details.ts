@@ -11,6 +11,13 @@ const SuccessResponseSchema = z.object({
 	patientId: z.string(),
 	generationTime: z.date(),
 	content: EMR,
+	proposedPlan: z.array(z.object({
+		id: z.number(),
+		followupDate: z.date(),
+		doctorNotes: z.string(),
+		additionalNotes: z.string().nullable(),
+		advisedLabTests: z.array(z.string())
+	})).optional()
 })
 
 const NotFoundSchema = z.object({
@@ -52,31 +59,32 @@ const route = createRoute({
 	},
 })
 
-export const getEmrRoute =  () =>{
+export const getEmrRoute = () => {
+	app.openapi(route, async (c) => {
+		const { emrId } = c.req.valid('param')
 
+		// Get EMR details
+		const emr = await db
+			.select()
+			.from(table.emr)
+			.where(eq(table.emr.emrId, emrId))
+			.execute()
+			.then(res => res.at(0))
 
+		if (!emr) {
+			return c.json({ error: `No Emr Record Found With Id ${emrId}` }, 404)
+		}
 
-app.openapi(route, async (c) => {
-	const { emrId } = c.req.valid('param')
+		// Get proposed plan details
+		const proposedPlans = await db
+			.select()
+			.from(table.proposedPlan)
+			.where(eq(table.proposedPlan.emrId, emrId))
+			.execute()
 
-	console.debug(emrId)
-
-	const emr = await db
-		.select()
-		.from(table.emr)
-		.where(
-			eq(table.emr.emrId, emrId),
-		)
-		.execute()
-		.then(res => res.at(0))
-
-	if (!emr) {
-		return c.json({ error: `No Emr Record Found With Id ${emrId}` }, 404)
-	}
-
-	const { ...emrResponse } = emr
-	return c.json(emrResponse, 200)
-})
+		const { ...emrResponse } = emr
+		return c.json({ ...emrResponse, proposedPlan: proposedPlans }, 200)
+	})
 }
 
 
