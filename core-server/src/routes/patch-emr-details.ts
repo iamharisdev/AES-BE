@@ -58,7 +58,10 @@ const route = createRoute({
   },
 });
 
-const handler = app.openapi(route, async (c) => {
+export  const patchEmrRoute =  () =>{
+
+
+app.openapi(route, async (c) => {
   const { emrId, content } = c.req.valid("json");
   console.log(emrId, content, "REQQQ");
   // TODO: Also check that doctor id should be same as emr Id for better authorization. skipping for now for easy testing
@@ -77,8 +80,6 @@ const handler = app.openapi(route, async (c) => {
 
   // return c.json({ message: "Success" }, 200);
   return c.json({ emrId, content }, 200);
-});
+})
 
-export type PatchEmrRoute = typeof handler;
-
-export default route;
+}

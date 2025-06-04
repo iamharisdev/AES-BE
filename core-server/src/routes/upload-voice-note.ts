@@ -90,7 +90,10 @@ const route = createRoute({
   },
 });
 
-const handler = app.openapi(route, async (c) => {
+export const uploadVoiceNoteRoute = ()=>{
+
+
+ app.openapi(route, async (c) => {
   try {
     const { patientId } = c.req.valid("param");
     const formData = await c.req.formData();
@@ -166,7 +169,7 @@ const handler = app.openapi(route, async (c) => {
     console.error("Error uploading voice note:", error);
     return c.json({ error: "Failed to upload voice note" }, 500);
   }
-});
+})
+}
 
-export type UploadVoiceNoteRoute = typeof handler;
-export default route;
+

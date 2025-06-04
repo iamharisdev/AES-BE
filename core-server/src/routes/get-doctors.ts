@@ -32,11 +32,12 @@ const route = createRoute({
   },
 })
 
-const handler = app.openapi(route, async (c) => {
+export const getDoctorsRoute = () =>{
+
+
+ app.openapi(route, async (c) => {
   const doctors = await db.select().from(table.doctor).execute()
   return c.json(doctors, 200)
 })
 
-export type GetDoctorsRoute = typeof handler
-
-export default route
+}

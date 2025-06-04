@@ -25,6 +25,7 @@ const SuccessResponseSchema = z.object({
 			personalHistory: z.record(z.unknown()),
 			socioEconomicHistory: z.record(z.unknown()),
 			emrId: z.string().uuid(),
+			redFlags:z.array(z.record(z.unknown())),
 		}),
 	),
 	prevPregnancies: z.array(z.record(z.unknown())),
@@ -69,8 +70,13 @@ const route = createRoute({
 	},
 })
 
-const handler = app.openapi(route, async (c) => {
+export const getAllEmrsFromPhone = () =>{
+
+
+
+app.openapi(route, async (c) => {
 	const { phoneNumber } = c.req.valid('param')
+
 
 	// Fetch all EMRs for the given phone number
 	  const emrs = await db
@@ -91,6 +97,8 @@ const handler = app.openapi(route, async (c) => {
       personalHistory: table.emr.personalHistory,
       socioEconomicHistory: table.emr.socioEconomicHistory,
       emrId: table.emr.emrId,
+			redFlags: table.emr.redFlags,
+			followups:table.emr.followups,
       hasExamination: sql<boolean>`CASE WHEN ${table.examinationDetails.emrId} IS NOT NULL THEN TRUE ELSE FALSE END`,
     })
     .from(table.emr)
@@ -119,7 +127,6 @@ const handler = app.openapi(route, async (c) => {
 
 	return c.json({ emrs, prevPregnancies }, 200)
 })
+}
 
-export type GetAllEmrsFromPhone = typeof handler
 
-export default route

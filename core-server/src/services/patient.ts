@@ -7,7 +7,7 @@ export const getPatientInfo = async ({ phoneNumber }: { phoneNumber: string }) =
 		.select()
 		.from(table.patient.info)
 		.where(
-			eq(table.patient.info.phoneNumber, phoneNumber),
+			eq(table.patient.info.phone, phoneNumber),
 		)
 		.execute()
 		.then(res => res.at(0))

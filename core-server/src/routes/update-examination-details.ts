@@ -115,7 +115,11 @@ const route = createRoute({
   },
 });
 
-const handler = app.openapi(route, async (c) => {
+export const updateExaminationDetailsRoute = () =>{
+
+
+
+app.openapi(route, async (c) => {
   const body = c.req.valid("json");
   const jwtPayload = c.get("jwtPayload") as JwtPayload;
 
@@ -196,7 +200,6 @@ const handler = app.openapi(route, async (c) => {
 
   return c.json({ message: "Examination updated successfully" }, 200);
 });
+}
 
-export type UpdateExaminationRoute = typeof handler;
 
-export default route;

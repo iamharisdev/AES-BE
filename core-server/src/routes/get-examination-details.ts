@@ -99,7 +99,10 @@ const route = createRoute({
   }
 });
 
-const handler = app.openapi(route, async c => {
+export const getExaminationDetailsRoute = ()=>{
+
+
+ app.openapi(route, async c => {
   const { emrId } = c.req.valid('param');
 
   const examinationDetail = await db
@@ -119,7 +122,6 @@ const handler = app.openapi(route, async c => {
 
   return c.json(examinationDetail, 200);
 });
+}
 
-export type GetExaminationDetailRoute = typeof handler;
 
-export default route;

@@ -98,7 +98,11 @@ const route = createRoute({
 	},
 })
 
-const handler = app.openapi(route, async (c) => {
+export const updateEmr =  () =>{
+
+
+
+app.openapi(route, async (c) => {
 	const { emrId, updates } = await c.req.json()
 
 	// Check if EMR exists
@@ -148,7 +152,6 @@ const handler = app.openapi(route, async (c) => {
 		200,
 	)
 })
+}
 
-export type UpdateEmrSectionsRoute = typeof handler
 
-export default route

@@ -49,7 +49,10 @@ const route = createRoute({
 	},
 })
 
-const handler = app.openapi(route, async (c) => {
+export const getDoctorInfoRoute = () =>{
+
+
+app.openapi(route, async (c) => {
 	const { userType, phoneNumber } = c.get('jwtPayload')
 
 	if (userType === 'patient') {
@@ -77,6 +80,4 @@ const handler = app.openapi(route, async (c) => {
 	}, 200)
 })
 
-export type GetDoctorInfoRoute = typeof handler
-
-export default route
+}

@@ -87,7 +87,12 @@ app.openapi(route, async (c, r) => {
   const token = await sign(jwtPayload, env.JWT_SECRET!, 'HS256')
 
 
+
+
   return c.json({ message: 'Login Successful', token }, 200)
 })
 }
+
+
+
 

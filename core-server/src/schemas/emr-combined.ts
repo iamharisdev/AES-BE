@@ -1,4 +1,4 @@
-import { createRoute, z } from '@hono/zod-openapi';
+import { z } from '@hono/zod-openapi';
 
 export const YesNoEnum = z.enum(['Yes', 'No', 'I don’t know']);
 
@@ -165,6 +165,17 @@ export const PreviousPregnancySchema = z
   })
   .openapi('PreviousPregnancy');
 
+
+  export const RedFlagsSchema = z.object({
+    source: z.object({
+      book: z.string(),
+      page_no: z.number(),
+    }),
+    red_flags: z.array(z.string()),
+  })
+  
+  export type RedFlags = z.infer<typeof RedFlagsSchema>
+
 export const EMR = z
   .object({
     patientProfile: PatientProfileDataSchema.optional().nullable(),
@@ -178,6 +189,9 @@ export const EMR = z
     familyHistory: FamilyHistoryDataSchema.optional().nullable(),
     personalHistory: PersonalHistoryDataSchema.optional().nullable(),
     socioEconomicHistory: SocioEconomicHistoryDataSchema.optional().nullable(),
-    previousPregnancy: PreviousPregnancySchema.optional().nullable()
+    previousPregnancy: PreviousPregnancySchema.optional().nullable(),
+    redFlags: RedFlagsSchema.optional().nullable()
+
+
   })
   .openapi('EMR');

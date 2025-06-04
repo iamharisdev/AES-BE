@@ -1,38 +1,45 @@
-import generatePresignedUrls from '@/routes/generate-presigned-urls';
-import getDoctorInfoRoute from '@/routes/get-doctor-info';
-import getEmrDetailsRoute from '@/routes/get-emr-details';
-import getAllEmrsFromPhone from '@/routes/get-erms-from-phone';
-import getExaminationDetailsRoute from '@/routes/get-examination-details';
-import getPatientInfoRoute from '@/routes/get-patient-info';
-import getRedFlagsRoute from '@/routes/get-redflags';
+import  { generatePresignedUrlsHandler } from '@/routes/generate-presigned-urls';
+import  { getEmrRoute } from '@/routes/get-emr-details';
 import homeRoute from '@/routes/home-page';
 import { registerLoginDoctorRoute } from '@/routes/login-doctor';
+import  { RegisterDoctorRoute } from '@/routes/register-doctor';
+import  { searchPatients } from '@/routes/search-patients';
+import { getMajorRedFlags } from './get-major-redflags';
+import { patchEmrRoute } from './patch-emr-details';
+import { getPatientInfoRoute } from './get-patient-info';
+import { getRedFlagsRoute } from './get-redflags';
+import { getDoctorInfoRoute } from './get-doctor-info';
+import { getAllEmrsFromPhone } from './get-erms-from-phone';
+import { updateEmr } from './update-emr';
+import { getExaminationDetailsRoute } from './get-examination-details';
+import { updateExaminationDetailsRoute } from './update-examination-details';
+import { createExaminationDetailsRoute } from './create-examination-details';
+import { uploadVoiceNoteRoute } from './upload-voice-note';
+import { getDoctorsRoute } from './get-doctors';
 
-import patchEmrRoute from '@/routes/patch-emr-details';
-import registerDoctorRoute from '@/routes/register-doctor';
-import searchPatientsRoute from '@/routes/search-patients';
-import updateEmr from '@/routes/update-emr';
-import updateExaminationDetailsRoute from '@/routes/update-examination-details';
-import createExaminationDetailsRoute from '@/routes/create-examination-details';
-import uploadVoiceNoteRoute from '@/routes/upload-voice-note';
-import GetDoctorsRoute from '@/routes/get-doctors';
+
 
 export const registerRoutes = () => {
-  registerLoginDoctorRoute()
-  homeRoute.getRoutingPath();
-  registerDoctorRoute.getRoutingPath();
-  generatePresignedUrls.getRoutingPath();
-  getEmrDetailsRoute.getRoutingPath();
-  getPatientInfoRoute.getRoutingPath();
-  getRedFlagsRoute.getRoutingPath();
-  patchEmrRoute.getRoutingPath();
-  getDoctorInfoRoute.getRoutingPath();
-  getAllEmrsFromPhone.getRoutingPath();
-  searchPatientsRoute.getRoutingPath();
-  updateEmr.getRoutingPath();
-  getExaminationDetailsRoute.getRoutingPath();
-  updateExaminationDetailsRoute.getRoutingPath();
-  createExaminationDetailsRoute.getRoutingPath();
-  uploadVoiceNoteRoute.getRoutingPath();
-  GetDoctorsRoute.getRoutingPath()
+
+
+ registerLoginDoctorRoute();
+ getMajorRedFlags();
+ searchPatients();
+ RegisterDoctorRoute();
+ generatePresignedUrlsHandler()
+ getEmrRoute();
+ getPatientInfoRoute();
+ getRedFlagsRoute();
+ patchEmrRoute()
+ getDoctorInfoRoute();
+ getAllEmrsFromPhone();
+ updateEmr();
+ getExaminationDetailsRoute();
+ updateExaminationDetailsRoute();
+ createExaminationDetailsRoute();
+ uploadVoiceNoteRoute();
+ getDoctorsRoute();
+homeRoute.getRoutingPath();
+
+
 };
