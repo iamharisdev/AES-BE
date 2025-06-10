@@ -57,6 +57,13 @@
       "when": 1748855603358,
       "tag": "0007_marvelous_masque",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1749540735016,
+      "tag": "0008_clear_elektra",
+      "breakpoints": true
     }
   ]
 }
