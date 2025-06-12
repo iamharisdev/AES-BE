@@ -134,6 +134,17 @@ const getAllEmrsFromPhoneHandler = app.openapi(
       })
       .from(tables.emr)
       .leftJoin(tables.examination, eq(tables.emr.id, tables.examination.id))
+      .leftJoin(tables.patient, eq(tables.emr.phone, tables.patient.phoneNumber))
+      .leftJoin(tables.presentingComplaint, eq(tables.emr.id, tables.presentingComplaint.emrId))
+      .leftJoin(tables.currentPregnancy, eq(tables.emr.id, tables.currentPregnancy.emrId))
+      .leftJoin(tables.trimester, eq(tables.emr.id, tables.trimester.emrId))
+      .leftJoin(tables.obsHistory, eq(tables.emr.id, tables.obsHistory.emrId))
+      .leftJoin(tables.gynecologicalHistory, eq(tables.emr.id, tables.gynecologicalHistory.emrId))
+      .leftJoin(tables.medicalHistory, eq(tables.emr.id, tables.medicalHistory.emrId))
+      .leftJoin(tables.surgicalHistory, eq(tables.emr.id, tables.surgicalHistory.emrId))
+      .leftJoin(tables.familyHistory, eq(tables.emr.id, tables.familyHistory.emrId))
+      .leftJoin(tables.personalHistory, eq(tables.emr.id, tables.personalHistory.emrId))
+      .leftJoin(tables.socioEconomicHistory, eq(tables.emr.id, tables.socioEconomicHistory.emrId))
       .where(eq(tables.emr.phone, phoneNumber))
       .execute();
     if (!emrs || emrs.length === 0) {
