@@ -103,13 +103,13 @@ const getExaminationRoute = createRoute({
   method: 'get',
   operationId: 'getExamination',
   tags: ['Examination'],
-  path: '/examination/{id}',
+  path: '/examination/{emrId}',
   summary: 'Fetches Examination for a specific EMR',
   security: [{ jwt: [] }],
   middleware: [jwtMiddleware],
   request: {
     params: z.object({
-      id: z.string().uuid(),
+      emrId: z.string().uuid(),
     }),
   },
   responses: {
@@ -133,17 +133,17 @@ const getExaminationRoute = createRoute({
 });
 
 const getExaminationHandler = app.openapi(getExaminationRoute, async (c) => {
-  const { id } = c.req.valid('param');
+  const { emrId } = c.req.valid('param');
   const record = await db
     .select()
     .from(tables.examination)
-    .where(eq(tables.examination.id, id))
+    .where(eq(tables.examination.emrId, emrId))
     .execute()
     .then((res) => res.at(0));
 
   if (!record) {
     return c.json(
-      { error: `No Examination Found With EMR ID ${id}` },
+      { error: `No Examination Found With EMR ID ${emrId}` },
       404
     );
   }
@@ -448,6 +448,10 @@ export type GetExaminationRoute = typeof getExaminationHandler;
 export type CreateExaminationRoute = typeof createExaminationHandler;
 export type UpdateExaminationRoute = typeof updateExaminationHandler;
 
-export { getExaminationRoute, createExaminationRoute, updateExaminationRoute };
+export {
+  getExaminationRoute,
+  createExaminationRoute,
+  updateExaminationRoute
+};
 
 export default getExaminationRoute;

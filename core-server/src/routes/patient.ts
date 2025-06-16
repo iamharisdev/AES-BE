@@ -330,10 +330,139 @@ const uploadVoiceNoteHandler = app.openapi(uploadVoiceNoteRoute, async (c) => {
   }
 });
 
+// Edit Patient Schema
+const EditPatientRequestSchema = z.object({
+  name: z.string().optional(),
+  age: z.number().optional(),
+  gender: z.string().optional(),
+  maritalStatus: z.string().optional(),
+  occupation: z.string().optional(),
+  address: z.string().optional(),
+  location: z.string().optional(),
+  cnic: z.string().optional(),
+  education: z.string().optional(),
+  marriedYears: z.number().optional(),
+  pregnancyMonths: z.number().optional(),
+  lastMenstruation: z.string().optional(),
+  regularMenstruation: z.string().optional(),
+  miscarriage: z.string().optional(),
+  firstPregnancy: z.string().optional(),
+  familyMarriage: z.string().optional()
+});
+
+const EditPatientSuccessSchema = z.object({
+  message: z.string(),
+  patient: z.object({
+    id: z.string().uuid(),
+    phoneNumber: z.string(),
+    name: z.string().nullable(),
+    age: z.number().nullable(),
+    gender: z.string().nullable(),
+    maritalStatus: z.string().nullable(),
+    occupation: z.string().nullable(),
+    address: z.string().nullable(),
+    location: z.string().nullable(),
+    cnic: z.string().nullable(),
+    education: z.string().nullable(),
+    marriedYears: z.number().nullable(),
+    pregnancyMonths: z.number().nullable(),
+    lastMenstruation: z.string().nullable(),
+    regularMenstruation: z.string().nullable(),
+    miscarriage: z.string().nullable(),
+    firstPregnancy: z.string().nullable(),
+    familyMarriage: z.string().nullable(),
+    updatedAt: z.date()
+  })
+});
+
+const EditPatientNotFoundSchema = z.object({
+  error: z.string().openapi({ example: 'Patient not found' })
+});
+
+const editPatientRoute = createRoute({
+  method: 'put',
+  operationId: 'editPatient',
+  tags: ['Patient'],
+  path: '/patient/{patientId}',
+  summary: 'Edit patient information',
+  security: [{ jwt: [] }],
+  middleware: [jwtMiddleware],
+  request: {
+    params: z.object({
+      patientId: z.string().uuid()
+    }),
+    body: {
+      content: {
+        'application/json': {
+          schema: EditPatientRequestSchema
+        }
+      }
+    }
+  },
+  responses: {
+    200: {
+      content: {
+        'application/json': {
+          schema: EditPatientSuccessSchema
+        }
+      },
+      description: 'Patient information updated successfully'
+    },
+    404: {
+      content: {
+        'application/json': {
+          schema: EditPatientNotFoundSchema
+        }
+      },
+      description: 'Patient not found'
+    }
+  }
+});
+
+const editPatientHandler = app.openapi(editPatientRoute, async (c) => {
+  const { patientId } = c.req.valid('param');
+  const updates = c.req.valid('json');
+
+  // Check if patient exists
+  const existingPatient = await db
+    .select()
+    .from(tables.patient)
+    .where(eq(tables.patient.id, patientId))
+    .execute()
+    .then(res => res.at(0));
+
+  if (!existingPatient) {
+    return c.json({ error: 'Patient not found' }, 404);
+  }
+
+  // Update patient information
+  const [updatedPatient] = await db
+    .update(tables.patient)
+    .set({
+      ...updates,
+      updatedAt: new Date()
+    })
+    .where(eq(tables.patient.id, patientId))
+    .returning();
+
+  return c.json({
+    message: 'Patient information updated successfully',
+    patient: updatedPatient
+  }, 200);
+});
+
+const patientRoute = {
+  getRoutingPath: () => {
+    app.openapi(searchPatientsRoute, searchPatientsHandler);
+    app.openapi(getPatientInfoRoute, getPatientInfoHandler);
+    app.openapi(uploadVoiceNoteRoute, uploadVoiceNoteHandler);
+    app.openapi(editPatientRoute, editPatientHandler);
+  }
+};
+
 export type SearchPatientsRoute = typeof searchPatientsHandler;
 export type GetPatientInfoRoute = typeof getPatientInfoHandler;
 export type UploadVoiceNoteRoute = typeof uploadVoiceNoteHandler;
+export type EditPatientRoute = typeof editPatientHandler;
 
-export { searchPatientsRoute, getPatientInfoRoute, uploadVoiceNoteRoute };
-
-export default searchPatientsRoute;
+export default patientRoute;

@@ -21,7 +21,7 @@ const getEmrDetailsRoute = createRoute({
   method: 'get',
   operationId: 'getEmr',
   tags: ['EMR'],
-  path: '/emr/id/{id}',
+  path: '/emr/{id}',
   summary: 'Get EMR Contents',
   security: [{ jwt: [] }],
   middleware: [jwtMiddleware],
