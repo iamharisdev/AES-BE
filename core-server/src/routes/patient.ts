@@ -343,8 +343,6 @@ const EditPatientRequestSchema = z.object({
   education: z.string().optional(),
   marriedYears: z.number().optional(),
   pregnancyMonths: z.number().optional(),
-  lastMenstruation: z.string().optional(),
-  regularMenstruation: z.string().optional(),
   miscarriage: z.string().optional(),
   firstPregnancy: z.string().optional(),
   familyMarriage: z.string().optional()
@@ -366,8 +364,6 @@ const EditPatientSuccessSchema = z.object({
     education: z.string().nullable(),
     marriedYears: z.number().nullable(),
     pregnancyMonths: z.number().nullable(),
-    lastMenstruation: z.string().nullable(),
-    regularMenstruation: z.string().nullable(),
     miscarriage: z.string().nullable(),
     firstPregnancy: z.string().nullable(),
     familyMarriage: z.string().nullable(),

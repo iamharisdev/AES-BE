@@ -22,8 +22,6 @@ export const patient = pgTable('patient', {
   education: text('education'),
   marriedYears: integer('married_years'),
   pregnancyMonths: integer('pregnancy_months'),
-  lastMenstruation: text('last_menstruation'),
-  regularMenstruation: text('regular_menstruation'),
   miscarriage: text('miscarriage'),
   firstPregnancy: text('first_pregnancy'),
   familyMarriage: text('family_marriage'),

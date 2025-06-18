@@ -18,6 +18,8 @@ const CurrentPregnancySchema = z.object({
   bloodUrineTest: z.string().nullable(),
   bloodUrineTestTypes: z.string().nullable(),
   earlyPregProblems: z.string().nullable(),
+  lastMenstruation: z.string().nullable(),
+  regularMenstruation: z.string().nullable(),
   createdAt: z.date(),
   updatedAt: z.date()
 });
@@ -33,7 +35,9 @@ const CreateCurrentPregnancySchema = z.object({
   folicAcid: z.string().nullable(),
   bloodUrineTest: z.string().nullable(),
   bloodUrineTestTypes: z.string().nullable(),
-  earlyPregProblems: z.string().nullable()
+  earlyPregProblems: z.string().nullable(),
+  lastMenstruation: z.string().nullable(),
+  regularMenstruation: z.string().nullable()
 });
 
 // Update schema

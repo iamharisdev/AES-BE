@@ -41,8 +41,6 @@ export const PatientProfileDataSchema = z
     cnic: z.string().nullable(),
     education: z.string().nullable(),
     pregnancy_months: z.number().nullable(),
-    last_menstruation: z.string().nullable(),
-    regular_menstruation: YesNoEnum.optional().nullable(),
     miscarriage: YesNoEnum.optional().nullable(),
     first_pregnancy: YesNoEnum.optional().nullable(),
     family_marriage: YesNoEnum.optional().nullable(),
@@ -69,6 +67,8 @@ export const CurrentPregnancyDataSchema = z
     blood_urine_test: YesNoEnum.optional().nullable(),
     blood_urine_test_types: z.string().nullable(),
     early_preg_problems: z.string().nullable(),
+    last_menstruation: z.string().nullable(),
+    regular_menstruation: YesNoEnum.optional().nullable(),
     additional_info: z.string().nullable()
   })
   .openapi('CurrentPregnancy');
@@ -181,4 +181,3 @@ export const EMR = z
     previousPregnancy: PreviousPregnancySchema.optional().nullable()
   })
   .openapi('EMR');
-

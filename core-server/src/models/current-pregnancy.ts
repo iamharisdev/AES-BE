@@ -15,6 +15,8 @@ export const currentPregnancy = pgTable('current_pregnancy', {
   bloodUrineTest: text('blood_urine_test'),
   bloodUrineTestTypes: text('blood_urine_test_types'),
   earlyPregProblems: text('early_preg_problems'),
+  lastMenstruation: text('last_menstruation'),
+  regularMenstruation: text('regular_menstruation'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow()
 });
