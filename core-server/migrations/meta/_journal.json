@@ -71,6 +71,13 @@
       "when": 1750244523278,
       "tag": "0009_smart_ulik",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1750328833722,
+      "tag": "0010_blue_vengeance",
+      "breakpoints": true
     }
   ]
 }

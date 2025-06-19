@@ -18,6 +18,7 @@ import vitalsRoute from '@/routes/vitals';
 import followupQuestionsRoute from '@/routes/followup-questions';
 import filesRoute from '@/routes/files';
 import generatePresignedUrls from '@/routes/generate-presigned-urls';
+import proposedPlanRoute from '@/routes/proposed-plan';
 
 export const registerRoutes = () => {
   homeRoute.getRoutingPath();
@@ -40,4 +41,5 @@ export const registerRoutes = () => {
   hospitalRoute.getRoutingPath();
   userRoute.getRoutingPath();
   patientRoute.getRoutingPath();
+  proposedPlanRoute.getRoutingPath();
 };
