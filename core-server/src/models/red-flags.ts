@@ -6,7 +6,8 @@ export const redFlags = pgTable('red_flags', {
   emrId: uuid('emr_id')
     .notNull()
     .references(() => emr.id),
-  symptoms: text('symptoms'),
+  flag: text('flag'),
+  justification: text('justification'),
   severity: text('severity'),
   actionTaken: text('action_taken'),
   createdAt: timestamp('created_at').notNull().defaultNow(),

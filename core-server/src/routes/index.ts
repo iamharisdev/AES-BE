@@ -9,7 +9,6 @@ import trimesterRoute from '@/routes/trimester';
 import currentPregnancyRoute from '@/routes/current-pregnancy';
 import obstetricHistoryRoute from '@/routes/obstetric-history';
 import gynecologicalHistoryRoute from '@/routes/gynecological-history';
-import medicalHistoryRoute from '@/routes/medical-history';
 import surgicalHistoryRoute from '@/routes/surgical-history';
 import familyHistoryRoute from '@/routes/family-history';
 import personalHistoryRoute from '@/routes/personal-history';
@@ -29,7 +28,6 @@ export const registerRoutes = () => {
   currentPregnancyRoute.getRoutingPath();
   obstetricHistoryRoute.getRoutingPath();
   gynecologicalHistoryRoute.getRoutingPath();
-  medicalHistoryRoute.getRoutingPath();
   surgicalHistoryRoute.getRoutingPath();
   familyHistoryRoute.getRoutingPath();
   personalHistoryRoute.getRoutingPath();

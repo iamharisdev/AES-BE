@@ -2,7 +2,7 @@ import { currentPregnancyEmrSchema } from '@/schemas/current-pregnancy'
 import { DiagnosticsSchema } from '@/schemas/diagnostics'
 import { EMR } from '@/schemas/emr-combined'
 import { husbandFamilyHistory, patientFamilyHistory } from '@/schemas/family-history'
-import { husbandDetails, medicalHistoryEMR, personalDetails, surgicalHistory } from '@/schemas/medical-history'
+import { husbandDetails, personalDetails, surgicalHistory } from '@/schemas/medical-history'
 import { previousPregnancyEmrSchema } from '@/schemas/previous-pregnancy'
 import { RedFlagsSchema } from '@/schemas/red-flags'
 import { socioEconomicHistoryEmrSchema } from '@/schemas/socioeconomic-history'
@@ -31,7 +31,6 @@ const schemaMap: Record<string, GenerateStructuredOutputArgs<any>['schema']> = {
 	personalDetails: personalDetails,
 	surgicalHistory: surgicalHistory,
 	husbandDetails: husbandDetails,
-	medicalHistory: medicalHistoryEMR,
 }
 
 type GenerateDiagnosticsArgs = {

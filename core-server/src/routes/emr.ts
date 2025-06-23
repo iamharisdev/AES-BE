@@ -20,7 +20,6 @@ const GetEmrSuccessResponseSchema = z.object({
       trimester: z.record(z.unknown()),
       obsHistory: z.record(z.unknown()),
       gynecologicalHistory: z.record(z.unknown()),
-      medicalHistory: z.record(z.unknown()),
       surgicalHistory: z.record(z.unknown()),
       familyHistory: z.record(z.unknown()),
       personalHistory: z.record(z.unknown()),
@@ -71,7 +70,6 @@ const getEmrDetailsHandler = app.openapi(getEmrDetailsRoute, async (c) => {
       trimester: tables.trimester,
       obsHistory: tables.obsHistory,
       gynecologicalHistory: tables.gynecologicalHistory,
-      medicalHistory: tables.medicalHistory,
       surgicalHistory: tables.surgicalHistory,
       familyHistory: tables.familyHistory,
       personalHistory: tables.personalHistory,
@@ -95,10 +93,6 @@ const getEmrDetailsHandler = app.openapi(getEmrDetailsRoute, async (c) => {
     .leftJoin(
       tables.gynecologicalHistory,
       eq(tables.emr.id, tables.gynecologicalHistory.emrId)
-    )
-    .leftJoin(
-      tables.medicalHistory,
-      eq(tables.emr.id, tables.medicalHistory.emrId)
     )
     .leftJoin(
       tables.surgicalHistory,
@@ -148,7 +142,6 @@ const GetAllEmrsSuccessSchema = z.object({
       trimester: z.record(z.unknown()),
       obsHistory: z.record(z.unknown()),
       gynecologicalHistory: z.record(z.unknown()),
-      medicalHistory: z.record(z.unknown()),
       surgicalHistory: z.record(z.unknown()),
       familyHistory: z.record(z.unknown()),
       personalHistory: z.record(z.unknown()),
@@ -203,7 +196,6 @@ const getAllEmrsFromPhoneHandler = app.openapi(
         trimester: tables.trimester,
         obsHistory: tables.obsHistory,
         gynecologicalHistory: tables.gynecologicalHistory,
-        medicalHistory: tables.medicalHistory,
         surgicalHistory: tables.surgicalHistory,
         familyHistory: tables.familyHistory,
         personalHistory: tables.personalHistory,
@@ -230,10 +222,6 @@ const getAllEmrsFromPhoneHandler = app.openapi(
       .leftJoin(
         tables.gynecologicalHistory,
         eq(tables.emr.id, tables.gynecologicalHistory.emrId)
-      )
-      .leftJoin(
-        tables.medicalHistory,
-        eq(tables.emr.id, tables.medicalHistory.emrId)
       )
       .leftJoin(
         tables.surgicalHistory,
@@ -295,7 +283,6 @@ const validSections = new Set([
   "trimester",
   "obsHistory",
   "gynecologicalHistory",
-  "medicalHistory",
   "surgicalHistory",
   "familyHistory",
   "personalHistory",

@@ -10,7 +10,6 @@ import { presentingComplaint } from './presenting-complaint';
 import { currentPregnancy } from './current-pregnancy';
 import { obsHistory } from './obstetric-history';
 import { gynecologicalHistory } from './gynecological-history';
-import { medicalHistory } from './medical-history';
 import { surgicalHistory } from './surgical-history';
 import { familyHistory } from './family-history';
 import { personalHistory } from './personal-history';
@@ -40,7 +39,6 @@ export const tables = {
   currentPregnancy,
   obsHistory,
   gynecologicalHistory,
-  medicalHistory,
   surgicalHistory,
   familyHistory,
   personalHistory,

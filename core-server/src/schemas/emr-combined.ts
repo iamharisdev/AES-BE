@@ -91,19 +91,6 @@ export const GynecologicalHistoryDataSchema = z
   })
   .openapi('GynecologicalHistory');
 
-export const MedicalHistoryDataSchema = z
-  .object({
-    current_meds: z.string().nullable(),
-    sugar_blood_pressure: z.string().nullable(),
-    additional_info: z.string().nullable(),
-    diabetes: z.string().optional(),
-    hypertension: z.string().optional(),
-    heartDisease: z.string().optional(),
-    asthma: z.string().optional(),
-    thyroid: z.string().optional(),
-    other: z.string().optional()
-  })
-  .openapi('MedicalHistory');
 
 export const SurgicalHistoryDataSchema = z
   .object({
@@ -173,7 +160,6 @@ export const EMR = z
     currentPregnancy: CurrentPregnancyDataSchema.optional().nullable(),
     trimester: TrimesterDataSchema.optional().nullable(),
     gynecologicalHistory: GynecologicalHistoryDataSchema.optional().nullable(),
-    medicalHistory: MedicalHistoryDataSchema.optional().nullable(),
     surgicalHistory: SurgicalHistoryDataSchema.optional().nullable(),
     familyHistory: FamilyHistoryDataSchema.optional().nullable(),
     personalHistory: PersonalHistoryDataSchema.optional().nullable(),
