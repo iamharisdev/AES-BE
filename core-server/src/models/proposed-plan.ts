@@ -1,4 +1,3 @@
-import { z } from '@hono/zod-openapi';
 import { pgTable, text, timestamp, uuid, date } from 'drizzle-orm/pg-core';
 import { emr } from './emr';
 
