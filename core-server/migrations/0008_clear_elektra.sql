@@ -1,1 +1,0 @@
-ALTER TABLE "user" ALTER COLUMN "hospital_id" DROP NOT NULL;

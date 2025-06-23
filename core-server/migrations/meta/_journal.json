@@ -5,85 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1747737272638,
-      "tag": "0000_tiresome_praxagora",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1747742798891,
-      "tag": "0001_groovy_gamora",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1747910373753,
-      "tag": "0002_confused_micromacro",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1748262465170,
-      "tag": "0003_great_alice",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1748340788528,
-      "tag": "0004_brief_silhouette",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1748512782022,
-      "tag": "0005_whole_justice",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1748850549298,
-      "tag": "0006_overconfident_darkstar",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "7",
-      "when": 1748855603358,
-      "tag": "0007_marvelous_masque",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "7",
-      "when": 1749540735016,
-      "tag": "0008_clear_elektra",
-      "breakpoints": true
-    },
-    {
-      "idx": 9,
-      "version": "7",
-      "when": 1750244523278,
-      "tag": "0009_smart_ulik",
-      "breakpoints": true
-    },
-    {
-      "idx": 10,
-      "version": "7",
-      "when": 1750328833722,
-      "tag": "0010_blue_vengeance",
-      "breakpoints": true
-    },
-    {
-      "idx": 11,
-      "version": "7",
-      "when": 1750670697802,
-      "tag": "0011_tidy_carnage",
+      "when": 1750677563426,
+      "tag": "0000_sour_red_skull",
       "breakpoints": true
     }
   ]
