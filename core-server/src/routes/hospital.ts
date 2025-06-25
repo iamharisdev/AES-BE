@@ -59,37 +59,39 @@ const route = createRoute({
   },
 });
 
-const handler = app.openapi(route, async (c) => {
-  const details = c.req.valid('json');
+const createHospitalHandler = () => {
+  app.openapi(route, async (c) => {
+    const details = c.req.valid('json');
 
-  // Check if the hospital already exists
-  const existingHospital = await db
-    .select()
-    .from(tables.hospital)
-    .where(eq(tables.hospital.name, details.name))
-    .then((res) => res.at(0));
+    // Check if the hospital already exists
+    const existingHospital = await db
+      .select()
+      .from(tables.hospital)
+      .where(eq(tables.hospital.name, details.name))
+      .then((res) => res.at(0));
 
-  if (existingHospital) {
+    if (existingHospital) {
+      return c.json(
+        { error: `Hospital with name ${details.name} already exists` },
+        409
+      );
+    }
+
+    const [newRecord] = await db.insert(tables.hospital).values({
+      name: details.name,
+      address: details.address,
+      description: details.description,
+    }).returning({ id: tables.hospital.id });
+
     return c.json(
-      { error: `Hospital with name ${details.name} already exists` },
-      409
+      {
+        message: 'Hospital created successfully',
+        id: newRecord.id,
+      },
+      200
     );
-  }
-
-  const [newRecord] = await db.insert(tables.hospital).values({
-    name: details.name,
-    address: details.address,
-    description: details.description,
-  }).returning({ id: tables.hospital.id });
-
-  return c.json(
-    {
-      message: 'Hospital created successfully',
-      id: newRecord.id,
-    },
-    200
-  );
-});
+  });
+}
 
 // GET all hospitals
 const listRoute = createRoute({
@@ -117,16 +119,18 @@ const listRoute = createRoute({
   },
 });
 
-const listHandler = app.openapi(listRoute, async (c) => {
-  const hospitals = await db.select().from(tables.hospital).execute();
-  const mappedHospitals = hospitals.map(h => ({
-    id: h.id,
-    name: h.name,
-    address: h.address,
-    description: h.description || undefined,
-  }));
-  return c.json(mappedHospitals, 200);
-});
+const listHospitalsHandler = () => {
+  app.openapi(listRoute, async (c) => {
+    const hospitals = await db.select().from(tables.hospital).execute();
+    const mappedHospitals = hospitals.map(h => ({
+      id: h.id,
+      name: h.name,
+      address: h.address,
+      description: h.description || undefined,
+    }));
+    return c.json(mappedHospitals, 200);
+  });
+}
 
 // GET hospital by ID
 const getByIdRoute = createRoute({
@@ -169,20 +173,22 @@ const getByIdRoute = createRoute({
   },
 });
 
-const getByIdHandler = app.openapi(getByIdRoute, async (c) => {
-  const { id } = c.req.valid('param');
-  const hospital = await db.select().from(tables.hospital).where(eq(tables.hospital.id, id)).then(res => res.at(0));
-  if (!hospital) {
-    return c.json({ error: 'Hospital not found' }, 404);
-  }
-  const mappedHospital = {
-    id: hospital.id,
-    name: hospital.name,
-    address: hospital.address,
-    description: hospital.description || undefined,
-  };
-  return c.json(mappedHospital, 200);
-});
+const getHospitalByIdHandler = () => {
+  app.openapi(getByIdRoute, async (c) => {
+    const { id } = c.req.valid('param');
+    const hospital = await db.select().from(tables.hospital).where(eq(tables.hospital.id, id)).then(res => res.at(0));
+    if (!hospital) {
+      return c.json({ error: 'Hospital not found' }, 404);
+    }
+    const mappedHospital = {
+      id: hospital.id,
+      name: hospital.name,
+      address: hospital.address,
+      description: hospital.description || undefined,
+    };
+    return c.json(mappedHospital, 200);
+  });
+}
 
 // PUT update hospital
 const updateRoute = createRoute({
@@ -229,20 +235,22 @@ const updateRoute = createRoute({
   },
 });
 
-const updateHandler = app.openapi(updateRoute, async (c) => {
-  const { id } = c.req.valid('param');
-  const details = c.req.valid('json');
-  const hospital = await db.select().from(tables.hospital).where(eq(tables.hospital.id, id)).then(res => res.at(0));
-  if (!hospital) {
-    return c.json({ error: 'Hospital not found' }, 404);
-  }
-  await db.update(tables.hospital).set({
-    name: details.name,
-    address: details.address,
-    description: details.description,
-  }).where(eq(tables.hospital.id, id));
-  return c.json({ message: 'Hospital updated successfully' }, 200);
-});
+const updateHospitalHandler = () => {
+  app.openapi(updateRoute, async (c) => {
+    const { id } = c.req.valid('param');
+    const details = c.req.valid('json');
+    const hospital = await db.select().from(tables.hospital).where(eq(tables.hospital.id, id)).then(res => res.at(0));
+    if (!hospital) {
+      return c.json({ error: 'Hospital not found' }, 404);
+    }
+    await db.update(tables.hospital).set({
+      name: details.name,
+      address: details.address,
+      description: details.description,
+    }).where(eq(tables.hospital.id, id));
+    return c.json({ message: 'Hospital updated successfully' }, 200);
+  });
+}
 
 // DELETE hospital
 const deleteRoute = createRoute({
@@ -282,22 +290,16 @@ const deleteRoute = createRoute({
   },
 });
 
-const deleteHandler = app.openapi(deleteRoute, async (c) => {
-  const { id } = c.req.valid('param');
-  const hospital = await db.select().from(tables.hospital).where(eq(tables.hospital.id, id)).then(res => res.at(0));
-  if (!hospital) {
-    return c.json({ error: 'Hospital not found' }, 404);
-  }
-  await db.delete(tables.hospital).where(eq(tables.hospital.id, id));
-  return c.json({ message: 'Hospital deleted successfully' }, 200);
-});
+const deleteHospitalHandler = () => {
+  app.openapi(deleteRoute, async (c) => {
+    const { id } = c.req.valid('param');
+    const hospital = await db.select().from(tables.hospital).where(eq(tables.hospital.id, id)).then(res => res.at(0));
+    if (!hospital) {
+      return c.json({ error: 'Hospital not found' }, 404);
+    }
+    await db.delete(tables.hospital).where(eq(tables.hospital.id, id));
+    return c.json({ message: 'Hospital deleted successfully' }, 200);
+  });
+}
 
-export type CreateHospitalRoute = typeof handler;
-export type ListHospitalsRoute = typeof listHandler;
-export type GetHospitalByIdRoute = typeof getByIdHandler;
-export type UpdateHospitalRoute = typeof updateHandler;
-export type DeleteHospitalRoute = typeof deleteHandler;
-
-export { listRoute, getByIdRoute, updateRoute, deleteRoute };
-
-export default route;
+export { createHospitalHandler, listHospitalsHandler, getHospitalByIdHandler, updateHospitalHandler, deleteHospitalHandler }

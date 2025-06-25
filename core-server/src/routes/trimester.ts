@@ -171,63 +171,68 @@ const deleteTrimesterRoute = createRoute({
   }
 });
 
-const trimesterRoute = {
-  getRoutingPath: () => {
-    app.openapi(createTrimesterRoute, async c => {
-      const data = c.req.valid('json');
-      const [record] = await db
-        .insert(tables.trimester)
-        .values(data)
-        .returning();
-      return c.json(record, 201);
-    });
+const createTrimesterHandler = () => {
+  app.openapi(createTrimesterRoute, async c => {
+    const data = c.req.valid('json');
+    const [record] = await db
+      .insert(tables.trimester)
+      .values(data)
+      .returning();
+    return c.json(record, 201);
+  });
+}
 
-    app.openapi(getTrimesterRoute, async c => {
-      const { id } = c.req.valid('param');
-      const [record] = await db
-        .select()
-        .from(tables.trimester)
-        .where(eq(tables.trimester.id, id))
-        .execute();
+const getTrimesterHandler = () => {
+  app.openapi(getTrimesterRoute, async c => {
+    const { id } = c.req.valid('param');
+    const [record] = await db
+      .select()
+      .from(tables.trimester)
+      .where(eq(tables.trimester.id, id))
+      .execute();
 
-      if (!record) {
-        return c.json({ error: 'Trimester record not found' }, 404);
-      }
+    if (!record) {
+      return c.json({ error: 'Trimester record not found' }, 404);
+    }
 
-      return c.json(record);
-    });
+    return c.json(record);
+  });
+}
 
-    app.openapi(updateTrimesterRoute, async c => {
-      const { id } = c.req.valid('param');
-      const data = c.req.valid('json');
+const updateTrimesterHandler = () => {
+  app.openapi(updateTrimesterRoute, async c => {
+    const { id } = c.req.valid('param');
+    const data = c.req.valid('json');
 
-      const [record] = await db
-        .update(tables.trimester)
-        .set({ ...data, updatedAt: new Date() })
-        .where(eq(tables.trimester.id, id))
-        .returning();
+    const [record] = await db
+      .update(tables.trimester)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(tables.trimester.id, id))
+      .returning();
 
-      if (!record) {
-        return c.json({ error: 'Trimester record not found' }, 404);
-      }
+    if (!record) {
+      return c.json({ error: 'Trimester record not found' }, 404);
+    }
 
-      return c.json(record);
-    });
+    return c.json(record);
+  });
+}
 
-    app.openapi(deleteTrimesterRoute, async c => {
-      const { id } = c.req.valid('param');
-      const [record] = await db
-        .delete(tables.trimester)
-        .where(eq(tables.trimester.id, id))
-        .returning();
+const deleteTrimesterHandler = () => {
+  app.openapi(deleteTrimesterRoute, async c => {
+    const { id } = c.req.valid('param');
+    const [record] = await db
+      .delete(tables.trimester)
+      .where(eq(tables.trimester.id, id))
+      .returning();
 
-      if (!record) {
-        return c.json({ error: 'Trimester record not found' }, 404);
-      }
+    if (!record) {
+      return c.json({ error: 'Trimester record not found' }, 404);
+    }
 
-      return c.body(null, 204);
-    });
-  }
-};
+    return c.body(null, 204);
+  });
+}
 
-export default trimesterRoute;
+
+export { createTrimesterHandler, getTrimesterHandler, updateTrimesterHandler, deleteTrimesterHandler }

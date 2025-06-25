@@ -132,24 +132,26 @@ const getExaminationRoute = createRoute({
   },
 });
 
-const getExaminationHandler = app.openapi(getExaminationRoute, async (c) => {
-  const { emrId } = c.req.valid('param');
-  const record = await db
-    .select()
-    .from(tables.examination)
-    .where(eq(tables.examination.emrId, emrId))
-    .execute()
-    .then((res) => res.at(0));
+const getExaminationHandler = () => {
+  app.openapi(getExaminationRoute, async (c) => {
+    const { emrId } = c.req.valid('param');
+    const record = await db
+      .select()
+      .from(tables.examination)
+      .where(eq(tables.examination.emrId, emrId))
+      .execute()
+      .then((res) => res.at(0));
 
-  if (!record) {
-    return c.json(
-      { error: `No Examination Found With EMR ID ${emrId}` },
-      404
-    );
-  }
+    if (!record) {
+      return c.json(
+        { error: `No Examination Found With EMR ID ${emrId}` },
+        404
+      );
+    }
 
-  return c.json(record, 200);
-});
+    return c.json(record, 200);
+  });
+}
 
 // --- CREATE Examination ---
 const CreateExaminationRequestSchema = z.object({
@@ -227,85 +229,87 @@ const createExaminationRoute = createRoute({
   },
 });
 
-const createExaminationHandler = app.openapi(createExaminationRoute, async (c) => {
-  const { emrId, examination } = c.req.valid('json');
-  const jwtPayload = c.get('jwtPayload') as JwtPayload;
+const createExaminationHandler = () => {
+  app.openapi(createExaminationRoute, async (c) => {
+    const { emrId, examination } = c.req.valid('json');
+    const jwtPayload = c.get('jwtPayload') as JwtPayload;
 
-  const user = await db
-    .select()
-    .from(tables.user)
-    .where(eq(tables.user.phoneNumber, jwtPayload.phoneNumber))
-    .then((d) => d.at(0));
+    const user = await db
+      .select()
+      .from(tables.user)
+      .where(eq(tables.user.phoneNumber, jwtPayload.phoneNumber))
+      .then((d) => d.at(0));
 
-  if (!user) {
-    return c.json({ error: 'Unauthorized - Doctor not found' }, 401);
-  }
+    if (!user) {
+      return c.json({ error: 'Unauthorized - Doctor not found' }, 401);
+    }
 
-  // Check if examination already exist for this EMR
-  const existingRecord = await db
-    .select()
-    .from(tables.examination)
-    .where(eq(tables.examination.emrId, emrId))
-    .execute()
-    .then((res) => res.at(0));
+    // Check if examination already exist for this EMR
+    const existingRecord = await db
+      .select()
+      .from(tables.examination)
+      .where(eq(tables.examination.emrId, emrId))
+      .execute()
+      .then((res) => res.at(0));
 
-  if (existingRecord) {
-    return c.json({ error: "Examination already exist for this EMR" }, 409);
-  }
+    if (existingRecord) {
+      return c.json({ error: "Examination already exist for this EMR" }, 409);
+    }
 
-  // Create new record
-  const newRecord = await db
-    .insert(tables.examination)
-    .values({
-      emrId,
-      userId: user.id,
-      bloodPressure: examination.vitals.bloodPressure,
-      pr: examination.vitals.pr,
-      rr: examination.vitals.rr,
-      temperature: examination.vitals.temperature,
-      bilateralPedalEdema: examination.generalExam.bilateralPedalEdema,
-      clubbing: examination.generalExam.clubbing,
-      jaundice: examination.generalExam.jaundice,
-      koilonychia: examination.generalExam.koilonychia,
-      lymphNodes: examination.generalExam.lymphNodes,
-      pallor: examination.generalExam.pallor,
-      spine: examination.generalExam.spine,
-      nippleDeformity: examination.breast.nippleDeformity,
-      nippleDischarge: examination.breast.nippleDischarge,
-      sizeComparison: examination.breast.sizeComparison,
-      swelling: examination.breast.swelling,
-      abdominalWallEdema: examination.abdominalExam.abdominalWallEdema,
-      estimatedFetalWeight: examination.abdominalExam.estimatedFetalWeight,
-      fetalHeartRate: examination.abdominalExam.fetalHeartRate,
-      fundalHeight: examination.abdominalExam.fundalHeight,
-      hernialOrfices: examination.abdominalExam.hernialOrfices,
-      lie: examination.abdominalExam.lie,
-      liquor: examination.abdominalExam.liquor,
-      presentation: examination.abdominalExam.presentation,
-      prominentVeins: examination.abdominalExam.prominentVeins,
-      pulsations: examination.abdominalExam.pulsations,
-      scarTenderness: examination.abdominalExam.scarTenderness,
-      shapeOfAbdomen: examination.abdominalExam.shapeOfAbdomen,
-      striae: examination.abdominalExam.striae,
-      umbilicus: examination.abdominalExam.umbilicus,
-      perSpeculumFindings: examination.perSpeculumFindings,
-      perVaginalFindings: examination.perVaginalFindings,
-      cns: examination.systematicExam.cns,
-      cvs: examination.systematicExam.cvs,
-    })
-    .returning({ id: tables.examination.id })
-    .execute()
-    .then((res) => res.at(0));
+    // Create new record
+    const newRecord = await db
+      .insert(tables.examination)
+      .values({
+        emrId,
+        userId: user.id,
+        bloodPressure: examination.vitals.bloodPressure,
+        pr: examination.vitals.pr,
+        rr: examination.vitals.rr,
+        temperature: examination.vitals.temperature,
+        bilateralPedalEdema: examination.generalExam.bilateralPedalEdema,
+        clubbing: examination.generalExam.clubbing,
+        jaundice: examination.generalExam.jaundice,
+        koilonychia: examination.generalExam.koilonychia,
+        lymphNodes: examination.generalExam.lymphNodes,
+        pallor: examination.generalExam.pallor,
+        spine: examination.generalExam.spine,
+        nippleDeformity: examination.breast.nippleDeformity,
+        nippleDischarge: examination.breast.nippleDischarge,
+        sizeComparison: examination.breast.sizeComparison,
+        swelling: examination.breast.swelling,
+        abdominalWallEdema: examination.abdominalExam.abdominalWallEdema,
+        estimatedFetalWeight: examination.abdominalExam.estimatedFetalWeight,
+        fetalHeartRate: examination.abdominalExam.fetalHeartRate,
+        fundalHeight: examination.abdominalExam.fundalHeight,
+        hernialOrfices: examination.abdominalExam.hernialOrfices,
+        lie: examination.abdominalExam.lie,
+        liquor: examination.abdominalExam.liquor,
+        presentation: examination.abdominalExam.presentation,
+        prominentVeins: examination.abdominalExam.prominentVeins,
+        pulsations: examination.abdominalExam.pulsations,
+        scarTenderness: examination.abdominalExam.scarTenderness,
+        shapeOfAbdomen: examination.abdominalExam.shapeOfAbdomen,
+        striae: examination.abdominalExam.striae,
+        umbilicus: examination.abdominalExam.umbilicus,
+        perSpeculumFindings: examination.perSpeculumFindings,
+        perVaginalFindings: examination.perVaginalFindings,
+        cns: examination.systematicExam.cns,
+        cvs: examination.systematicExam.cvs,
+      })
+      .returning({ id: tables.examination.id })
+      .execute()
+      .then((res) => res.at(0));
 
-  if (!newRecord) {
-    return c.json({ error: 'Failed to create examination' }, 500);
-  }
+    if (!newRecord) {
+      return c.json({ error: 'Failed to create examination' }, 500);
+    }
 
-  return c.json({
-    id: newRecord.id,
-    message: 'Examination created successfully',
-  }, 201);
-});
+    return c.json({
+      id: newRecord.id,
+      message: 'Examination created successfully',
+    }, 201);
+  });
+}
 
 // --- UPDATE Examination ---
 const UpdateExaminationRequestSchema = z.object({
@@ -372,86 +376,79 @@ const updateExaminationRoute = createRoute({
   },
 });
 
-const updateExaminationHandler = app.openapi(updateExaminationRoute, async (c) => {
-  const { emrId } = c.req.valid('param');
-  const { examination } = c.req.valid('json');
-  const jwtPayload = c.get('jwtPayload') as JwtPayload;
+const updateExaminationHandler = () => {
+  app.openapi(updateExaminationRoute, async (c) => {
+    const { emrId } = c.req.valid('param');
+    const { examination } = c.req.valid('json');
+    const jwtPayload = c.get('jwtPayload') as JwtPayload;
 
-  const user = await db
-    .select()
-    .from(tables.user)
-    .where(eq(tables.user.phoneNumber, jwtPayload.phoneNumber))
-    .then((d) => d.at(0));
+    const user = await db
+      .select()
+      .from(tables.user)
+      .where(eq(tables.user.phoneNumber, jwtPayload.phoneNumber))
+      .then((d) => d.at(0));
 
-  if (!user) {
-    return c.json({ error: 'Unauthorized - Doctor not found' }, 401);
-  }
+    if (!user) {
+      return c.json({ error: 'Unauthorized - Doctor not found' }, 401);
+    }
 
-  // Check if examination exists for this EMR
-  const existingRecord = await db
-    .select()
-    .from(tables.examination)
-    .where(eq(tables.examination.emrId, emrId))
-    .execute()
-    .then((res) => res.at(0));
+    // Check if examination exists for this EMR
+    const existingRecord = await db
+      .select()
+      .from(tables.examination)
+      .where(eq(tables.examination.emrId, emrId))
+      .execute()
+      .then((res) => res.at(0));
 
-  if (!existingRecord) {
-    return c.json({ error: "Examination not found for this EMR" }, 404);
-  }
+    if (!existingRecord) {
+      return c.json({ error: "Examination not found for this EMR" }, 404);
+    }
 
-  // Update the record
-  await db
-    .update(tables.examination)
-    .set({
-      updatedByUserId: user.id,
-      bloodPressure: examination.vitals.bloodPressure,
-      pr: examination.vitals.pr,
-      rr: examination.vitals.rr,
-      temperature: examination.vitals.temperature,
-      bilateralPedalEdema: examination.generalExam.bilateralPedalEdema,
-      clubbing: examination.generalExam.clubbing,
-      jaundice: examination.generalExam.jaundice,
-      koilonychia: examination.generalExam.koilonychia,
-      lymphNodes: examination.generalExam.lymphNodes,
-      pallor: examination.generalExam.pallor,
-      spine: examination.generalExam.spine,
-      nippleDeformity: examination.breast.nippleDeformity,
-      nippleDischarge: examination.breast.nippleDischarge,
-      sizeComparison: examination.breast.sizeComparison,
-      swelling: examination.breast.swelling,
-      abdominalWallEdema: examination.abdominalExam.abdominalWallEdema,
-      estimatedFetalWeight: examination.abdominalExam.estimatedFetalWeight,
-      fetalHeartRate: examination.abdominalExam.fetalHeartRate,
-      fundalHeight: examination.abdominalExam.fundalHeight,
-      hernialOrfices: examination.abdominalExam.hernialOrfices,
-      lie: examination.abdominalExam.lie,
-      liquor: examination.abdominalExam.liquor,
-      presentation: examination.abdominalExam.presentation,
-      prominentVeins: examination.abdominalExam.prominentVeins,
-      pulsations: examination.abdominalExam.pulsations,
-      scarTenderness: examination.abdominalExam.scarTenderness,
-      shapeOfAbdomen: examination.abdominalExam.shapeOfAbdomen,
-      striae: examination.abdominalExam.striae,
-      umbilicus: examination.abdominalExam.umbilicus,
-      perSpeculumFindings: examination.perSpeculumFindings,
-      perVaginalFindings: examination.perVaginalFindings,
-      cns: examination.systematicExam.cns,
-      cvs: examination.systematicExam.cvs,
-      updatedAt: new Date()
-    })
-    .where(eq(tables.examination.emrId, emrId));
+    // Update the record
+    await db
+      .update(tables.examination)
+      .set({
+        updatedByUserId: user.id,
+        bloodPressure: examination.vitals.bloodPressure,
+        pr: examination.vitals.pr,
+        rr: examination.vitals.rr,
+        temperature: examination.vitals.temperature,
+        bilateralPedalEdema: examination.generalExam.bilateralPedalEdema,
+        clubbing: examination.generalExam.clubbing,
+        jaundice: examination.generalExam.jaundice,
+        koilonychia: examination.generalExam.koilonychia,
+        lymphNodes: examination.generalExam.lymphNodes,
+        pallor: examination.generalExam.pallor,
+        spine: examination.generalExam.spine,
+        nippleDeformity: examination.breast.nippleDeformity,
+        nippleDischarge: examination.breast.nippleDischarge,
+        sizeComparison: examination.breast.sizeComparison,
+        swelling: examination.breast.swelling,
+        abdominalWallEdema: examination.abdominalExam.abdominalWallEdema,
+        estimatedFetalWeight: examination.abdominalExam.estimatedFetalWeight,
+        fetalHeartRate: examination.abdominalExam.fetalHeartRate,
+        fundalHeight: examination.abdominalExam.fundalHeight,
+        hernialOrfices: examination.abdominalExam.hernialOrfices,
+        lie: examination.abdominalExam.lie,
+        liquor: examination.abdominalExam.liquor,
+        presentation: examination.abdominalExam.presentation,
+        prominentVeins: examination.abdominalExam.prominentVeins,
+        pulsations: examination.abdominalExam.pulsations,
+        scarTenderness: examination.abdominalExam.scarTenderness,
+        shapeOfAbdomen: examination.abdominalExam.shapeOfAbdomen,
+        striae: examination.abdominalExam.striae,
+        umbilicus: examination.abdominalExam.umbilicus,
+        perSpeculumFindings: examination.perSpeculumFindings,
+        perVaginalFindings: examination.perVaginalFindings,
+        cns: examination.systematicExam.cns,
+        cvs: examination.systematicExam.cvs,
+        updatedAt: new Date()
+      })
+      .where(eq(tables.examination.emrId, emrId));
 
-  return c.json({ message: 'Examination updated successfully' }, 200);
-});
+    return c.json({ message: 'Examination updated successfully' }, 200);
+  });
+}
 
-export type GetExaminationRoute = typeof getExaminationHandler;
-export type CreateExaminationRoute = typeof createExaminationHandler;
-export type UpdateExaminationRoute = typeof updateExaminationHandler;
 
-export {
-  getExaminationRoute,
-  createExaminationRoute,
-  updateExaminationRoute
-};
-
-export default getExaminationRoute;
+export { getExaminationHandler, createExaminationHandler, updateExaminationHandler }

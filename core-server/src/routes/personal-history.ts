@@ -171,67 +171,76 @@ const deletePersonalHistoryRoute = createRoute({
   }
 });
 
-const personalHistoryRoute = {
-  getRoutingPath: () => {
-    // Create handler
-    app.openapi(createPersonalHistoryRoute, async c => {
-      const data = c.req.valid('json');
-      const [record] = await db
-        .insert(tables.personalHistory)
-        .values(data)
-        .returning();
-      return c.json(record, 201);
-    });
+const createPersonalHistoryHandler = () => {
+  app.openapi(createPersonalHistoryRoute, async c => {
+    const data = c.req.valid('json');
+    const [record] = await db
+      .insert(tables.personalHistory)
+      .values(data)
+      .returning();
+    return c.json(record, 201);
+  });
+}
 
-    // Get handler
-    app.openapi(getPersonalHistoryRoute, async c => {
-      const { id } = c.req.valid('param');
-      const [record] = await db
-        .select()
-        .from(tables.personalHistory)
-        .where(eq(tables.personalHistory.id, id))
-        .execute();
+const getPersonalHistoryHandler = () => {
+  app.openapi(getPersonalHistoryRoute, async c => {
+    const { id } = c.req.valid('param');
+    const [record] = await db
+      .select()
+      .from(tables.personalHistory)
+      .where(eq(tables.personalHistory.id, id))
+      .execute();
 
-      if (!record) {
-        return c.json({ error: 'Personal history record not found' }, 404);
-      }
+    if (!record) {
+      return c.json({ error: 'Personal history record not found' }, 404);
+    }
 
-      return c.json(record);
-    });
+    return c.json(record);
+  });
+}
 
-    // Update handler
-    app.openapi(updatePersonalHistoryRoute, async c => {
-      const { id } = c.req.valid('param');
-      const data = c.req.valid('json');
+const updatePersonalHistoryHandler = () => {
+  app.openapi(updatePersonalHistoryRoute, async c => {
+    const { id } = c.req.valid('param');
+    const data = c.req.valid('json');
 
-      const [record] = await db
-        .update(tables.personalHistory)
-        .set({ ...data, updatedAt: new Date() })
-        .where(eq(tables.personalHistory.id, id))
-        .returning();
+    const [record] = await db
+      .update(tables.personalHistory)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(tables.personalHistory.id, id))
+      .returning();
 
-      if (!record) {
-        return c.json({ error: 'Personal history record not found' }, 404);
-      }
+    if (!record) {
+      return c.json({ error: 'Personal history record not found' }, 404);
+    }
 
-      return c.json(record);
-    });
+    return c.json(record);
+  });
+}
 
-    // Delete handler
-    app.openapi(deletePersonalHistoryRoute, async c => {
-      const { id } = c.req.valid('param');
-      const [record] = await db
-        .delete(tables.personalHistory)
-        .where(eq(tables.personalHistory.id, id))
-        .returning();
+const deletePersonalHistoryHandler = () => {
+  app.openapi(deletePersonalHistoryRoute, async c => {
+    const { id } = c.req.valid('param');
+    const [record] = await db
+      .delete(tables.personalHistory)
+      .where(eq(tables.personalHistory.id, id))
+      .returning();
 
-      if (!record) {
-        return c.json({ error: 'Personal history record not found' }, 404);
-      }
+    if (!record) {
+      return c.json({ error: 'Personal history record not found' }, 404);
+    }
 
-      return c.body(null, 204);
-    });
-  }
-};
+    return c.body(null, 204);
+  });
+}
+
+const personalHistoryRoute = () => {
+  createPersonalHistoryHandler();
+  getPersonalHistoryHandler();
+  updatePersonalHistoryHandler();
+  deletePersonalHistoryHandler();
+}
+
+export { createPersonalHistoryHandler, getPersonalHistoryHandler, updatePersonalHistoryHandler, deletePersonalHistoryHandler }
 
 export default personalHistoryRoute;

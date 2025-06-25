@@ -159,119 +159,64 @@ const deleteObstetricHistoryRoute = createRoute({
   }
 });
 
-// Create handler
-app.openapi(createObstetricHistoryRoute, async c => {
-  const data = c.req.valid('json');
-  const [record] = await db.insert(tables.obsHistory).values(data).returning();
-  return c.json(record, 201);
-});
+const createObstetricHistoryHandler = () => {
+  app.openapi(createObstetricHistoryRoute, async c => {
+    const data = c.req.valid('json');
+    const [record] = await db.insert(tables.obsHistory).values(data).returning();
+    return c.json(record, 201);
+  });
+}
 
-// Get handler
-app.openapi(getObstetricHistoryRoute, async c => {
-  const { id } = c.req.valid('param');
-  const [record] = await db
-    .select()
-    .from(tables.obsHistory)
-    .where(eq(tables.obsHistory.id, id))
-    .execute();
+const getObstetricHistoryHandler = () => {
+  app.openapi(getObstetricHistoryRoute, async c => {
+    const { id } = c.req.valid('param');
+    const [record] = await db
+      .select()
+      .from(tables.obsHistory)
+      .where(eq(tables.obsHistory.id, id))
+      .execute();
 
-  if (!record) {
-    return c.json({ error: 'Obstetric history record not found' }, 404);
-  }
+    if (!record) {
+      return c.json({ error: 'Obstetric history record not found' }, 404);
+    }
 
-  return c.json(record);
-});
+    return c.json(record);
+  });
+}
 
-// Update handler
-app.openapi(updateObstetricHistoryRoute, async c => {
-  const { id } = c.req.valid('param');
-  const data = c.req.valid('json');
+const updateObstetricHistoryHandler = () => {
+  app.openapi(updateObstetricHistoryRoute, async c => {
+    const { id } = c.req.valid('param');
+    const data = c.req.valid('json');
 
-  const [record] = await db
-    .update(tables.obsHistory)
-    .set({ ...data, updatedAt: new Date() })
-    .where(eq(tables.obsHistory.id, id))
-    .returning();
+    const [record] = await db
+      .update(tables.obsHistory)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(tables.obsHistory.id, id))
+      .returning();
 
-  if (!record) {
-    return c.json({ error: 'Obstetric history record not found' }, 404);
-  }
+    if (!record) {
+      return c.json({ error: 'Obstetric history record not found' }, 404);
+    }
 
-  return c.json(record);
-});
+    return c.json(record);
+  });
+}
 
-// Delete handler
-app.openapi(deleteObstetricHistoryRoute, async c => {
-  const { id } = c.req.valid('param');
-  const [record] = await db
-    .delete(tables.obsHistory)
-    .where(eq(tables.obsHistory.id, id))
-    .returning();
+const deleteObstetricHistoryHandler = () => {
+  app.openapi(deleteObstetricHistoryRoute, async c => {
+    const { id } = c.req.valid('param');
+    const [record] = await db
+      .delete(tables.obsHistory)
+      .where(eq(tables.obsHistory.id, id))
+      .returning();
 
-  if (!record) {
-    return c.json({ error: 'Obstetric history record not found' }, 404);
-  }
+    if (!record) {
+      return c.json({ error: 'Obstetric history record not found' }, 404);
+    }
 
-  return c.body(null, 204);
-});
+    return c.body(null, 204);
+  });
+}
 
-const obstetricHistoryRoute = {
-  getRoutingPath: () => {
-    app.openapi(createObstetricHistoryRoute, async c => {
-      const data = c.req.valid('json');
-      const [record] = await db
-        .insert(tables.obsHistory)
-        .values(data)
-        .returning();
-      return c.json(record, 201);
-    });
-
-    app.openapi(getObstetricHistoryRoute, async c => {
-      const { id } = c.req.valid('param');
-      const [record] = await db
-        .select()
-        .from(tables.obsHistory)
-        .where(eq(tables.obsHistory.id, id))
-        .execute();
-
-      if (!record) {
-        return c.json({ error: 'Obstetric history record not found' }, 404);
-      }
-
-      return c.json(record);
-    });
-
-    app.openapi(updateObstetricHistoryRoute, async c => {
-      const { id } = c.req.valid('param');
-      const data = c.req.valid('json');
-
-      const [record] = await db
-        .update(tables.obsHistory)
-        .set({ ...data, updatedAt: new Date() })
-        .where(eq(tables.obsHistory.id, id))
-        .returning();
-
-      if (!record) {
-        return c.json({ error: 'Obstetric history record not found' }, 404);
-      }
-
-      return c.json(record);
-    });
-
-    app.openapi(deleteObstetricHistoryRoute, async c => {
-      const { id } = c.req.valid('param');
-      const [record] = await db
-        .delete(tables.obsHistory)
-        .where(eq(tables.obsHistory.id, id))
-        .returning();
-
-      if (!record) {
-        return c.json({ error: 'Obstetric history record not found' }, 404);
-      }
-
-      return c.body(null, 204);
-    });
-  }
-};
-
-export default obstetricHistoryRoute;
+export { createObstetricHistoryHandler, getObstetricHistoryHandler, updateObstetricHistoryHandler, deleteObstetricHistoryHandler }

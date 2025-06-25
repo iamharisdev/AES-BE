@@ -66,25 +66,27 @@ const createProposedPlanRoute = createRoute({
   },
 });
 
-const createProposedPlanHandler = async (c) => {
-  const body = c.req.valid("json");
+const createProposedPlanHandler = () => {
+  app.openapi(createProposedPlanRoute, async (c) => {
+    const body = c.req.valid("json");
 
-  try {
-    const newProposedPlan = await db.insert(proposedPlan).values({
-      emrId: body.emrId,
-      generalPlan: body.generalPlan,
-      medications: body.medications,
-      instructions: body.instructions,
-      nextFollowUpTiming: body.nextFollowUpTiming,
-      nextFollowUpPurpose: body.nextFollowUpPurpose,
-      advisedLabTests: body.advisedLabTests,
-    }).returning();
+    try {
+      const newProposedPlan = await db.insert(proposedPlan).values({
+        emrId: body.emrId,
+        generalPlan: body.generalPlan,
+        medications: body.medications,
+        instructions: body.instructions,
+        nextFollowUpTiming: body.nextFollowUpTiming,
+        nextFollowUpPurpose: body.nextFollowUpPurpose,
+        advisedLabTests: body.advisedLabTests,
+      }).returning();
 
-    return c.json(newProposedPlan[0], 201);
-  } catch (error) {
-    return c.json({ error: 'Failed to create proposed plan' }, 500);
-  }
-};
+      return c.json(newProposedPlan[0], 201);
+    } catch (error) {
+      return c.json({ error: 'Failed to create proposed plan' }, 500);
+    }
+  });
+}
 
 // --- get-proposed-plans-by-emr ---
 const getProposedPlansByEmrRoute = createRoute({
@@ -120,16 +122,18 @@ const getProposedPlansByEmrRoute = createRoute({
   },
 });
 
-const getProposedPlansByEmrHandler = async (c) => {
-  const { emrId } = c.req.valid("param");
+const getProposedPlansByEmrHandler = () => {
+  app.openapi(getProposedPlansByEmrRoute, async (c) => {
+    const { emrId } = c.req.valid("param");
 
-  try {
-    const plans = await db.select().from(proposedPlan).where(eq(proposedPlan.emrId, emrId));
-    return c.json({ plans });
-  } catch (error) {
-    return c.json({ error: 'Failed to fetch proposed plans' }, 500);
-  }
-};
+    try {
+      const plans = await db.select().from(proposedPlan).where(eq(proposedPlan.emrId, emrId));
+      return c.json({ plans });
+    } catch (error) {
+      return c.json({ error: 'Failed to fetch proposed plans' }, 500);
+    }
+  });
+}
 
 // --- get-proposed-plan-by-id ---
 const getProposedPlanByIdRoute = createRoute({
@@ -167,21 +171,23 @@ const getProposedPlanByIdRoute = createRoute({
   },
 });
 
-const getProposedPlanByIdHandler = async (c) => {
-  const { id } = c.req.valid("param");
+const getProposedPlanByIdHandler = () => {
+  app.openapi(getProposedPlanByIdRoute, async (c) => {
+    const { id } = c.req.valid("param");
 
-  try {
-    const plan = await db.select().from(proposedPlan).where(eq(proposedPlan.id, id));
+    try {
+      const plan = await db.select().from(proposedPlan).where(eq(proposedPlan.id, id));
 
-    if (plan.length === 0) {
-      return c.json({ error: 'Proposed plan not found' }, 404);
+      if (plan.length === 0) {
+        return c.json({ error: 'Proposed plan not found' }, 404);
+      }
+
+      return c.json(plan[0]);
+    } catch (error) {
+      return c.json({ error: 'Failed to fetch proposed plan' }, 500);
     }
-
-    return c.json(plan[0]);
-  } catch (error) {
-    return c.json({ error: 'Failed to fetch proposed plan' }, 500);
-  }
-};
+  });
+}
 
 // --- update-proposed-plan ---
 const updateProposedPlanRoute = createRoute({
@@ -226,33 +232,35 @@ const updateProposedPlanRoute = createRoute({
   },
 });
 
-const updateProposedPlanHandler = async (c) => {
-  const { id } = c.req.valid("param");
-  const body = c.req.valid("json");
+const updateProposedPlanHandler = () => {
+  app.openapi(updateProposedPlanRoute, async (c) => {
+    const { id } = c.req.valid("param");
+    const body = c.req.valid("json");
 
-  try {
-    const updatedPlan = await db.update(proposedPlan)
-      .set({
-        generalPlan: body.generalPlan,
-        medications: body.medications,
-        instructions: body.instructions,
-        nextFollowUpTiming: body.nextFollowUpTiming,
-        nextFollowUpPurpose: body.nextFollowUpPurpose,
-        advisedLabTests: body.advisedLabTests,
-        updatedAt: new Date()
-      })
-      .where(eq(proposedPlan.id, id))
-      .returning();
+    try {
+      const updatedPlan = await db.update(proposedPlan)
+        .set({
+          generalPlan: body.generalPlan,
+          medications: body.medications,
+          instructions: body.instructions,
+          nextFollowUpTiming: body.nextFollowUpTiming,
+          nextFollowUpPurpose: body.nextFollowUpPurpose,
+          advisedLabTests: body.advisedLabTests,
+          updatedAt: new Date()
+        })
+        .where(eq(proposedPlan.id, id))
+        .returning();
 
-    if (updatedPlan.length === 0) {
-      return c.json({ error: 'Proposed plan not found' }, 404);
+      if (updatedPlan.length === 0) {
+        return c.json({ error: 'Proposed plan not found' }, 404);
+      }
+
+      return c.json(updatedPlan[0]);
+    } catch (error) {
+      return c.json({ error: 'Failed to update proposed plan' }, 500);
     }
-
-    return c.json(updatedPlan[0]);
-  } catch (error) {
-    return c.json({ error: 'Failed to update proposed plan' }, 500);
-  }
-};
+  });
+}
 
 // --- delete-proposed-plan ---
 const deleteProposedPlanRoute = createRoute({
@@ -284,38 +292,24 @@ const deleteProposedPlanRoute = createRoute({
   },
 });
 
-const deleteProposedPlanHandler = async (c) => {
-  const { id } = c.req.valid("param");
+const deleteProposedPlanHandler = () => {
+  app.openapi(deleteProposedPlanRoute, async (c) => {
+    const { id } = c.req.valid("param");
 
-  try {
-    const deletedPlan = await db.delete(proposedPlan)
-      .where(eq(proposedPlan.id, id))
-      .returning();
+    try {
+      const deletedPlan = await db.delete(proposedPlan)
+        .where(eq(proposedPlan.id, id))
+        .returning();
 
-    if (deletedPlan.length === 0) {
-      return c.json({ error: 'Proposed plan not found' }, 404);
+      if (deletedPlan.length === 0) {
+        return c.json({ error: 'Proposed plan not found' }, 404);
+      }
+
+      return c.json({ message: 'Proposed plan deleted successfully' });
+    } catch (error) {
+      return c.json({ error: 'Failed to delete proposed plan' }, 500);
     }
+  });
+}
 
-    return c.json({ message: 'Proposed plan deleted successfully' });
-  } catch (error) {
-    return c.json({ error: 'Failed to delete proposed plan' }, 500);
-  }
-};
-
-const proposedPlanRoute = {
-  getRoutingPath: () => {
-    app.openapi(createProposedPlanRoute, createProposedPlanHandler);
-    app.openapi(getProposedPlansByEmrRoute, getProposedPlansByEmrHandler);
-    app.openapi(getProposedPlanByIdRoute, getProposedPlanByIdHandler);
-    app.openapi(updateProposedPlanRoute, updateProposedPlanHandler);
-    app.openapi(deleteProposedPlanRoute, deleteProposedPlanHandler);
-  }
-};
-
-export type CreateProposedPlanRoute = typeof createProposedPlanHandler;
-export type GetProposedPlansByEmrRoute = typeof getProposedPlansByEmrHandler;
-export type GetProposedPlanByIdRoute = typeof getProposedPlanByIdHandler;
-export type UpdateProposedPlanRoute = typeof updateProposedPlanHandler;
-export type DeleteProposedPlanRoute = typeof deleteProposedPlanHandler;
-
-export default proposedPlanRoute;
+export { createProposedPlanHandler, getProposedPlansByEmrHandler, getProposedPlanByIdHandler, updateProposedPlanHandler, deleteProposedPlanHandler }

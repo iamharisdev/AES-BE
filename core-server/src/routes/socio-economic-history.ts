@@ -161,67 +161,67 @@ const deleteSocioEconomicHistoryRoute = createRoute({
   }
 });
 
-const socioEconomicHistoryRoute = {
-  getRoutingPath: () => {
-    // Create handler
-    app.openapi(createSocioEconomicHistoryRoute, async c => {
-      const data = c.req.valid('json');
-      const [record] = await db
-        .insert(tables.socioEconomicHistory)
-        .values(data)
-        .returning();
-      return c.json(record, 201);
-    });
+const createSocioEconomicHistoryHandler = () => {
+  app.openapi(createSocioEconomicHistoryRoute, async c => {
+    const data = c.req.valid('json');
+    const [record] = await db
+      .insert(tables.socioEconomicHistory)
+      .values(data)
+      .returning();
+    return c.json(record, 201);
+  });
+}
 
-    // Get handler
-    app.openapi(getSocioEconomicHistoryRoute, async c => {
-      const { id } = c.req.valid('param');
-      const [record] = await db
-        .select()
-        .from(tables.socioEconomicHistory)
-        .where(eq(tables.socioEconomicHistory.id, id))
-        .execute();
+const getSocioEconomicHistoryHandler = () => {
+  app.openapi(getSocioEconomicHistoryRoute, async c => {
+    const { id } = c.req.valid('param');
+    const [record] = await db
+      .select()
+      .from(tables.socioEconomicHistory)
+      .where(eq(tables.socioEconomicHistory.id, id))
+      .execute();
 
-      if (!record) {
-        return c.json({ error: 'Socio economic history record not found' }, 404);
-      }
+    if (!record) {
+      return c.json({ error: 'Socio economic history record not found' }, 404);
+    }
 
-      return c.json(record);
-    });
+    return c.json(record);
+  });
+}
 
-    // Update handler
-    app.openapi(updateSocioEconomicHistoryRoute, async c => {
-      const { id } = c.req.valid('param');
-      const data = c.req.valid('json');
+const updateSocioEconomicHistoryHandler = () => {
+  app.openapi(updateSocioEconomicHistoryRoute, async c => {
+    const { id } = c.req.valid('param');
+    const data = c.req.valid('json');
 
-      const [record] = await db
-        .update(tables.socioEconomicHistory)
-        .set({ ...data, updatedAt: new Date() })
-        .where(eq(tables.socioEconomicHistory.id, id))
-        .returning();
+    const [record] = await db
+      .update(tables.socioEconomicHistory)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(tables.socioEconomicHistory.id, id))
+      .returning();
 
-      if (!record) {
-        return c.json({ error: 'Socio economic history record not found' }, 404);
-      }
+    if (!record) {
+      return c.json({ error: 'Socio economic history record not found' }, 404);
+    }
 
-      return c.json(record);
-    });
+    return c.json(record);
+  });
+}
 
-    // Delete handler
-    app.openapi(deleteSocioEconomicHistoryRoute, async c => {
-      const { id } = c.req.valid('param');
-      const [record] = await db
-        .delete(tables.socioEconomicHistory)
-        .where(eq(tables.socioEconomicHistory.id, id))
-        .returning();
+const deleteSocioEconomicHistoryHandler = () => {
+  app.openapi(deleteSocioEconomicHistoryRoute, async c => {
+    const { id } = c.req.valid('param');
+    const [record] = await db
+      .delete(tables.socioEconomicHistory)
+      .where(eq(tables.socioEconomicHistory.id, id))
+      .returning();
 
-      if (!record) {
-        return c.json({ error: 'Socio economic history record not found' }, 404);
-      }
+    if (!record) {
+      return c.json({ error: 'Socio economic history record not found' }, 404);
+    }
 
-      return c.body(null, 204);
-    });
-  }
-};
+    return c.body(null, 204);
+  });
+}
 
-export default socioEconomicHistoryRoute;
+export { createSocioEconomicHistoryHandler, getSocioEconomicHistoryHandler, updateSocioEconomicHistoryHandler, deleteSocioEconomicHistoryHandler }

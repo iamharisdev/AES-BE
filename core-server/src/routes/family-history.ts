@@ -161,67 +161,67 @@ const deleteFamilyHistoryRoute = createRoute({
   }
 });
 
-const familyHistoryRoute = {
-  getRoutingPath: () => {
-    // Create handler
-    app.openapi(createFamilyHistoryRoute, async c => {
-      const data = c.req.valid('json');
-      const [record] = await db
-        .insert(tables.familyHistory)
-        .values(data)
-        .returning();
-      return c.json(record, 201);
-    });
+const createFamilyHistoryHandler = () => {
+  app.openapi(createFamilyHistoryRoute, async c => {
+    const data = c.req.valid('json');
+    const [record] = await db
+      .insert(tables.familyHistory)
+      .values(data)
+      .returning();
+    return c.json(record, 201);
+  });
+}
 
-    // Get handler
-    app.openapi(getFamilyHistoryRoute, async c => {
-      const { id } = c.req.valid('param');
-      const [record] = await db
-        .select()
-        .from(tables.familyHistory)
-        .where(eq(tables.familyHistory.id, id))
-        .execute();
+const getFamilyHistoryHandler = () => {
+  app.openapi(getFamilyHistoryRoute, async c => {
+    const { id } = c.req.valid('param');
+    const [record] = await db
+      .select()
+      .from(tables.familyHistory)
+      .where(eq(tables.familyHistory.id, id))
+      .execute();
 
-      if (!record) {
-        return c.json({ error: 'Family history record not found' }, 404);
-      }
+    if (!record) {
+      return c.json({ error: 'Family history record not found' }, 404);
+    }
 
-      return c.json(record);
-    });
+    return c.json(record);
+  });
+}
 
-    // Update handler
-    app.openapi(updateFamilyHistoryRoute, async c => {
-      const { id } = c.req.valid('param');
-      const data = c.req.valid('json');
+const updateFamilyHistoryHandler = () => {
+  app.openapi(updateFamilyHistoryRoute, async c => {
+    const { id } = c.req.valid('param');
+    const data = c.req.valid('json');
 
-      const [record] = await db
-        .update(tables.familyHistory)
-        .set({ ...data, updatedAt: new Date() })
-        .where(eq(tables.familyHistory.id, id))
-        .returning();
+    const [record] = await db
+      .update(tables.familyHistory)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(tables.familyHistory.id, id))
+      .returning();
 
-      if (!record) {
-        return c.json({ error: 'Family history record not found' }, 404);
-      }
+    if (!record) {
+      return c.json({ error: 'Family history record not found' }, 404);
+    }
 
-      return c.json(record);
-    });
+    return c.json(record);
+  });
+}
 
-    // Delete handler
-    app.openapi(deleteFamilyHistoryRoute, async c => {
-      const { id } = c.req.valid('param');
-      const [record] = await db
-        .delete(tables.familyHistory)
-        .where(eq(tables.familyHistory.id, id))
-        .returning();
+const deleteFamilyHistoryHandler = () => {
+  app.openapi(deleteFamilyHistoryRoute, async c => {
+    const { id } = c.req.valid('param');
+    const [record] = await db
+      .delete(tables.familyHistory)
+      .where(eq(tables.familyHistory.id, id))
+      .returning();
 
-      if (!record) {
-        return c.json({ error: 'Family history record not found' }, 404);
-      }
+    if (!record) {
+      return c.json({ error: 'Family history record not found' }, 404);
+    }
 
-      return c.body(null, 204);
-    });
-  }
-};
+    return c.body(null, 204);
+  });
+}
 
-export default familyHistoryRoute;
+export { createFamilyHistoryHandler, getFamilyHistoryHandler, updateFamilyHistoryHandler, deleteFamilyHistoryHandler }

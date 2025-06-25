@@ -164,115 +164,67 @@ const deleteFilesRoute = createRoute({
 });
 
 // Create handler
-app.openapi(createFilesRoute, async c => {
-  const data = c.req.valid('json');
-  const [record] = await db.insert(tables.files).values(data).returning();
-  return c.json(record, 201);
-});
+const createFilesHandler = () => {
+  app.openapi(createFilesRoute, async c => {
+    const data = c.req.valid('json');
+    const [record] = await db.insert(tables.files).values(data).returning();
+    return c.json(record, 201);
+  });
+}
 
 // Get handler
-app.openapi(getFilesRoute, async c => {
-  const { id } = c.req.valid('param');
-  const [record] = await db
-    .select()
-    .from(tables.files)
-    .where(eq(tables.files.id, id))
-    .execute();
+const getFilesHandler = () => {
+  app.openapi(getFilesRoute, async c => {
+    const { id } = c.req.valid('param');
+    const [record] = await db
+      .select()
+      .from(tables.files)
+      .where(eq(tables.files.id, id))
+      .execute();
 
-  if (!record) {
-    return c.json({ error: 'File record not found' }, 404);
-  }
+    if (!record) {
+      return c.json({ error: 'File record not found' }, 404);
+    }
 
-  return c.json(record);
-});
+    return c.json(record);
+  });
+}
 
 // Update handler
-app.openapi(updateFilesRoute, async c => {
-  const { id } = c.req.valid('param');
-  const data = c.req.valid('json');
+const updateFilesHandler = () => {
+  app.openapi(updateFilesRoute, async c => {
+    const { id } = c.req.valid('param');
+    const data = c.req.valid('json');
 
-  const [record] = await db
-    .update(tables.files)
-    .set({ ...data, updatedAt: new Date() })
-    .where(eq(tables.files.id, id))
-    .returning();
+    const [record] = await db
+      .update(tables.files)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(tables.files.id, id))
+      .returning();
 
-  if (!record) {
-    return c.json({ error: 'File record not found' }, 404);
-  }
+    if (!record) {
+      return c.json({ error: 'File record not found' }, 404);
+    }
 
-  return c.json(record);
-});
+    return c.json(record);
+  });
+}
 
 // Delete handler
-app.openapi(deleteFilesRoute, async c => {
-  const { id } = c.req.valid('param');
-  const [record] = await db
-    .delete(tables.files)
-    .where(eq(tables.files.id, id))
-    .returning();
+const deleteFilesHandler = () => {
+  app.openapi(deleteFilesRoute, async c => {
+    const { id } = c.req.valid('param');
+    const [record] = await db
+      .delete(tables.files)
+      .where(eq(tables.files.id, id))
+      .returning();
 
-  if (!record) {
-    return c.json({ error: 'File record not found' }, 404);
-  }
+    if (!record) {
+      return c.json({ error: 'File record not found' }, 404);
+    }
 
-  return c.body(null, 204);
-});
+    return c.body(null, 204);
+  });
+}
 
-const filesRoute = {
-  getRoutingPath: () => {
-    app.openapi(createFilesRoute, async c => {
-      const data = c.req.valid('json');
-      const [record] = await db.insert(tables.files).values(data).returning();
-      return c.json(record, 201);
-    });
-
-    app.openapi(getFilesRoute, async c => {
-      const { id } = c.req.valid('param');
-      const [record] = await db
-        .select()
-        .from(tables.files)
-        .where(eq(tables.files.id, id))
-        .execute();
-
-      if (!record) {
-        return c.json({ error: 'File record not found' }, 404);
-      }
-
-      return c.json(record);
-    });
-
-    app.openapi(updateFilesRoute, async c => {
-      const { id } = c.req.valid('param');
-      const data = c.req.valid('json');
-
-      const [record] = await db
-        .update(tables.files)
-        .set({ ...data, updatedAt: new Date() })
-        .where(eq(tables.files.id, id))
-        .returning();
-
-      if (!record) {
-        return c.json({ error: 'File record not found' }, 404);
-      }
-
-      return c.json(record);
-    });
-
-    app.openapi(deleteFilesRoute, async c => {
-      const { id } = c.req.valid('param');
-      const [record] = await db
-        .delete(tables.files)
-        .where(eq(tables.files.id, id))
-        .returning();
-
-      if (!record) {
-        return c.json({ error: 'File record not found' }, 404);
-      }
-
-      return c.body(null, 204);
-    });
-  }
-};
-
-export default filesRoute;
+export { createFilesHandler, getFilesHandler, updateFilesHandler, deleteFilesHandler }

@@ -96,87 +96,89 @@ const registerRoute = createRoute({
   }
 });
 
-const registerHandler = app.openapi(registerRoute, async c => {
-  const details = c.req.valid('json');
+const registerHandler = () => {
+  app.openapi(registerRoute, async c => {
+    const details = c.req.valid('json');
 
-  // Validate role
-  if (!Object.values(UserRole).includes(details.role)) {
-    return c.json({ error: 'Invalid role' }, 400);
-  }
+    // Validate role
+    if (!Object.values(UserRole).includes(details.role)) {
+      return c.json({ error: 'Invalid role' }, 400);
+    }
 
-  // Validate hospitalId based on role
-  if (details.role !== UserRole.SuperAdmin) {
-    if (!details.hospitalId) {
+    // Validate hospitalId based on role
+    if (details.role !== UserRole.SuperAdmin) {
+      if (!details.hospitalId) {
+        return c.json(
+          { error: 'hospitalId is required!' },
+          400
+        );
+      }
+      // Validate hospitalId is a valid UUID
+      if (!z.string().uuid().safeParse(details.hospitalId).success) {
+        return c.json({ error: 'Invalid hospitalId format' }, 400);
+      }
+      // Check that the hospital exists
+      const hospital = await db
+        .select()
+        .from(tables.hospital)
+        .where(eq(tables.hospital.id, details.hospitalId))
+        .then(res => res.at(0));
+
+      if (!hospital) {
+        return c.json({ error: 'Hospital does not exist' }, 404);
+      }
+    }
+
+    // Check if the user exists in the database
+    const user = await db
+      .select()
+      .from(tables.user)
+      .where(eq(tables.user.phoneNumber, details.phoneNumber))
+      .then(user => user.at(0));
+
+    if (user) {
       return c.json(
-        { error: 'hospitalId is required!' },
-        400
+        {
+          error: `Record With Phone Number ${details.phoneNumber} already exists`
+        },
+        409
       );
     }
-    // Validate hospitalId is a valid UUID
-    if (!z.string().uuid().safeParse(details.hospitalId).success) {
-      return c.json({ error: 'Invalid hospitalId format' }, 400);
-    }
-    // Check that the hospital exists
-    const hospital = await db
-      .select()
-      .from(tables.hospital)
-      .where(eq(tables.hospital.id, details.hospitalId))
-      .then(res => res.at(0));
 
-    if (!hospital) {
-      return c.json({ error: 'Hospital does not exist' }, 404);
-    }
-  }
+    const [newRecord] = await db
+      .insert(tables.user)
+      .values({
+        hospitalId: details.hospitalId,
+        name: details.name,
+        phoneNumber: details.phoneNumber,
+        encryptedPassword: (await sha256(details.password)) ?? '',
+        role: details.role
+      })
+      .returning({
+        id: tables.user.id,
+        phoneNumber: tables.user.phoneNumber,
+        name: tables.user.name,
+        role: tables.user.role
+      });
 
-  // Check if the user exists in the database
-  const user = await db
-    .select()
-    .from(tables.user)
-    .where(eq(tables.user.phoneNumber, details.phoneNumber))
-    .then(user => user.at(0));
+    const jwtPayload: JwtPayload = {
+      id: newRecord.id,
+      phoneNumber: newRecord.phoneNumber,
+      name: newRecord.name,
+      role: newRecord.role as UserRole
+    };
 
-  if (user) {
+    const token = await sign(jwtPayload, env.JWT_SECRET!, 'HS256');
+
     return c.json(
       {
-        error: `Record With Phone Number ${details.phoneNumber} already exists`
+        message: 'Account Created',
+        token
       },
-      409
+      200
     );
-  }
-
-  const [newRecord] = await db
-    .insert(tables.user)
-    .values({
-      hospitalId: details.hospitalId,
-      name: details.name,
-      phoneNumber: details.phoneNumber,
-      encryptedPassword: (await sha256(details.password)) ?? '',
-      role: details.role
-    })
-    .returning({
-      id: tables.user.id,
-      phoneNumber: tables.user.phoneNumber,
-      name: tables.user.name,
-      role: tables.user.role
-    });
-
-  const jwtPayload: JwtPayload = {
-    id: newRecord.id,
-    phoneNumber: newRecord.phoneNumber,
-    name: newRecord.name,
-    role: newRecord.role as UserRole
-  };
-
-  const token = await sign(jwtPayload, env.JWT_SECRET!, 'HS256');
-
-  return c.json(
-    {
-      message: 'Account Created',
-      token
-    },
-    200
-  );
-});
+  });
+}
 
 // Login User Schema
 const LoginRequestBodySchema = z.object({
@@ -234,53 +236,55 @@ const loginRoute = createRoute({
   }
 });
 
-const loginHandler = app.openapi(loginRoute, async c => {
-  const details = c.req.valid('json');
+const loginHandler = () => {
+  app.openapi(loginRoute, async c => {
+    const details = c.req.valid('json');
 
-  // Check if the user exists in the database
-  const user = await db
-    .select()
-    .from(tables.user)
-    .where(eq(tables.user.phoneNumber, details.phoneNumber))
-    .then(user => user.at(0));
+    // Check if the user exists in the database
+    const user = await db
+      .select()
+      .from(tables.user)
+      .where(eq(tables.user.phoneNumber, details.phoneNumber))
+      .then(user => user.at(0));
 
-  if (!user) {
-    return c.json({ error: 'Invalid phone number or password' }, 401);
-  }
+    if (!user) {
+      return c.json({ error: 'Invalid phone number or password' }, 401);
+    }
 
-  // Verify password
-  const encryptedPassword = (await sha256(details.password)) ?? '';
-  if (user.encryptedPassword !== encryptedPassword) {
-    return c.json({ error: 'Invalid phone number or password' }, 401);
-  }
+    // Verify password
+    const encryptedPassword = (await sha256(details.password)) ?? '';
+    if (user.encryptedPassword !== encryptedPassword) {
+      return c.json({ error: 'Invalid phone number or password' }, 401);
+    }
 
-  const jwtPayload: JwtPayload = {
-    id: user.id,
-    phoneNumber: details.phoneNumber,
-    name: user.name,
-    role: user.role as UserRole
-  };
+    const jwtPayload: JwtPayload = {
+      id: user.id,
+      phoneNumber: details.phoneNumber,
+      name: user.name,
+      role: user.role as UserRole
+    };
 
-  const token = await sign(jwtPayload, env.JWT_SECRET!, 'HS256');
-  return c.json(
-    {
-      message: 'Login Successful',
-      token,
-      user: {
-        name: user.name,
-        phoneNumber: user.phoneNumber,
-        role: user.role,
-        id: user.id
-      }
-    },
-    200
-  );
-});
+    const token = await sign(jwtPayload, env.JWT_SECRET!, 'HS256');
+    return c.json(
+      {
+        message: 'Login Successful',
+        token,
+        user: {
+          name: user.name,
+          phoneNumber: user.phoneNumber,
+          role: user.role,
+          id: user.id
+        }
+      },
+      200
+    );
+  });
+}
 
 // Get All Users Schema
 const userSchema = z.object({
   id: z.string().openapi({ example: 'uuid-1234' }),
-  hospitalId: z.string().openapi({ example: 'uuid-1234' }),
+  hospitalId: z.string().nullable().openapi({ example: 'uuid-1234' }),
   name: z.string().openapi({ example: 'Nazia' }),
   phoneNumber: z.string().openapi({ example: '03001234567' })
 });
@@ -305,10 +309,12 @@ const getUsersRoute = createRoute({
   }
 });
 
-const getUsersHandler = app.openapi(getUsersRoute, async c => {
-  const users = await db.select().from(tables.user).execute();
-  return c.json(users, 200);
-});
+const getUsersHandler = () => {
+  app.openapi(getUsersRoute, async c => {
+    const users = await db.select().from(tables.user).execute();
+    return c.json(users, 200);
+  });
+}
 
 // Get User Info Schema
 const getUserInfoRoute = createRoute({
@@ -326,7 +332,7 @@ const getUserInfoRoute = createRoute({
           schema: z.object({
             name: z.string(),
             phoneNumber: z.string(),
-            hospitalId: z.string()
+            hospitalId: z.string().nullable()
           })
         }
       },
@@ -345,37 +351,32 @@ const getUserInfoRoute = createRoute({
   }
 });
 
-const getUserInfoHandler = app.openapi(getUserInfoRoute, async c => {
-  const { phoneNumber } = c.get('jwtPayload');
+const getUserInfoHandler = () => {
+  app.openapi(getUserInfoRoute, async c => {
+    const { phoneNumber } = c.get('jwtPayload');
 
-  const user = await db
-    .select()
-    .from(tables.user)
-    .where(eq(tables.user.phoneNumber, phoneNumber))
-    .then(res => res.at(0));
+    const user = await db
+      .select()
+      .from(tables.user)
+      .where(eq(tables.user.phoneNumber, phoneNumber))
+      .then(res => res.at(0));
 
-  if (!user) {
+    if (!user) {
+      return c.json(
+        { error: `No user record exists with phone number ${phoneNumber}` },
+        404
+      );
+    }
+
     return c.json(
-      { error: `No user record exists with phone number ${phoneNumber}` },
-      404
+      {
+        name: user.name,
+        phoneNumber: user.phoneNumber,
+        hospitalId: user.hospitalId
+      },
+      200
     );
-  }
+  });
+}
 
-  return c.json(
-    {
-      name: user.name,
-      phoneNumber: user.phoneNumber,
-      hospitalId: user.hospitalId
-    },
-    200
-  );
-});
-
-export type RegisterUserRoute = typeof registerHandler;
-export type LoginUserRoute = typeof loginHandler;
-export type GetUsersRoute = typeof getUsersHandler;
-export type GetUserInfoRoute = typeof getUserInfoHandler;
-
-export { registerRoute, loginRoute, getUsersRoute, getUserInfoRoute };
-
-export default registerRoute;
+export  {getUserInfoHandler, getUsersHandler, loginHandler, registerHandler}

@@ -157,63 +157,67 @@ const deletePresentingComplaintRoute = createRoute({
   }
 });
 
-const presentingComplaintRoute = {
-  getRoutingPath: () => {
-    app.openapi(createPresentingComplaintRoute, async c => {
-      const data = c.req.valid('json');
-      const [complaint] = await db
-        .insert(tables.presentingComplaint)
-        .values(data)
-        .returning();
-      return c.json(complaint, 201);
-    });
+const createPresentingComplaintHandler = () => {
+  app.openapi(createPresentingComplaintRoute, async c => {
+    const data = c.req.valid('json');
+    const [complaint] = await db
+      .insert(tables.presentingComplaint)
+      .values(data)
+      .returning();
+    return c.json(complaint, 201);
+  });
+}
 
-    app.openapi(getPresentingComplaintRoute, async c => {
-      const { id } = c.req.valid('param');
-      const [complaint] = await db
-        .select()
-        .from(tables.presentingComplaint)
-        .where(eq(tables.presentingComplaint.id, id))
-        .execute();
+const getPresentingComplaintHandler = () => {
+  app.openapi(getPresentingComplaintRoute, async c => {
+    const { id } = c.req.valid('param');
+    const [complaint] = await db
+      .select()
+      .from(tables.presentingComplaint)
+      .where(eq(tables.presentingComplaint.id, id))
+      .execute();
 
-      if (!complaint) {
-        return c.json({ error: 'Presenting complaint not found' }, 404);
-      }
+    if (!complaint) {
+      return c.json({ error: 'Presenting complaint not found' }, 404);
+    }
 
-      return c.json(complaint, 200);
-    });
+    return c.json(complaint, 200);
+  });
+}
 
-    app.openapi(updatePresentingComplaintRoute, async c => {
-      const { id } = c.req.valid('param');
-      const data = c.req.valid('json');
+const updatePresentingComplaintHandler = () => {
+  app.openapi(updatePresentingComplaintRoute, async c => {
+    const { id } = c.req.valid('param');
+    const data = c.req.valid('json');
 
-      const [complaint] = await db
-        .update(tables.presentingComplaint)
-        .set({ ...data, updatedAt: new Date() })
-        .where(eq(tables.presentingComplaint.id, id))
-        .returning();
+    const [complaint] = await db
+      .update(tables.presentingComplaint)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(tables.presentingComplaint.id, id))
+      .returning();
 
-      if (!complaint) {
-        return c.json({ error: 'Presenting complaint not found' }, 404);
-      }
+    if (!complaint) {
+      return c.json({ error: 'Presenting complaint not found' }, 404);
+    }
 
-      return c.json(complaint, 200);
-    });
+    return c.json(complaint, 200);
+  });
+}
 
-    app.openapi(deletePresentingComplaintRoute, async c => {
-      const { id } = c.req.valid('param');
-      const [complaint] = await db
-        .delete(tables.presentingComplaint)
-        .where(eq(tables.presentingComplaint.id, id))
-        .returning();
+const deletePresentingComplaintHandler = () => {
+  app.openapi(deletePresentingComplaintRoute, async c => {
+    const { id } = c.req.valid('param');
+    const [complaint] = await db
+      .delete(tables.presentingComplaint)
+      .where(eq(tables.presentingComplaint.id, id))
+      .returning();
 
-      if (!complaint) {
-        return c.json({ error: 'Presenting complaint not found' }, 404);
-      }
+    if (!complaint) {
+      return c.json({ error: 'Presenting complaint not found' }, 404);
+    }
 
-      return c.body(null, 204);
-    });
-  }
-};
+    return c.body(null, 204);
+  });
+}
 
-export default presentingComplaintRoute;
+export { createPresentingComplaintHandler, getPresentingComplaintHandler, updatePresentingComplaintHandler, deletePresentingComplaintHandler }

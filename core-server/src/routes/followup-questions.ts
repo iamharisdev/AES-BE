@@ -161,122 +161,67 @@ const deleteFollowupQuestionsRoute = createRoute({
   }
 });
 
-// Create handler
-app.openapi(createFollowupQuestionsRoute, async c => {
-  const data = c.req.valid('json');
-  const [record] = await db
-    .insert(tables.followupQuestions)
-    .values(data)
-    .returning();
-  return c.json(record, 201);
-});
+const createFollowupQuestionsHandler = () => {
+  app.openapi(createFollowupQuestionsRoute, async c => {
+    const data = c.req.valid('json');
+    const [record] = await db
+      .insert(tables.followupQuestions)
+      .values(data)
+      .returning();
+    return c.json(record, 201);
+  });
+}
 
-// Get handler
-app.openapi(getFollowupQuestionsRoute, async c => {
-  const { id } = c.req.valid('param');
-  const [record] = await db
-    .select()
-    .from(tables.followupQuestions)
-    .where(eq(tables.followupQuestions.id, id))
-    .execute();
+const getFollowupQuestionsHandler = () => {
+  app.openapi(getFollowupQuestionsRoute, async c => {
+    const { id } = c.req.valid('param');
+    const [record] = await db
+      .select()
+      .from(tables.followupQuestions)
+      .where(eq(tables.followupQuestions.id, id))
+      .execute();
 
-  if (!record) {
-    return c.json({ error: 'Followup question record not found' }, 404);
-  }
+    if (!record) {
+      return c.json({ error: 'Followup question record not found' }, 404);
+    }
 
-  return c.json(record);
-});
+    return c.json(record);
+  });
+}
 
-// Update handler
-app.openapi(updateFollowupQuestionsRoute, async c => {
-  const { id } = c.req.valid('param');
-  const data = c.req.valid('json');
+const updateFollowupQuestionsHandler = () => {
+  app.openapi(updateFollowupQuestionsRoute, async c => {
+    const { id } = c.req.valid('param');
+    const data = c.req.valid('json');
 
-  const [record] = await db
-    .update(tables.followupQuestions)
-    .set({ ...data, updatedAt: new Date() })
-    .where(eq(tables.followupQuestions.id, id))
-    .returning();
+    const [record] = await db
+      .update(tables.followupQuestions)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(tables.followupQuestions.id, id))
+      .returning();
 
-  if (!record) {
-    return c.json({ error: 'Followup question record not found' }, 404);
-  }
+    if (!record) {
+      return c.json({ error: 'Followup question record not found' }, 404);
+    }
 
-  return c.json(record);
-});
+    return c.json(record);
+  });
+}
 
-// Delete handler
-app.openapi(deleteFollowupQuestionsRoute, async c => {
-  const { id } = c.req.valid('param');
-  const [record] = await db
-    .delete(tables.followupQuestions)
-    .where(eq(tables.followupQuestions.id, id))
-    .returning();
+const deleteFollowupQuestionsHandler = () => {
+  app.openapi(deleteFollowupQuestionsRoute, async c => {
+    const { id } = c.req.valid('param');
+    const [record] = await db
+      .delete(tables.followupQuestions)
+      .where(eq(tables.followupQuestions.id, id))
+      .returning();
 
-  if (!record) {
-    return c.json({ error: 'Followup question record not found' }, 404);
-  }
+    if (!record) {
+      return c.json({ error: 'Followup question record not found' }, 404);
+    }
 
-  return c.body(null, 204);
-});
+    return c.body(null, 204);
+  });
+}
 
-const followupQuestionsRoute = {
-  getRoutingPath: () => {
-    app.openapi(createFollowupQuestionsRoute, async c => {
-      const data = c.req.valid('json');
-      const [record] = await db
-        .insert(tables.followupQuestions)
-        .values(data)
-        .returning();
-      return c.json(record, 201);
-    });
-
-    app.openapi(getFollowupQuestionsRoute, async c => {
-      const { id } = c.req.valid('param');
-      const [record] = await db
-        .select()
-        .from(tables.followupQuestions)
-        .where(eq(tables.followupQuestions.id, id))
-        .execute();
-
-      if (!record) {
-        return c.json({ error: 'Followup question record not found' }, 404);
-      }
-
-      return c.json(record);
-    });
-
-    app.openapi(updateFollowupQuestionsRoute, async c => {
-      const { id } = c.req.valid('param');
-      const data = c.req.valid('json');
-
-      const [record] = await db
-        .update(tables.followupQuestions)
-        .set({ ...data, updatedAt: new Date() })
-        .where(eq(tables.followupQuestions.id, id))
-        .returning();
-
-      if (!record) {
-        return c.json({ error: 'Followup question record not found' }, 404);
-      }
-
-      return c.json(record);
-    });
-
-    app.openapi(deleteFollowupQuestionsRoute, async c => {
-      const { id } = c.req.valid('param');
-      const [record] = await db
-        .delete(tables.followupQuestions)
-        .where(eq(tables.followupQuestions.id, id))
-        .returning();
-
-      if (!record) {
-        return c.json({ error: 'Followup question record not found' }, 404);
-      }
-
-      return c.body(null, 204);
-    });
-  }
-};
-
-export default followupQuestionsRoute;
+export { createFollowupQuestionsHandler, getFollowupQuestionsHandler, updateFollowupQuestionsHandler, deleteFollowupQuestionsHandler }

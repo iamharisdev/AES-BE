@@ -159,67 +159,67 @@ const deleteGynecologicalHistoryRoute = createRoute({
   }
 });
 
-const gynecologicalHistoryRoute = {
-  getRoutingPath: () => {
-    // Create handler
-    app.openapi(createGynecologicalHistoryRoute, async c => {
-      const data = c.req.valid('json');
-      const [record] = await db
-        .insert(tables.gynecologicalHistory)
-        .values(data)
-        .returning();
-      return c.json(record, 201);
-    });
+const createGynecologicalHistoryHandler = () => {
+  app.openapi(createGynecologicalHistoryRoute, async c => {
+    const data = c.req.valid('json');
+    const [record] = await db
+      .insert(tables.gynecologicalHistory)
+      .values(data)
+      .returning();
+    return c.json(record, 201);
+  });
+}
 
-    // Get handler
-    app.openapi(getGynecologicalHistoryRoute, async c => {
-      const { id } = c.req.valid('param');
-      const [record] = await db
-        .select()
-        .from(tables.gynecologicalHistory)
-        .where(eq(tables.gynecologicalHistory.id, id))
-        .execute();
+const getGynecologicalHistoryHandler = () => {
+  app.openapi(getGynecologicalHistoryRoute, async c => {
+    const { id } = c.req.valid('param');
+    const [record] = await db
+      .select()
+      .from(tables.gynecologicalHistory)
+      .where(eq(tables.gynecologicalHistory.id, id))
+      .execute();
 
-      if (!record) {
-        return c.json({ error: 'Gynecological history record not found' }, 404);
-      }
+    if (!record) {
+      return c.json({ error: 'Gynecological history record not found' }, 404);
+    }
 
-      return c.json(record);
-    });
+    return c.json(record);
+  });
+}
 
-    // Update handler
-    app.openapi(updateGynecologicalHistoryRoute, async c => {
-      const { id } = c.req.valid('param');
-      const data = c.req.valid('json');
+const updateGynecologicalHistoryHandler = () => {
+  app.openapi(updateGynecologicalHistoryRoute, async c => {
+    const { id } = c.req.valid('param');
+    const data = c.req.valid('json');
 
-      const [record] = await db
-        .update(tables.gynecologicalHistory)
-        .set({ ...data, updatedAt: new Date() })
-        .where(eq(tables.gynecologicalHistory.id, id))
-        .returning();
+    const [record] = await db
+      .update(tables.gynecologicalHistory)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(tables.gynecologicalHistory.id, id))
+      .returning();
 
-      if (!record) {
-        return c.json({ error: 'Gynecological history record not found' }, 404);
-      }
+    if (!record) {
+      return c.json({ error: 'Gynecological history record not found' }, 404);
+    }
 
-      return c.json(record);
-    });
+    return c.json(record);
+  });
+}
 
-    // Delete handler
-    app.openapi(deleteGynecologicalHistoryRoute, async c => {
-      const { id } = c.req.valid('param');
-      const [record] = await db
-        .delete(tables.gynecologicalHistory)
-        .where(eq(tables.gynecologicalHistory.id, id))
-        .returning();
+const deleteGynecologicalHistoryHandler = () => {
+  app.openapi(deleteGynecologicalHistoryRoute, async c => {
+    const { id } = c.req.valid('param');
+    const [record] = await db
+      .delete(tables.gynecologicalHistory)
+      .where(eq(tables.gynecologicalHistory.id, id))
+      .returning();
 
-      if (!record) {
-        return c.json({ error: 'Gynecological history record not found' }, 404);
-      }
+    if (!record) {
+      return c.json({ error: 'Gynecological history record not found' }, 404);
+    }
 
-      return c.body(null, 204);
-    });
-  }
-};
+    return c.body(null, 204);
+  });
+}
 
-export default gynecologicalHistoryRoute;
+export { createGynecologicalHistoryHandler, getGynecologicalHistoryHandler, updateGynecologicalHistoryHandler, deleteGynecologicalHistoryHandler }

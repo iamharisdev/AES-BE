@@ -157,67 +157,67 @@ const deleteSurgicalHistoryRoute = createRoute({
   }
 });
 
-const surgicalHistoryRoute = {
-  getRoutingPath: () => {
-    // Create handler
-    app.openapi(createSurgicalHistoryRoute, async c => {
-      const data = c.req.valid('json');
-      const [record] = await db
-        .insert(tables.surgicalHistory)
-        .values(data)
-        .returning();
-      return c.json(record, 201);
-    });
+const createSurgicalHistoryHandler = () => {
+  app.openapi(createSurgicalHistoryRoute, async c => {
+    const data = c.req.valid('json');
+    const [record] = await db
+      .insert(tables.surgicalHistory)
+      .values(data)
+      .returning();
+    return c.json(record, 201);
+  });
+}
 
-    // Get handler
-    app.openapi(getSurgicalHistoryRoute, async c => {
-      const { id } = c.req.valid('param');
-      const [record] = await db
-        .select()
-        .from(tables.surgicalHistory)
-        .where(eq(tables.surgicalHistory.id, id))
-        .execute();
+const getSurgicalHistoryHandler = () => {
+  app.openapi(getSurgicalHistoryRoute, async c => {
+    const { id } = c.req.valid('param');
+    const [record] = await db
+      .select()
+      .from(tables.surgicalHistory)
+      .where(eq(tables.surgicalHistory.id, id))
+      .execute();
 
-      if (!record) {
-        return c.json({ error: 'Surgical history record not found' }, 404);
-      }
+    if (!record) {
+      return c.json({ error: 'Surgical history record not found' }, 404);
+    }
 
-      return c.json(record);
-    });
+    return c.json(record);
+  });
+}
 
-    // Update handler
-    app.openapi(updateSurgicalHistoryRoute, async c => {
-      const { id } = c.req.valid('param');
-      const data = c.req.valid('json');
+const updateSurgicalHistoryHandler = () => {
+  app.openapi(updateSurgicalHistoryRoute, async c => {
+    const { id } = c.req.valid('param');
+    const data = c.req.valid('json');
 
-      const [record] = await db
-        .update(tables.surgicalHistory)
-        .set({ ...data, updatedAt: new Date() })
-        .where(eq(tables.surgicalHistory.id, id))
-        .returning();
+    const [record] = await db
+      .update(tables.surgicalHistory)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(tables.surgicalHistory.id, id))
+      .returning();
 
-      if (!record) {
-        return c.json({ error: 'Surgical history record not found' }, 404);
-      }
+    if (!record) {
+      return c.json({ error: 'Surgical history record not found' }, 404);
+    }
 
-      return c.json(record);
-    });
+    return c.json(record);
+  });
+}
 
-    // Delete handler
-    app.openapi(deleteSurgicalHistoryRoute, async c => {
-      const { id } = c.req.valid('param');
-      const [record] = await db
-        .delete(tables.surgicalHistory)
-        .where(eq(tables.surgicalHistory.id, id))
-        .returning();
+const deleteSurgicalHistoryHandler = () => {
+  app.openapi(deleteSurgicalHistoryRoute, async c => {
+    const { id } = c.req.valid('param');
+    const [record] = await db
+      .delete(tables.surgicalHistory)
+      .where(eq(tables.surgicalHistory.id, id))
+      .returning();
 
-      if (!record) {
-        return c.json({ error: 'Surgical history record not found' }, 404);
-      }
+    if (!record) {
+      return c.json({ error: 'Surgical history record not found' }, 404);
+    }
 
-      return c.body(null, 204);
-    });
-  }
-};
+    return c.body(null, 204);
+  });
+}
 
-export default surgicalHistoryRoute;
+export { createSurgicalHistoryHandler, getSurgicalHistoryHandler, updateSurgicalHistoryHandler, deleteSurgicalHistoryHandler }

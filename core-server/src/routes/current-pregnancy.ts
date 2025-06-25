@@ -175,67 +175,67 @@ const deleteCurrentPregnancyRoute = createRoute({
   }
 });
 
-const currentPregnancyRoute = {
-  getRoutingPath: () => {
-    // Create handler
-    app.openapi(createCurrentPregnancyRoute, async c => {
-      const data = c.req.valid('json');
-      const [record] = await db
-        .insert(tables.currentPregnancy)
-        .values(data)
-        .returning();
-      return c.json(record, 201);
-    });
+const createCurrentPregnancyHandler = () => {
+  app.openapi(createCurrentPregnancyRoute, async c => {
+    const data = c.req.valid('json');
+    const [record] = await db
+      .insert(tables.currentPregnancy)
+      .values(data)
+      .returning();
+    return c.json(record, 201);
+  });
+}
 
-    // Get handler
-    app.openapi(getCurrentPregnancyRoute, async c => {
-      const { id } = c.req.valid('param');
-      const [record] = await db
-        .select()
-        .from(tables.currentPregnancy)
-        .where(eq(tables.currentPregnancy.id, id))
-        .execute();
+const getCurrentPregnancyHandler = () => {
+  app.openapi(getCurrentPregnancyRoute, async c => {
+    const { id } = c.req.valid('param');
+    const [record] = await db
+      .select()
+      .from(tables.currentPregnancy)
+      .where(eq(tables.currentPregnancy.id, id))
+      .execute();
 
-      if (!record) {
-        return c.json({ error: 'Current pregnancy record not found' }, 404);
-      }
+    if (!record) {
+      return c.json({ error: 'Current pregnancy record not found' }, 404);
+    }
 
-      return c.json(record);
-    });
+    return c.json(record);
+  });
+}
 
-    // Update handler
-    app.openapi(updateCurrentPregnancyRoute, async c => {
-      const { id } = c.req.valid('param');
-      const data = c.req.valid('json');
+const updateCurrentPregnancyHandler = () => {
+  app.openapi(updateCurrentPregnancyRoute, async c => {
+    const { id } = c.req.valid('param');
+    const data = c.req.valid('json');
 
-      const [record] = await db
-        .update(tables.currentPregnancy)
-        .set({ ...data, updatedAt: new Date() })
-        .where(eq(tables.currentPregnancy.id, id))
-        .returning();
+    const [record] = await db
+      .update(tables.currentPregnancy)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(tables.currentPregnancy.id, id))
+      .returning();
 
-      if (!record) {
-        return c.json({ error: 'Current pregnancy record not found' }, 404);
-      }
+    if (!record) {
+      return c.json({ error: 'Current pregnancy record not found' }, 404);
+    }
 
-      return c.json(record);
-    });
+    return c.json(record);
+  });
+}
 
-    // Delete handler
-    app.openapi(deleteCurrentPregnancyRoute, async c => {
-      const { id } = c.req.valid('param');
-      const [record] = await db
-        .delete(tables.currentPregnancy)
-        .where(eq(tables.currentPregnancy.id, id))
-        .returning();
+const deleteCurrentPregnancyHandler = () => {
+  app.openapi(deleteCurrentPregnancyRoute, async c => {
+    const { id } = c.req.valid('param');
+    const [record] = await db
+      .delete(tables.currentPregnancy)
+      .where(eq(tables.currentPregnancy.id, id))
+      .returning();
 
-      if (!record) {
-        return c.json({ error: 'Current pregnancy record not found' }, 404);
-      }
+    if (!record) {
+      return c.json({ error: 'Current pregnancy record not found' }, 404);
+    }
 
-      return c.body(null, 204);
-    });
-  }
-};
+    return c.body(null, 204);
+  });
+}
 
-export default currentPregnancyRoute;
+export { createCurrentPregnancyHandler, getCurrentPregnancyHandler, updateCurrentPregnancyHandler, deleteCurrentPregnancyHandler }

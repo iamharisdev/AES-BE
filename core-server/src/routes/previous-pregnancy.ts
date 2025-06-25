@@ -175,67 +175,68 @@ const deletePreviousPregnancyRoute = createRoute({
   }
 });
 
-const previousPregnancyRoute = {
-  getRoutingPath: () => {
-    // Create handler
-    app.openapi(createPreviousPregnancyRoute, async c => {
-      const data = c.req.valid('json');
-      const [record] = await db
-        .insert(tables.previousPregnancy)
-        .values(data)
-        .returning();
-      return c.json(record, 201);
-    });
+const createPreviousPregnancyHandler = () => {
+  app.openapi(createPreviousPregnancyRoute, async c => {
+    const data = c.req.valid('json');
+    const [record] = await db
+      .insert(tables.previousPregnancy)
+      .values(data)
+      .returning();
+    return c.json(record, 201);
+  });
+}
 
-    // Get handler
-    app.openapi(getPreviousPregnancyRoute, async c => {
-      const { id } = c.req.valid('param');
-      const [record] = await db
-        .select()
-        .from(tables.previousPregnancy)
-        .where(eq(tables.previousPregnancy.id, id))
-        .execute();
+const getPreviousPregnancyHandler = () => {
+  app.openapi(getPreviousPregnancyRoute, async c => {
+    const { id } = c.req.valid('param');
+    const [record] = await db
+      .select()
+      .from(tables.previousPregnancy)
+      .where(eq(tables.previousPregnancy.id, id))
+      .execute();
 
-      if (!record) {
-        return c.json({ error: 'Previous pregnancy record not found' }, 404);
-      }
+    if (!record) {
+      return c.json({ error: 'Previous pregnancy record not found' }, 404);
+    }
 
-      return c.json(record);
-    });
+    return c.json(record);
+  });
+}
 
-    // Update handler
-    app.openapi(updatePreviousPregnancyRoute, async c => {
-      const { id } = c.req.valid('param');
-      const data = c.req.valid('json');
+const updatePreviousPregnancyHandler = () => {
+  app.openapi(updatePreviousPregnancyRoute, async c => {
+    const { id } = c.req.valid('param');
+    const data = c.req.valid('json');
 
-      const [record] = await db
-        .update(tables.previousPregnancy)
-        .set({ ...data, updatedAt: new Date() })
-        .where(eq(tables.previousPregnancy.id, id))
-        .returning();
+    const [record] = await db
+      .update(tables.previousPregnancy)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(tables.previousPregnancy.id, id))
+      .returning();
 
-      if (!record) {
-        return c.json({ error: 'Previous pregnancy record not found' }, 404);
-      }
+    if (!record) {
+      return c.json({ error: 'Previous pregnancy record not found' }, 404);
+    }
 
-      return c.json(record);
-    });
+    return c.json(record);
+  });
+}
 
-    // Delete handler
-    app.openapi(deletePreviousPregnancyRoute, async c => {
-      const { id } = c.req.valid('param');
-      const [record] = await db
-        .delete(tables.previousPregnancy)
-        .where(eq(tables.previousPregnancy.id, id))
-        .returning();
+const deletePreviousPregnancyHandler = () => {
+  app.openapi(deletePreviousPregnancyRoute, async c => {
+    const { id } = c.req.valid('param');
+    const [record] = await db
+      .delete(tables.previousPregnancy)
+      .where(eq(tables.previousPregnancy.id, id))
+      .returning();
 
-      if (!record) {
-        return c.json({ error: 'Previous pregnancy record not found' }, 404);
-      }
+    if (!record) {
+      return c.json({ error: 'Previous pregnancy record not found' }, 404);
+    }
 
-      return c.body(null, 204);
-    });
-  }
-};
+    return c.body(null, 204);
+  });
+}
 
-export default previousPregnancyRoute;
+
+export { createPreviousPregnancyHandler, getPreviousPregnancyHandler, updatePreviousPregnancyHandler, deletePreviousPregnancyHandler }

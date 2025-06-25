@@ -74,43 +74,45 @@ const searchPatientsRoute = createRoute({
   },
 });
 
-const searchPatientsHandler = app.openapi(searchPatientsRoute, async (c) => {
-  const { searchKey } = c.req.valid("query");
-  let patients;
+const searchPatientsHandler = () => {
+  app.openapi(searchPatientsRoute, async (c) => {
+    const { searchKey } = c.req.valid("query");
+    let patients;
 
-  if (searchKey && searchKey.trim().length >= 3) {
-    patients = await db
-      .select()
-      .from(tables.patient)
-      .where(
-        or(
-          ilike(tables.patient.name, `%${searchKey}%`),
-          ilike(tables.patient.phoneNumber, `%${searchKey}%`),
-          ilike(tables.patient.cnic, `%${searchKey}%`)
+    if (searchKey && searchKey.trim().length >= 3) {
+      patients = await db
+        .select()
+        .from(tables.patient)
+        .where(
+          or(
+            ilike(tables.patient.name, `%${searchKey}%`),
+            ilike(tables.patient.phoneNumber, `%${searchKey}%`),
+            ilike(tables.patient.cnic, `%${searchKey}%`)
+          )
         )
-      )
-      .orderBy(desc(tables.patient.createdAt)) // 👈 sort by latest
-      .limit(50)
-      .execute();
+        .orderBy(desc(tables.patient.createdAt)) // 👈 sort by latest
+        .limit(50)
+        .execute();
 
-    if (patients.length === 0) {
-      return c.json(
-        { error: "No patients found for the given search key" },
-        404
-      );
+      if (patients.length === 0) {
+        return c.json(
+          { error: "No patients found for the given search key" },
+          404
+        );
+      }
+    } else {
+      // Return initial 20 records
+      patients = await db
+        .select()
+        .from(tables.patient)
+        .orderBy(desc(tables.patient.createdAt)) // 👈 sort by latest
+        .limit(20)
+        .execute();
     }
-  } else {
-    // Return initial 20 records
-    patients = await db
-      .select()
-      .from(tables.patient)
-      .orderBy(desc(tables.patient.createdAt)) // 👈 sort by latest
-      .limit(20)
-      .execute();
-  }
 
-  return c.json(patients, 200);
-});
+    return c.json(patients, 200);
+  });
+}
 
 // Get Patient Info Schema
 const SuccessResponseSchema = z.object({
@@ -161,24 +163,26 @@ const getPatientInfoRoute = createRoute({
   },
 });
 
-const getPatientInfoHandler = app.openapi(getPatientInfoRoute, async (c) => {
-  const { phoneNumber } = c.req.valid('param');
+const getPatientInfoHandler = () => {
+  app.openapi(getPatientInfoRoute, async (c) => {
+    const { phoneNumber } = c.req.valid('param');
 
-  // Check if the patient record already exists
-  const patient = await db
-    .select()
-    .from(tables.patient)
-    .where(eq(tables.patient.phoneNumber, phoneNumber))
-    .then((res) => res.at(0));
+    // Check if the patient record already exists
+    const patient = await db
+      .select()
+      .from(tables.patient)
+      .where(eq(tables.patient.phoneNumber, phoneNumber))
+      .then((res) => res.at(0));
 
-  if (!patient) {
-    return c.json({ error: `No Patient Info Record found with phone number ${phoneNumber}` }, 404);
-  }
+    if (!patient) {
+      return c.json({ error: `No Patient Info Record found with phone number ${phoneNumber}` }, 404);
+    }
 
-  const { ...response } = patient;
+    const { ...response } = patient;
 
-  return c.json(response, 200);
-});
+    return c.json(response, 200);
+  });
+}
 
 // Upload Voice Note Schema
 const UploadVoiceNoteSuccessResponseSchema = z.object({
@@ -255,80 +259,84 @@ const uploadVoiceNoteRoute = createRoute({
   },
 });
 
-const uploadVoiceNoteHandler = app.openapi(uploadVoiceNoteRoute, async (c) => {
-  try {
-    const { patientId } = c.req.valid("param");
-    const formData = await c.req.formData();
-    const voiceNote = formData.get("voiceNote");
+const uploadVoiceNoteHandler = () => {
+  app.openapi(uploadVoiceNoteRoute, async c => {
+    try {
+      const { patientId } = c.req.valid('param');
+      const formData = await c.req.formData();
+      const voiceNote = formData.get('voiceNote');
 
-    if (!voiceNote || !(voiceNote instanceof File)) {
-      return c.json({ error: "No voice note file provided" }, 400);
-    }
-
-    // Get the patient by ID
-    const patient = await db
-      .select()
-      .from(tables.patient)
-      .where(eq(tables.patient.id, patientId))
-      .execute()
-      .then((res) => res[0]);
-
-    if (!patient) {
-      return c.json({ error: "Patient not found" }, 404);
-    }
-
-    // Check if the user has permission to upload for this patient
-    const { role, phoneNumber } = c.get("jwtPayload");
-
-    // If user is a doctor, they can upload for any patient
-    // If user is a patient, they can only upload for themselves
-    if (role === UserRole.Patient && patient.phoneNumber !== phoneNumber) {
-      return c.json(
-        {
-          error:
-            "You do not have permission to upload voice notes for this patient",
-        },
-        403
-      );
-    }
-
-    // Generate a unique filename with patient ID as folder and date-time
-    const fileExtension = voiceNote.name.split(".").pop();
-    const now = new Date();
-    const dateTimeStr = now
-      .toISOString()
-      .replace(/[:.]/g, "-")
-      .substring(0, 19);
-    const fileName = `${
-      patient.id
-    }/${dateTimeStr}_${ulid()}.${fileExtension}`;
-
-    // Upload to Google Cloud Storage
-    const file = bucket.file(fileName);
-    const buffer = await voiceNote.arrayBuffer();
-    await file.save(Buffer.from(buffer), {
-      metadata: {
-        contentType: voiceNote.type
+      if (!voiceNote || !(voiceNote instanceof File)) {
+        return c.json({ error: 'No voice note file provided' }, 400);
       }
-    });
 
-    // Get the public URL
-    const publicUrl = `https://storage.cloud.google.com/${bucketName}/${fileName}`;
-    // Add the new voice note URL to the array
-    const currentVoiceNotes = Array.isArray(patient.voiceNotes) ? patient.voiceNotes : [];
-    const updatedVoiceNotes = [...currentVoiceNotes, publicUrl];
-    await db
-      .update(tables.patient)
-      .set({ voiceNotes: updatedVoiceNotes })
-      .where(eq(tables.patient.id, patientId))
-      .execute();
+      // Get the patient by ID
+      const patient = await db
+        .select()
+        .from(tables.patient)
+        .where(eq(tables.patient.id, patientId))
+        .execute()
+        .then(res => res[0]);
 
-    return c.json({ voiceNoteUrl: publicUrl }, 200);
-  } catch (error) {
-    console.error("Error uploading voice note:", error);
-    return c.json({ error: "Failed to upload voice note" }, 500);
-  }
-});
+      if (!patient) {
+        return c.json({ error: 'Patient not found' }, 404);
+      }
+
+      // Check if the user has permission to upload for this patient
+      const { role, phoneNumber } = c.get('jwtPayload');
+
+      // If user is a doctor, they can upload for any patient
+      // If user is a patient, they can only upload for themselves
+      if (role === UserRole.Patient && patient.phoneNumber !== phoneNumber) {
+        return c.json(
+          {
+            error:
+              'You do not have permission to upload voice notes for this patient'
+          },
+          403
+        );
+      }
+
+      // Generate a unique filename with patient ID as folder and date-time
+      const fileExtension = voiceNote.name.split('.').pop();
+      const now = new Date();
+      const dateTimeStr = now
+        .toISOString()
+        .replace(/[:.]/g, '-')
+        .substring(0, 19);
+      const fileName = `${
+        patient.id
+      }/${dateTimeStr}_${ulid()}.${fileExtension}`;
+
+      // Upload to Google Cloud Storage
+      const file = bucket.file(fileName);
+      const buffer = await voiceNote.arrayBuffer();
+      await file.save(Buffer.from(buffer), {
+        metadata: {
+          contentType: voiceNote.type
+        }
+      });
+
+      // Get the public URL
+      const publicUrl = `https://storage.cloud.google.com/${bucketName}/${fileName}`;
+      // Add the new voice note URL to the array
+      const currentVoiceNotes = Array.isArray(patient.voiceNotes)
+        ? patient.voiceNotes
+        : [];
+      const updatedVoiceNotes = [...currentVoiceNotes, publicUrl];
+      await db
+        .update(tables.patient)
+        .set({ voiceNotes: updatedVoiceNotes })
+        .where(eq(tables.patient.id, patientId))
+        .execute();
+
+      return c.json({ voiceNoteUrl: publicUrl }, 200);
+    } catch (error) {
+      console.error('Error uploading voice note:', error);
+      return c.json({ error: 'Failed to upload voice note' }, 500);
+    }
+  });
+}
 
 // Edit Patient Schema
 const EditPatientRequestSchema = z.object({
@@ -411,50 +419,34 @@ const editPatientRoute = createRoute({
   }
 });
 
-const editPatientHandler = app.openapi(editPatientRoute, async (c) => {
-  const { patientId } = c.req.valid('param');
-  const updates = c.req.valid('json');
+const editPatientHandler = () => {
+  app.openapi(editPatientRoute, async (c) => {
+    const { patientId } = c.req.valid('param');
+    const updates = c.req.valid('json');
 
-  // Check if patient exists
-  const existingPatient = await db
-    .select()
-    .from(tables.patient)
-    .where(eq(tables.patient.id, patientId))
-    .execute()
-    .then(res => res.at(0));
+    // Check if the patient exists
+    const existingPatient = await db
+      .select()
+      .from(tables.patient)
+      .where(eq(tables.patient.id, patientId))
+      .then((res) => res.at(0));
 
-  if (!existingPatient) {
-    return c.json({ error: 'Patient not found' }, 404);
-  }
+    if (!existingPatient) {
+      return c.json({ error: `No Patient Record found with ID ${patientId}` }, 404);
+    }
 
-  // Update patient information
-  const [updatedPatient] = await db
-    .update(tables.patient)
-    .set({
-      ...updates,
-      updatedAt: new Date()
-    })
-    .where(eq(tables.patient.id, patientId))
-    .returning();
+    // Update the patient record
+    const [updatedPatient] = await db
+      .update(tables.patient)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(tables.patient.id, patientId))
+      .returning();
 
-  return c.json({
-    message: 'Patient information updated successfully',
-    patient: updatedPatient
-  }, 200);
-});
+    return c.json({
+      message: 'Patient updated successfully',
+      patient: updatedPatient
+    }, 200);
+  });
+}
 
-const patientRoute = {
-  getRoutingPath: () => {
-    app.openapi(searchPatientsRoute, searchPatientsHandler);
-    app.openapi(getPatientInfoRoute, getPatientInfoHandler);
-    app.openapi(uploadVoiceNoteRoute, uploadVoiceNoteHandler);
-    app.openapi(editPatientRoute, editPatientHandler);
-  }
-};
-
-export type SearchPatientsRoute = typeof searchPatientsHandler;
-export type GetPatientInfoRoute = typeof getPatientInfoHandler;
-export type UploadVoiceNoteRoute = typeof uploadVoiceNoteHandler;
-export type EditPatientRoute = typeof editPatientHandler;
-
-export default patientRoute;
+export {searchPatientsHandler,getPatientInfoHandler, editPatientHandler, uploadVoiceNoteHandler }
