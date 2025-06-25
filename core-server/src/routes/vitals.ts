@@ -10,7 +10,7 @@ const VitalsSchema = z.object({
   id: z.string().uuid(),
   emrId: z.string().uuid(),
   bloodPressure: z.string().nullable(),
-  pulse: z.number().nullable(),
+  pulse: z.string().nullable(),
   temperature: z.string().nullable(),
   weight: z.string().nullable(),
   height: z.string().nullable(),
@@ -21,7 +21,7 @@ const VitalsSchema = z.object({
 const CreateVitalsSchema = z.object({
   emrId: z.string().uuid(),
   bloodPressure: z.string().nullable(),
-  pulse: z.number().nullable(),
+  pulse: z.string().nullable(),
   temperature: z.string().nullable(),
   weight: z.string().nullable(),
   height: z.string().nullable(),

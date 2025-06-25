@@ -1,10 +1,8 @@
 import {
-  numeric,
   pgTable,
   text,
   timestamp,
   uuid,
-  integer
 } from 'drizzle-orm/pg-core';
 import { emr } from './emr';
 

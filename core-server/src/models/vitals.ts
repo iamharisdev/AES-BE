@@ -3,8 +3,6 @@ import {
   text,
   timestamp,
   uuid,
-  integer,
-  numeric
 } from 'drizzle-orm/pg-core';
 import { emr } from './emr';
 
@@ -14,11 +12,11 @@ export const vitals = pgTable('vitals', {
     .notNull()
     .references(() => emr.id),
   bloodPressure: text('blood_pressure'),
-  pulse: integer('pulse'),
-  temperature: numeric('temperature'),
-  weight: numeric('weight'),
-  height: numeric('height'),
-  bmi: numeric('bmi'),
+  pulse: text('pulse'),
+  temperature: text('temperature'),
+  weight: text('weight'),
+  height: text('height'),
+  bmi: text('bmi'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow()
 });
