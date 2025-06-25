@@ -18,6 +18,7 @@ import { createFilesHandler, getFilesHandler, updateFilesHandler, deleteFilesHan
 import generatePresignedUrls from '@/routes/generate-presigned-urls';
 import { createProposedPlanHandler, getProposedPlansByEmrHandler, getProposedPlanByIdHandler, updateProposedPlanHandler, deleteProposedPlanHandler } from '@/routes/proposed-plan';
 import { getUserInfoHandler, getUsersHandler, loginHandler, registerHandler } from './user';
+import { createRedFlagsHandler, listRedFlagsHandler, getRedFlagsByIdHandler, updateRedFlagsHandler, deleteRedFlagsHandler } from '@/routes/red-flags';
 
 export const registerRoutes = () => {
   homeRoute.getRoutingPath();
@@ -95,4 +96,9 @@ export const registerRoutes = () => {
   getObstetricHistoryHandler();
   updateObstetricHistoryHandler();
   deleteObstetricHistoryHandler();
+  createRedFlagsHandler();
+  listRedFlagsHandler();
+  getRedFlagsByIdHandler();
+  updateRedFlagsHandler();
+  deleteRedFlagsHandler();
 };
