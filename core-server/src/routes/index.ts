@@ -115,8 +115,8 @@ import {
   getRedFlagsByIdHandler,
   updateRedFlagsHandler,
   deleteRedFlagsHandler,
+  getMajorRedFlags,
 } from "@/routes/red-flags";
-import { getMajorRedFlags } from "./get-major-redFlags";
 
 export const registerRoutes = () => {
   homeRoute.getRoutingPath();
