@@ -1,24 +1,122 @@
-import homeRoute from '@/routes/home-page';
-import { getExaminationHandler, createExaminationHandler, updateExaminationHandler } from '@/routes/examination';
-import { createHospitalHandler, listHospitalsHandler, getHospitalByIdHandler, updateHospitalHandler, deleteHospitalHandler } from '@/routes/hospital';
-import { editPatientHandler, getPatientInfoHandler, searchPatientsHandler, uploadVoiceNoteHandler } from '@/routes/patient';
-import { getAllEmrsFromPhoneHandler, getEmrDetailsHandler, updateEmrHandler } from '@/routes/emr';
-import { createPresentingComplaintHandler, getPresentingComplaintHandler, updatePresentingComplaintHandler, deletePresentingComplaintHandler } from '@/routes/presenting-complaint';
-import { createTrimesterHandler, getTrimesterHandler, updateTrimesterHandler, deleteTrimesterHandler } from '@/routes/trimester';
-import { createCurrentPregnancyHandler, getCurrentPregnancyHandler, updateCurrentPregnancyHandler, deleteCurrentPregnancyHandler } from '@/routes/current-pregnancy';
-import { createObstetricHistoryHandler, getObstetricHistoryHandler, updateObstetricHistoryHandler, deleteObstetricHistoryHandler } from '@/routes/obstetric-history';
-import { createGynecologicalHistoryHandler, getGynecologicalHistoryHandler, updateGynecologicalHistoryHandler, deleteGynecologicalHistoryHandler } from '@/routes/gynecological-history';
-import { createSurgicalHistoryHandler, getSurgicalHistoryHandler, updateSurgicalHistoryHandler, deleteSurgicalHistoryHandler } from '@/routes/surgical-history';
-import { createFamilyHistoryHandler, getFamilyHistoryHandler, updateFamilyHistoryHandler, deleteFamilyHistoryHandler } from '@/routes/family-history';
-import { createPersonalHistoryHandler, getPersonalHistoryHandler, updatePersonalHistoryHandler, deletePersonalHistoryHandler } from '@/routes/personal-history';
-import { createSocioEconomicHistoryHandler, getSocioEconomicHistoryHandler, updateSocioEconomicHistoryHandler, deleteSocioEconomicHistoryHandler } from '@/routes/socio-economic-history';
-import { createVitalsHandler, listVitalsHandler, getVitalsByIdHandler, updateVitalsHandler, deleteVitalsHandler } from '@/routes/vitals';
-import { createFollowupQuestionsHandler, getFollowupQuestionsHandler, updateFollowupQuestionsHandler, deleteFollowupQuestionsHandler } from '@/routes/followup-questions';
-import { createFilesHandler, getFilesHandler, updateFilesHandler, deleteFilesHandler } from '@/routes/files';
-import generatePresignedUrls from '@/routes/generate-presigned-urls';
-import { createProposedPlanHandler, getProposedPlansByEmrHandler, getProposedPlanByIdHandler, updateProposedPlanHandler, deleteProposedPlanHandler } from '@/routes/proposed-plan';
-import { getUserInfoHandler, getUsersHandler, loginHandler, registerHandler } from './user';
-import { createRedFlagsHandler, listRedFlagsHandler, getRedFlagsByIdHandler, updateRedFlagsHandler, deleteRedFlagsHandler } from '@/routes/red-flags';
+import homeRoute from "@/routes/home-page";
+import {
+  getExaminationHandler,
+  createExaminationHandler,
+  updateExaminationHandler,
+} from "@/routes/examination";
+import {
+  createHospitalHandler,
+  listHospitalsHandler,
+  getHospitalByIdHandler,
+  updateHospitalHandler,
+  deleteHospitalHandler,
+} from "@/routes/hospital";
+import {
+  editPatientHandler,
+  getPatientInfoHandler,
+  searchPatientsHandler,
+  uploadVoiceNoteHandler,
+} from "@/routes/patient";
+import {
+  getAllEmrsFromPhoneHandler,
+  getEmrDetailsHandler,
+  updateEmrHandler,
+} from "@/routes/emr";
+import {
+  createPresentingComplaintHandler,
+  getPresentingComplaintHandler,
+  updatePresentingComplaintHandler,
+  deletePresentingComplaintHandler,
+} from "@/routes/presenting-complaint";
+import {
+  createTrimesterHandler,
+  getTrimesterHandler,
+  updateTrimesterHandler,
+  deleteTrimesterHandler,
+} from "@/routes/trimester";
+import {
+  createCurrentPregnancyHandler,
+  getCurrentPregnancyHandler,
+  updateCurrentPregnancyHandler,
+  deleteCurrentPregnancyHandler,
+} from "@/routes/current-pregnancy";
+import {
+  createObstetricHistoryHandler,
+  getObstetricHistoryHandler,
+  updateObstetricHistoryHandler,
+  deleteObstetricHistoryHandler,
+} from "@/routes/obstetric-history";
+import {
+  createGynecologicalHistoryHandler,
+  getGynecologicalHistoryHandler,
+  updateGynecologicalHistoryHandler,
+  deleteGynecologicalHistoryHandler,
+} from "@/routes/gynecological-history";
+import {
+  createSurgicalHistoryHandler,
+  getSurgicalHistoryHandler,
+  updateSurgicalHistoryHandler,
+  deleteSurgicalHistoryHandler,
+} from "@/routes/surgical-history";
+import {
+  createFamilyHistoryHandler,
+  getFamilyHistoryHandler,
+  updateFamilyHistoryHandler,
+  deleteFamilyHistoryHandler,
+} from "@/routes/family-history";
+import {
+  createPersonalHistoryHandler,
+  getPersonalHistoryHandler,
+  updatePersonalHistoryHandler,
+  deletePersonalHistoryHandler,
+} from "@/routes/personal-history";
+import {
+  createSocioEconomicHistoryHandler,
+  getSocioEconomicHistoryHandler,
+  updateSocioEconomicHistoryHandler,
+  deleteSocioEconomicHistoryHandler,
+} from "@/routes/socio-economic-history";
+import {
+  createVitalsHandler,
+  listVitalsHandler,
+  getVitalsByIdHandler,
+  updateVitalsHandler,
+  deleteVitalsHandler,
+} from "@/routes/vitals";
+import {
+  createFollowupQuestionsHandler,
+  getFollowupQuestionsHandler,
+  updateFollowupQuestionsHandler,
+  deleteFollowupQuestionsHandler,
+} from "@/routes/followup-questions";
+import {
+  createFilesHandler,
+  getFilesHandler,
+  updateFilesHandler,
+  deleteFilesHandler,
+} from "@/routes/files";
+import generatePresignedUrls from "@/routes/generate-presigned-urls";
+import {
+  createProposedPlanHandler,
+  getProposedPlansByEmrHandler,
+  getProposedPlanByIdHandler,
+  updateProposedPlanHandler,
+  deleteProposedPlanHandler,
+} from "@/routes/proposed-plan";
+import {
+  getUserInfoHandler,
+  getUsersHandler,
+  loginHandler,
+  registerHandler,
+} from "./user";
+import {
+  createRedFlagsHandler,
+  listRedFlagsHandler,
+  getRedFlagsByIdHandler,
+  updateRedFlagsHandler,
+  deleteRedFlagsHandler,
+  getMajorRedFlags,
+} from "@/routes/red-flags";
 
 export const registerRoutes = () => {
   homeRoute.getRoutingPath();
@@ -101,4 +199,5 @@ export const registerRoutes = () => {
   getRedFlagsByIdHandler();
   updateRedFlagsHandler();
   deleteRedFlagsHandler();
+  getMajorRedFlags();
 };
