@@ -26,8 +26,8 @@ const GetEmrSuccessResponseSchema = z.object({
     redFlags: z.record(z.unknown()),
     followupQuestions: z.record(z.unknown()),
     proposedPlan: z.record(z.unknown()),
-    previousPregnancy: z.array(z.record(z.unknown()))
-  })
+    previousPregnancy: z.array(z.record(z.unknown())),
+  }),
 });
 const GetEmrNotFoundSchema = z.object({
   error: z.string().openapi({ example: "No Record Found With Patient ID" }),
@@ -56,7 +56,7 @@ const getEmrDetailsRoute = createRoute({
     },
   },
 });
-const getEmrDetailsHandler = ()=> {
+const getEmrDetailsHandler = () => {
   app.openapi(getEmrDetailsRoute, async (c) => {
     const { id } = c.req.valid("param");
     const emr = await db
@@ -79,11 +79,14 @@ const getEmrDetailsHandler = ()=> {
         redFlags: tables.redFlags,
         followupQuestions: tables.followupQuestions,
         proposedPlan: tables.proposedPlan,
-        hasExamination: sql<boolean>`CASE WHEN ${tables.examination.id} IS NOT NULL THEN TRUE ELSE FALSE END`
+        hasExamination: sql<boolean>`CASE WHEN ${tables.examination.id} IS NOT NULL THEN TRUE ELSE FALSE END`,
       })
       .from(tables.emr)
       .leftJoin(tables.examination, eq(tables.emr.id, tables.examination.id))
-      .leftJoin(tables.patient, eq(tables.emr.phone, tables.patient.phoneNumber))
+      .leftJoin(
+        tables.patient,
+        eq(tables.emr.phone, tables.patient.phoneNumber)
+      )
       .leftJoin(
         tables.presentingComplaint,
         eq(tables.emr.id, tables.presentingComplaint.emrId)
@@ -119,10 +122,13 @@ const getEmrDetailsHandler = ()=> {
         tables.followupQuestions,
         eq(tables.emr.id, tables.followupQuestions.emrId)
       )
-      .leftJoin(tables.proposedPlan, eq(tables.emr.id, tables.proposedPlan.emrId))
+      .leftJoin(
+        tables.proposedPlan,
+        eq(tables.emr.id, tables.proposedPlan.emrId)
+      )
       .where(eq(tables.emr.id, id))
       .execute()
-      .then(res => res.at(0));
+      .then((res) => res.at(0));
 
     if (!emr) {
       return c.json({ error: `No Emr Record Found With Id ${id}` }, 404);
@@ -155,7 +161,7 @@ const getEmrDetailsHandler = ()=> {
       redFlags: emr.redFlags || {},
       followupQuestions: emr.followupQuestions || {},
       proposedPlan: emr.proposedPlan || {},
-      previousPregnancy: previousPregnancies.map(pregnancy => ({
+      previousPregnancy: previousPregnancies.map((pregnancy) => ({
         id: pregnancy.id,
         emrId: pregnancy.emrId,
         childAge: pregnancy.childAge,
@@ -170,15 +176,18 @@ const getEmrDetailsHandler = ()=> {
         childCondition: pregnancy.childCondition,
         pregnancyProblems: pregnancy.pregnancyProblems,
         createdAt: pregnancy.createdAt,
-        updatedAt: pregnancy.updatedAt
-      }))
+        updatedAt: pregnancy.updatedAt,
+      })),
     };
 
-    return c.json({
-      emr: transformedEmr
-    }, 200);
+    return c.json(
+      {
+        emr: transformedEmr,
+      },
+      200
+    );
   });
-}
+};
 
 // --- get-erms-from-phone ---
 const GetAllEmrsSuccessSchema = z.object({
@@ -204,7 +213,7 @@ const GetAllEmrsSuccessSchema = z.object({
       proposedPlan: z.record(z.unknown()),
       previousPregnancy: z.array(z.record(z.unknown())),
     })
-  )
+  ),
 });
 const GetAllEmrsNotFoundSchema = z.object({
   error: z
@@ -235,185 +244,199 @@ const getAllEmrsFromPhoneRoute = createRoute({
     },
   },
 });
-const getAllEmrsFromPhoneHandler =()=>{
-  app.openapi(
-    getAllEmrsFromPhoneRoute,
-    async (c) => {
-      const { phoneNumber } = c.req.valid("param");
+const getAllEmrsFromPhoneHandler = () => {
+  app.openapi(getAllEmrsFromPhoneRoute, async (c) => {
+    const { phoneNumber } = c.req.valid("param");
 
-      // First, get the basic EMR records without joins to avoid duplicates
-      const emrs = await db
-        .select({
-          id: tables.emr.id,
-          phone: tables.emr.phone,
-          visit: tables.emr.visit,
-          createdAt: tables.emr.createdAt,
-          updatedAt: tables.emr.updatedAt,
-        })
-        .from(tables.emr)
-        .where(eq(tables.emr.phone, phoneNumber))
-        .execute();
+    // First, get the basic EMR records without joins to avoid duplicates
+    const emrs = await db
+      .select({
+        id: tables.emr.id,
+        phone: tables.emr.phone,
+        visit: tables.emr.visit,
+        createdAt: tables.emr.createdAt,
+        updatedAt: tables.emr.updatedAt,
+      })
+      .from(tables.emr)
+      .where(eq(tables.emr.phone, phoneNumber))
+      .execute();
 
-      if (emrs.length === 0) {
-        return c.json(
-          { error: `No EMR records found for phone number ${phoneNumber}` },
-          404
-        );
-      }
+    if (emrs.length === 0) {
+      return c.json(
+        { error: `No EMR records found for phone number ${phoneNumber}` },
+        404
+      );
+    }
 
-      // Get all related data for these EMRs
-      const emrIds = emrs.map(emr => emr.id);
+    // Get all related data for these EMRs
+    const emrIds = emrs.map((emr) => emr.id);
 
-      const [patientInfo] = await db
-        .select()
-        .from(tables.patient)
-        .where(eq(tables.patient.phoneNumber, phoneNumber))
-        .execute();
+    const [patientInfo] = await db
+      .select()
+      .from(tables.patient)
+      .where(eq(tables.patient.phoneNumber, phoneNumber))
+      .execute();
 
-      const presentingComplaints = await db
-        .select()
-        .from(tables.presentingComplaint)
-        .where(inArray(tables.presentingComplaint.emrId, emrIds))
-        .execute();
+    const presentingComplaints = await db
+      .select()
+      .from(tables.presentingComplaint)
+      .where(inArray(tables.presentingComplaint.emrId, emrIds))
+      .execute();
 
-      const currentPregnancies = await db
-        .select()
-        .from(tables.currentPregnancy)
-        .where(inArray(tables.currentPregnancy.emrId, emrIds))
-        .execute();
+    const currentPregnancies = await db
+      .select()
+      .from(tables.currentPregnancy)
+      .where(inArray(tables.currentPregnancy.emrId, emrIds))
+      .execute();
 
-      const trimesters = await db
-        .select()
-        .from(tables.trimester)
-        .where(inArray(tables.trimester.emrId, emrIds))
-        .execute();
+    const trimesters = await db
+      .select()
+      .from(tables.trimester)
+      .where(inArray(tables.trimester.emrId, emrIds))
+      .execute();
 
-      const obsHistories = await db
-        .select()
-        .from(tables.obsHistory)
-        .where(inArray(tables.obsHistory.emrId, emrIds))
-        .execute();
+    const obsHistories = await db
+      .select()
+      .from(tables.obsHistory)
+      .where(inArray(tables.obsHistory.emrId, emrIds))
+      .execute();
 
-      const gynecologicalHistories = await db
-        .select()
-        .from(tables.gynecologicalHistory)
-        .where(inArray(tables.gynecologicalHistory.emrId, emrIds))
-        .execute();
+    const gynecologicalHistories = await db
+      .select()
+      .from(tables.gynecologicalHistory)
+      .where(inArray(tables.gynecologicalHistory.emrId, emrIds))
+      .execute();
 
-      const surgicalHistories = await db
-        .select()
-        .from(tables.surgicalHistory)
-        .where(inArray(tables.surgicalHistory.emrId, emrIds))
-        .execute();
+    const surgicalHistories = await db
+      .select()
+      .from(tables.surgicalHistory)
+      .where(inArray(tables.surgicalHistory.emrId, emrIds))
+      .execute();
 
-      const familyHistories = await db
-        .select()
-        .from(tables.familyHistory)
-        .where(inArray(tables.familyHistory.emrId, emrIds))
-        .execute();
+    const familyHistories = await db
+      .select()
+      .from(tables.familyHistory)
+      .where(inArray(tables.familyHistory.emrId, emrIds))
+      .execute();
 
-      const personalHistories = await db
-        .select()
-        .from(tables.personalHistory)
-        .where(inArray(tables.personalHistory.emrId, emrIds))
-        .execute();
+    const personalHistories = await db
+      .select()
+      .from(tables.personalHistory)
+      .where(inArray(tables.personalHistory.emrId, emrIds))
+      .execute();
 
-      const socioEconomicHistories = await db
-        .select()
-        .from(tables.socioEconomicHistory)
-        .where(inArray(tables.socioEconomicHistory.emrId, emrIds))
-        .execute();
+    const socioEconomicHistories = await db
+      .select()
+      .from(tables.socioEconomicHistory)
+      .where(inArray(tables.socioEconomicHistory.emrId, emrIds))
+      .execute();
 
-      const redFlags = await db
-        .select()
-        .from(tables.redFlags)
-        .where(inArray(tables.redFlags.emrId, emrIds))
-        .execute();
+    const redFlags = await db
+      .select()
+      .from(tables.redFlags)
+      .where(inArray(tables.redFlags.emrId, emrIds))
+      .execute();
 
-      const followupQuestions = await db
-        .select()
-        .from(tables.followupQuestions)
-        .where(inArray(tables.followupQuestions.emrId, emrIds))
-        .execute();
+    const followupQuestions = await db
+      .select()
+      .from(tables.followupQuestions)
+      .where(inArray(tables.followupQuestions.emrId, emrIds))
+      .execute();
 
-      const proposedPlans = await db
-        .select()
-        .from(tables.proposedPlan)
-        .where(inArray(tables.proposedPlan.emrId, emrIds))
-        .execute();
+    const proposedPlans = await db
+      .select()
+      .from(tables.proposedPlan)
+      .where(inArray(tables.proposedPlan.emrId, emrIds))
+      .execute();
 
-      const allPreviousPregnancies = await db
-        .select()
-        .from(tables.previousPregnancy)
-        .where(inArray(tables.previousPregnancy.emrId, emrIds))
-        .execute();
+    const allPreviousPregnancies = await db
+      .select()
+      .from(tables.previousPregnancy)
+      .where(inArray(tables.previousPregnancy.emrId, emrIds))
+      .execute();
 
-      // Create lookup maps for efficient data retrieval
-      const createLookupMap = (data: any[], key: string) => {
-        return data.reduce((acc, item) => {
-          const emrId = item[key];
-          if (!acc[emrId]) {
-            acc[emrId] = item;
-          }
-          return acc;
-        }, {} as Record<string, any>);
-      };
+    // Create lookup maps for efficient data retrieval
+    const createLookupMap = (data: any[], key: string) => {
+      return data.reduce((acc, item) => {
+        const emrId = item[key];
+        if (!acc[emrId]) {
+          acc[emrId] = item;
+        }
+        return acc;
+      }, {} as Record<string, any>);
+    };
 
-      const createGroupedLookupMap = (data: any[], key: string) => {
-        return data.reduce((acc, item) => {
-          const emrId = item[key];
-          if (!acc[emrId]) {
-            acc[emrId] = [];
-          }
-          acc[emrId].push(item);
-          return acc;
-        }, {} as Record<string, any[]>);
-      };
+    const createGroupedLookupMap = (data: any[], key: string) => {
+      return data.reduce((acc, item) => {
+        const emrId = item[key];
+        if (!acc[emrId]) {
+          acc[emrId] = [];
+        }
+        acc[emrId].push(item);
+        return acc;
+      }, {} as Record<string, any[]>);
+    };
 
-      const presentingComplaintsMap = createLookupMap(presentingComplaints, 'emrId');
-      const currentPregnanciesMap = createLookupMap(currentPregnancies, 'emrId');
-      const trimestersMap = createLookupMap(trimesters, 'emrId');
-      const obsHistoriesMap = createLookupMap(obsHistories, 'emrId');
-      const gynecologicalHistoriesMap = createLookupMap(gynecologicalHistories, 'emrId');
-      const surgicalHistoriesMap = createLookupMap(surgicalHistories, 'emrId');
-      const familyHistoriesMap = createLookupMap(familyHistories, 'emrId');
-      const personalHistoriesMap = createLookupMap(personalHistories, 'emrId');
-      const socioEconomicHistoriesMap = createLookupMap(socioEconomicHistories, 'emrId');
-      const redFlagsMap = createGroupedLookupMap(redFlags, 'emrId');
-      const followupQuestionsMap = createGroupedLookupMap(followupQuestions, 'emrId');
-      const proposedPlansMap = createLookupMap(proposedPlans, 'emrId');
+    const presentingComplaintsMap = createLookupMap(
+      presentingComplaints,
+      "emrId"
+    );
+    const currentPregnanciesMap = createLookupMap(currentPregnancies, "emrId");
+    const trimestersMap = createLookupMap(trimesters, "emrId");
+    const obsHistoriesMap = createLookupMap(obsHistories, "emrId");
+    const gynecologicalHistoriesMap = createLookupMap(
+      gynecologicalHistories,
+      "emrId"
+    );
+    const surgicalHistoriesMap = createLookupMap(surgicalHistories, "emrId");
+    const familyHistoriesMap = createLookupMap(familyHistories, "emrId");
+    const personalHistoriesMap = createLookupMap(personalHistories, "emrId");
+    const socioEconomicHistoriesMap = createLookupMap(
+      socioEconomicHistories,
+      "emrId"
+    );
+    const redFlagsMap = createGroupedLookupMap(redFlags, "emrId");
+    const followupQuestionsMap = createGroupedLookupMap(
+      followupQuestions,
+      "emrId"
+    );
+    const proposedPlansMap = createLookupMap(proposedPlans, "emrId");
 
-      // Group previous pregnancies by EMR ID
-      const previousPregnanciesByEmrId = allPreviousPregnancies.reduce((acc, pregnancy) => {
+    // Group previous pregnancies by EMR ID
+    const previousPregnanciesByEmrId = allPreviousPregnancies.reduce(
+      (acc, pregnancy) => {
         const emrId = pregnancy.emrId;
         if (!acc[emrId]) {
           acc[emrId] = [];
         }
         acc[emrId].push(pregnancy);
         return acc;
-      }, {} as Record<string, any[]>);
+      },
+      {} as Record<string, any[]>
+    );
 
-      // Transform the response to match the schema
-      const transformedEmrs = emrs.map(emr => ({
-        id: emr.id,
-        phone: emr.phone,
-        visit: emr.visit,
-        createdAt: emr.createdAt,
-        updatedAt: emr.updatedAt,
-        patient: patientInfo[0] || {},
-        presentingComplaint: presentingComplaintsMap[emr.id] || {},
-        currentPregnancy: currentPregnanciesMap[emr.id] || {},
-        trimester: trimestersMap[emr.id] || {},
-        obsHistory: obsHistoriesMap[emr.id] || {},
-        gynecologicalHistory: gynecologicalHistoriesMap[emr.id] || {},
-        surgicalHistory: surgicalHistoriesMap[emr.id] || {},
-        familyHistory: familyHistoriesMap[emr.id] || {},
-        personalHistory: personalHistoriesMap[emr.id] || {},
-        socioEconomicHistory: socioEconomicHistoriesMap[emr.id] || {},
-        redFlags: redFlagsMap[emr.id] || [],
-        followupQuestions: followupQuestionsMap[emr.id] || [],
-        proposedPlan: proposedPlansMap[emr.id] || {},
-        previousPregnancy: (previousPregnanciesByEmrId[emr.id] || []).map(pregnancy => ({
+    // Transform the response to match the schema
+    const transformedEmrs = emrs.map((emr) => ({
+      id: emr.id,
+      phone: emr.phone,
+      visit: emr.visit,
+      createdAt: emr.createdAt,
+      updatedAt: emr.updatedAt,
+      patient: patientInfo || {},
+      presentingComplaint: presentingComplaintsMap[emr.id] || {},
+      currentPregnancy: currentPregnanciesMap[emr.id] || {},
+      trimester: trimestersMap[emr.id] || {},
+      obsHistory: obsHistoriesMap[emr.id] || {},
+      gynecologicalHistory: gynecologicalHistoriesMap[emr.id] || {},
+      surgicalHistory: surgicalHistoriesMap[emr.id] || {},
+      familyHistory: familyHistoriesMap[emr.id] || {},
+      personalHistory: personalHistoriesMap[emr.id] || {},
+      socioEconomicHistory: socioEconomicHistoriesMap[emr.id] || {},
+      redFlags: redFlagsMap[emr.id] || [],
+      followupQuestions: followupQuestionsMap[emr.id] || [],
+      proposedPlan: proposedPlansMap[emr.id] || {},
+      previousPregnancy: (previousPregnanciesByEmrId[emr.id] || []).map(
+        (pregnancy) => ({
           id: pregnancy.id,
           emrId: pregnancy.emrId,
           childAge: pregnancy.childAge,
@@ -428,31 +451,31 @@ const getAllEmrsFromPhoneHandler =()=>{
           childCondition: pregnancy.childCondition,
           pregnancyProblems: pregnancy.pregnancyProblems,
           createdAt: pregnancy.createdAt,
-          updatedAt: pregnancy.updatedAt
-        })),
-      }));
+          updatedAt: pregnancy.updatedAt,
+        })
+      ),
+    }));
 
-      return c.json({ emrs: transformedEmrs }, 200);
-    }
-  );
-}
+    return c.json({ emrs: transformedEmrs }, 200);
+  });
+};
 
 // --- update-emr ---
 const validSections = new Set([
-  'patient',
-  'presentingComplaint',
-  'currentPregnancy',
-  'trimester',
-  'obsHistory',
-  'gynecologicalHistory',
-  'surgicalHistory',
-  'familyHistory',
-  'personalHistory',
-  'socioEconomicHistory',
-  'redFlags',
-  'followupQuestions',
-  'proposedPlan',
-  'previousPregnancy'
+  "patient",
+  "presentingComplaint",
+  "currentPregnancy",
+  "trimester",
+  "obsHistory",
+  "gynecologicalHistory",
+  "surgicalHistory",
+  "familyHistory",
+  "personalHistory",
+  "socioEconomicHistory",
+  "redFlags",
+  "followupQuestions",
+  "proposedPlan",
+  "previousPregnancy",
 ]);
 const UpdateEmrRequestSchema = z.object({
   id: z.string().uuid(),
@@ -515,7 +538,7 @@ const updateEmrRoute = createRoute({
     },
   },
 });
-const updateEmrHandler = ()=>{
+const updateEmrHandler = () => {
   app.openapi(updateEmrRoute, async (c) => {
     const { id, updates } = await c.req.json();
     const existingEmr = await db
@@ -551,6 +574,6 @@ const updateEmrHandler = ()=>{
       200
     );
   });
-}
+};
 
-export {getEmrDetailsHandler, getAllEmrsFromPhoneHandler, updateEmrHandler}
+export { getEmrDetailsHandler, getAllEmrsFromPhoneHandler, updateEmrHandler };
