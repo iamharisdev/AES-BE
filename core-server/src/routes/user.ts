@@ -379,4 +379,86 @@ const getUserInfoHandler = () => {
   });
 }
 
-export  {getUserInfoHandler, getUsersHandler, loginHandler, registerHandler}
+const ChangePasswordRequestSchema = z.object({
+  oldPassword: z.string().openapi({ example: 'oldpassword123' }),
+  newPassword: z.string().openapi({ example: 'newpassword456' })
+});
+
+const ChangePasswordResponseSchema = z.object({
+  message: z.string().openapi({ example: 'Password changed successfully' })
+});
+
+const ChangePasswordErrorSchema = z.object({
+  error: z.string().openapi({ example: 'Old password is incorrect' })
+});
+
+const changePasswordRoute = createRoute({
+  method: 'post',
+  operationId: 'changePassword',
+  tags: ['User'],
+  path: '/user/change-password',
+  summary: 'Change user password',
+  security: [{ jwt: [] }],
+  middleware: [jwtMiddleware],
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: ChangePasswordRequestSchema
+        }
+      }
+    }
+  },
+  responses: {
+    200: {
+      content: {
+        'application/json': {
+          schema: ChangePasswordResponseSchema
+        }
+      },
+      description: 'Password changed successfully'
+    },
+    400: {
+      content: {
+        'application/json': {
+          schema: ChangePasswordErrorSchema
+        }
+      },
+      description: 'Old password is incorrect'
+    }
+  }
+});
+
+const changePasswordHandler = () => {
+  app.openapi(changePasswordRoute, async c => {
+    const { oldPassword, newPassword } = c.req.valid('json');
+    const { phoneNumber } = c.get('jwtPayload');
+    // Fetch user
+    const user = await db
+      .select()
+      .from(tables.user)
+      .where(eq(tables.user.phoneNumber, phoneNumber))
+      .then(res => res.at(0));
+
+    if (!user) {
+      return c.json({ error: 'User not found' }, 400);
+    }
+
+    // Verify old password
+    const encryptedOld = (await sha256(oldPassword)) ?? '';
+    if (user.encryptedPassword !== encryptedOld) {
+      return c.json({ error: 'Old password is incorrect' }, 400);
+    }
+
+    // Update to new password
+    const encryptedNew = (await sha256(newPassword)) ?? '';
+    await db.update(tables.user)
+      .set({ encryptedPassword: encryptedNew })
+      .where(eq(tables.user.phoneNumber, phoneNumber))
+      .execute();
+
+    return c.json({ message: 'Password changed successfully' }, 200);
+  });
+};
+
+export { getUserInfoHandler, getUsersHandler, loginHandler, registerHandler, changePasswordHandler };
