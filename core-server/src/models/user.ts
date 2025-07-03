@@ -11,6 +11,7 @@ export enum UserRole {
 export const user = pgTable('user', {
   id: uuid('id').primaryKey().defaultRandom(),
   phoneNumber: text('phone_number').notNull(),
+  email: text('email'),
   name: text('name').notNull(),
   encryptedPassword: text('encrypted_password').notNull(),
   role: text('role').notNull().default(UserRole.Doctor),
