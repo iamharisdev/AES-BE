@@ -104,6 +104,7 @@ import {
   deleteProposedPlanHandler,
 } from "@/routes/proposed-plan";
 import {
+  changePasswordHandler,
   getUserInfoHandler,
   getUsersHandler,
   loginHandler,
@@ -200,4 +201,5 @@ export const registerRoutes = () => {
   updateRedFlagsHandler();
   deleteRedFlagsHandler();
   getMajorRedFlags();
+  changePasswordHandler()
 };
