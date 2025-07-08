@@ -19,6 +19,7 @@ import {
 } from "@/routes/patient";
 import {
   getAllEmrsFromPhoneHandler,
+  getAllEmrsFromCnicHandler,
   getEmrDetailsHandler,
   updateEmrHandler,
 } from "@/routes/emr";
@@ -182,6 +183,7 @@ export const registerRoutes = () => {
   registerHandler();
   getEmrDetailsHandler();
   getAllEmrsFromPhoneHandler();
+  getAllEmrsFromCnicHandler();
   updateEmrHandler();
   searchPatientsHandler();
   getPatientInfoHandler();
