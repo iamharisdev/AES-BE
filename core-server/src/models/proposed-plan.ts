@@ -1,5 +1,6 @@
 import { pgTable, text, timestamp, uuid, date } from 'drizzle-orm/pg-core';
 import { emr } from './emr';
+import { createdByEnum } from '../schemas/enums';
 
 export const proposedPlan = pgTable('proposed_plan', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -12,6 +13,9 @@ export const proposedPlan = pgTable('proposed_plan', {
   nextFollowUpTiming: date('next_follow_up_timing'),
   nextFollowUpPurpose: text('next_follow_up_purpose'),
   advisedLabTests: text('advised_lab_tests').array(),
+  createdBy: text('created_by', { enum: createdByEnum })
+    .notNull()
+    .default('AI'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow()
 });
