@@ -19,11 +19,13 @@
         "drizzle-kit": "0.22.8",
         "drizzle-orm": "^0.33.0",
         "hono": "^4.5.4",
+        "nodemailer": "^7.0.4",
         "openai": "^4.55.7",
         "postgres": "^3.4.4",
         "ulidx": "^2.4.0"
     },
     "devDependencies": {
-        "@types/bun": "latest"
+        "@types/bun": "latest",
+        "@types/nodemailer": "^6.4.17"
     }
 }

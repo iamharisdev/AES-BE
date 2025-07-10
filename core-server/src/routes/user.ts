@@ -5,10 +5,12 @@ import { JwtPayload } from '@/middleware/jwt';
 import { tables } from '@/models';
 import { UserRole } from '@/models/user';
 import { createRoute, z } from '@hono/zod-openapi';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { sign } from 'hono/jwt';
 import { sha256 } from 'hono/utils/crypto';
 import { jwtMiddleware } from '@/middleware/jwt';
+import { sendEmail } from '@/services/email';
+
 
 // Register User Schema
 const RegisterRequestBodySchema = z.object({
@@ -461,4 +463,211 @@ const changePasswordHandler = () => {
   });
 };
 
-export { getUserInfoHandler, getUsersHandler, loginHandler, registerHandler, changePasswordHandler };
+
+
+// Send OTP route using user table fields
+const SendOtpRequestSchema = z.object({
+  email: z.string().email().openapi({ example: 'user@example.com' })
+});
+const SendOtpResponseSchema = z.object({
+  message: z.string().openapi({ example: 'OTP sent to email' })
+});
+const SendOtpErrorSchema = z.object({
+  error: z.string().openapi({ example: 'User not found' })
+});
+
+const sendOtpRoute = createRoute({
+  method: 'post',
+  operationId: 'sendOtp',
+  tags: ['User'],
+  path: '/user/send-otp',
+  summary: 'Send OTP to user email',
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: SendOtpRequestSchema
+        }
+      }
+    }
+  },
+  responses: {
+    200: {
+      content: {
+        'application/json': {
+          schema: SendOtpResponseSchema
+        }
+      },
+      description: 'OTP sent'
+    },
+    404: {
+      content: {
+        'application/json': {
+          schema: SendOtpErrorSchema
+        }
+      },
+      description: 'User not found'
+    }
+  }
+});
+
+const sendOtpHandler = () => {
+  app.openapi(sendOtpRoute, async c => {
+    const { email } = c.req.valid('json');
+    const user = await db.select().from(tables.user).where(eq(tables.user.email, email)).then(res => res.at(0));
+    if (!user) {
+      return c.json({ error: 'User not found' }, 404);
+    }
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 min
+    const hash = await sha256(code);
+    await db.update(tables.user)
+      .set({ resetOtpHash: hash, resetOtpExpiry: expiresAt })
+      .where(eq(tables.user.email, email))
+      .execute();
+      await sendEmail(email, user, code)
+
+    return c.json({ message: 'OTP sent to email' }, 200);
+  });
+};
+
+// Verify OTP route using user table fields
+const VerifyOtpRequestSchema = z.object({
+  email: z.string().email().openapi({ example: 'user@example.com' }),
+  code: z.string().openapi({ example: '123456' })
+});
+const VerifyOtpResponseSchema = z.object({
+  message: z.string().openapi({ example: 'OTP verified successfully' })
+});
+const VerifyOtpErrorSchema = z.object({
+  error: z.string().openapi({ example: 'Invalid or expired OTP' })
+});
+
+const verifyOtpRoute = createRoute({
+  method: 'post',
+  operationId: 'verifyOtp',
+  tags: ['User'],
+  path: '/user/verify-otp',
+  summary: 'Verify OTP for user email',
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: VerifyOtpRequestSchema
+        }
+      }
+    }
+  },
+  responses: {
+    200: {
+      content: {
+        'application/json': {
+          schema: VerifyOtpResponseSchema
+        }
+      },
+      description: 'OTP verified'
+    },
+    400: {
+      content: {
+        'application/json': {
+          schema: VerifyOtpErrorSchema
+        }
+      },
+      description: 'Invalid or expired OTP'
+    }
+  }
+});
+
+const verifyOtpHandler = () => {
+  app.openapi(verifyOtpRoute, async c => {
+    const { email, code } = c.req.valid('json');
+    const user = await db.select().from(tables.user).where(eq(tables.user.email, email)).then(res => res.at(0));
+     console.log(user,"USERRR")
+    if (!user || !user.resetOtpHash || !user.resetOtpExpiry) {
+      return c.json({ error: 'Invalid or expired OTP' }, 400);
+    }
+    const hash = await sha256(code);
+    if (user.resetOtpHash !== hash || user.resetOtpExpiry < new Date()) {
+      return c.json({ error: 'Invalid or expired OTP' }, 400);
+    }
+    return c.json({ message: 'OTP verified successfully' }, 200);
+  });
+};
+
+const ForgotPasswordRequestSchema = z.object({
+  email: z.string().email().openapi({ example: 'user@example.com' }),
+  code: z.string().openapi({ example: '123456' }),
+  newPassword: z.string().openapi({ example: 'newpassword123' })
+});
+const ForgotPasswordResponseSchema = z.object({
+  message: z.string().openapi({ example: 'Password updated successfully' })
+});
+const ForgotPasswordErrorSchema = z.object({
+  error: z.string().openapi({ example: 'Invalid or expired OTP' })
+});
+
+const forgotPasswordRoute = createRoute({
+  method: 'post',
+  operationId: 'forgotPassword',
+  tags: ['User'],
+  path: '/user/forgot-password',
+  summary: 'Reset password using OTP',
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: ForgotPasswordRequestSchema
+        }
+      }
+    }
+  },
+  responses: {
+    200: {
+      content: {
+        'application/json': {
+          schema: ForgotPasswordResponseSchema
+        }
+      },
+      description: 'Password updated successfully'
+    },
+    400: {
+      content: {
+        'application/json': {
+          schema: ForgotPasswordErrorSchema
+        }
+      },
+      description: 'Invalid or expired OTP'
+    }
+  }
+});
+
+const forgotPasswordHandler = () => {
+  app.openapi(forgotPasswordRoute, async c => {
+    const { email, code, newPassword } = c.req.valid('json');
+    const user = await db.select().from(tables.user).where(eq(tables.user.email, email)).then(res => res.at(0));
+    if (!user || !user.resetOtpHash || !user.resetOtpExpiry) {
+      return c.json({ error: 'Invalid or expired OTP' }, 400);
+    }
+    const hash = await sha256(code);
+    if (user.resetOtpHash !== hash || user.resetOtpExpiry < new Date()) {
+      return c.json({ error: 'Invalid or expired OTP' }, 400);
+    }
+    const encryptedPassword = (await sha256(newPassword)) ?? '';
+    if (!encryptedPassword) {
+      return c.json({ error: 'Failed to encrypt password' }, 500);
+    }
+    await db.update(tables.user)
+      .set({
+        encryptedPassword,
+        resetOtpHash: null,
+        resetOtpExpiry: null
+      })
+      .where(eq(tables.user.email, email))
+      .execute();
+    return c.json({ message: 'Password updated successfully' }, 200);
+  });
+};
+
+
+
+export { getUserInfoHandler, getUsersHandler, loginHandler, registerHandler, changePasswordHandler, sendOtpHandler, verifyOtpHandler, forgotPasswordHandler };

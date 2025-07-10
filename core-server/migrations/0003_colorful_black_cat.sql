@@ -1,1 +1,0 @@
-ALTER TABLE "proposed_plan" ADD COLUMN "created_by" text DEFAULT 'AI' NOT NULL;

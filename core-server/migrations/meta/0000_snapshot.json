@@ -1,5 +1,5 @@
 {
-  "id": "24ff4461-ead3-4465-bf47-204bf8411982",
+  "id": "3fd49840-a055-4a09-8b14-32cb7b9bf5fb",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -900,13 +900,13 @@
         },
         "previous_pregnancies": {
           "name": "previous_pregnancies",
-          "type": "integer",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
         "previous_deliveries": {
           "name": "previous_deliveries",
-          "type": "integer",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
@@ -975,12 +975,6 @@
         },
         "age": {
           "name": "age",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "gender": {
-          "name": "gender",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -993,12 +987,6 @@
         },
         "occupation": {
           "name": "occupation",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "address": {
-          "name": "address",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -1023,13 +1011,13 @@
         },
         "married_years": {
           "name": "married_years",
-          "type": "integer",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
         "pregnancy_months": {
           "name": "pregnancy_months",
-          "type": "integer",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
@@ -1442,6 +1430,13 @@
           "primaryKey": false,
           "notNull": false
         },
+        "created_by": {
+          "name": "created_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'AI'"
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -1811,6 +1806,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "name": {
           "name": "name",
           "type": "text",
@@ -1833,6 +1834,18 @@
         "hospital_id": {
           "name": "hospital_id",
           "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reset_otp_hash": {
+          "name": "reset_otp_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reset_otp_expiry": {
+          "name": "reset_otp_expiry",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": false
         },
@@ -1895,31 +1908,31 @@
         },
         "pulse": {
           "name": "pulse",
-          "type": "integer",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
         "temperature": {
           "name": "temperature",
-          "type": "numeric",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
         "weight": {
           "name": "weight",
-          "type": "numeric",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
         "height": {
           "name": "height",
-          "type": "numeric",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
         "bmi": {
           "name": "bmi",
-          "type": "numeric",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },

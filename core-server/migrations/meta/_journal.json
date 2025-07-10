@@ -5,29 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1750677563426,
-      "tag": "0000_sour_red_skull",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1750851232280,
-      "tag": "0001_useful_outlaw_kid",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1751530119349,
-      "tag": "0002_sad_dark_phoenix",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1751968503104,
-      "tag": "0003_colorful_black_cat",
+      "when": 1752137939308,
+      "tag": "0000_happy_master_chief",
       "breakpoints": true
     }
   ]

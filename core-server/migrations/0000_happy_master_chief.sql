@@ -133,8 +133,8 @@ CREATE TABLE IF NOT EXISTS "migrations" (
 CREATE TABLE IF NOT EXISTS "obs_history" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"emr_id" uuid NOT NULL,
-	"previous_pregnancies" integer,
-	"previous_deliveries" integer,
+	"previous_pregnancies" text,
+	"previous_deliveries" text,
 	"previous_complications" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
@@ -144,16 +144,14 @@ CREATE TABLE IF NOT EXISTS "patient" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"phone_number" text NOT NULL,
 	"name" text,
-	"age" integer,
-	"gender" text,
+	"age" text,
 	"marital_status" text,
 	"occupation" text,
-	"address" text,
 	"location" text,
 	"cnic" text,
 	"education" text,
-	"married_years" integer,
-	"pregnancy_months" integer,
+	"married_years" text,
+	"pregnancy_months" text,
 	"miscarriage" text,
 	"first_pregnancy" text,
 	"family_marriage" text,
@@ -216,6 +214,7 @@ CREATE TABLE IF NOT EXISTS "proposed_plan" (
 	"next_follow_up_timing" date,
 	"next_follow_up_purpose" text,
 	"advised_lab_tests" text[],
+	"created_by" text DEFAULT 'AI' NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
@@ -270,10 +269,13 @@ CREATE TABLE IF NOT EXISTS "trimester" (
 CREATE TABLE IF NOT EXISTS "user" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"phone_number" text NOT NULL,
+	"email" text,
 	"name" text NOT NULL,
 	"encrypted_password" text NOT NULL,
 	"role" text DEFAULT 'doctor' NOT NULL,
 	"hospital_id" uuid,
+	"reset_otp_hash" text,
+	"reset_otp_expiry" timestamp,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
@@ -282,11 +284,11 @@ CREATE TABLE IF NOT EXISTS "vitals" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"emr_id" uuid NOT NULL,
 	"blood_pressure" text,
-	"pulse" integer,
-	"temperature" numeric,
-	"weight" numeric,
-	"height" numeric,
-	"bmi" numeric,
+	"pulse" text,
+	"temperature" text,
+	"weight" text,
+	"height" text,
+	"bmi" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );

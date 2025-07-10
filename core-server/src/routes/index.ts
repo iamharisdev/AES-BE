@@ -106,10 +106,13 @@ import {
 } from "@/routes/proposed-plan";
 import {
   changePasswordHandler,
+  forgotPasswordHandler,
   getUserInfoHandler,
   getUsersHandler,
   loginHandler,
   registerHandler,
+  sendOtpHandler,
+  verifyOtpHandler,
 } from "./user";
 import {
   createRedFlagsHandler,
@@ -204,4 +207,8 @@ export const registerRoutes = () => {
   deleteRedFlagsHandler();
   getMajorRedFlags();
   changePasswordHandler()
+  changePasswordHandler();
+  sendOtpHandler();
+  verifyOtpHandler();
+  forgotPasswordHandler()
 };
