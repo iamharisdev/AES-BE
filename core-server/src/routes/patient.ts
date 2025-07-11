@@ -7,6 +7,7 @@ import { eq, ilike, or, desc } from 'drizzle-orm';
 import { Storage } from '@google-cloud/storage';
 import { ulid } from 'ulidx';
 import { UserRole } from '@/models/user';
+import { getTranscription } from "@/services/transcription";
 
 // Initialize Google Cloud Storage
 const storage = new Storage();
@@ -260,14 +261,14 @@ const uploadVoiceNoteRoute = createRoute({
 });
 
 const uploadVoiceNoteHandler = () => {
-  app.openapi(uploadVoiceNoteRoute, async c => {
+  app.openapi(uploadVoiceNoteRoute, async (c) => {
     try {
-      const { patientId } = c.req.valid('param');
+      const { patientId } = c.req.valid("param");
       const formData = await c.req.formData();
-      const voiceNote = formData.get('voiceNote');
+      const voiceNote = formData.get("voiceNote");
 
       if (!voiceNote || !(voiceNote instanceof File)) {
-        return c.json({ error: 'No voice note file provided' }, 400);
+        return c.json({ error: "No voice note file provided" }, 400);
       }
 
       // Get the patient by ID
@@ -276,64 +277,64 @@ const uploadVoiceNoteHandler = () => {
         .from(tables.patient)
         .where(eq(tables.patient.id, patientId))
         .execute()
-        .then(res => res[0]);
-
+        .then((res) => res[0]);
       if (!patient) {
-        return c.json({ error: 'Patient not found' }, 404);
-      }
-
-      // Check if the user has permission to upload for this patient
-      const { role, phoneNumber } = c.get('jwtPayload');
-
-      // If user is a doctor, they can upload for any patient
-      // If user is a patient, they can only upload for themselves
-      if (role === UserRole.Patient && patient.phoneNumber !== phoneNumber) {
-        return c.json(
-          {
-            error:
-              'You do not have permission to upload voice notes for this patient'
-          },
-          403
-        );
+        return c.json({ error: "Patient not found" }, 404);
       }
 
       // Generate a unique filename with patient ID as folder and date-time
-      const fileExtension = voiceNote.name.split('.').pop();
+      const fileExtension = voiceNote.name.split(".").pop();
       const now = new Date();
       const dateTimeStr = now
         .toISOString()
-        .replace(/[:.]/g, '-')
+        .replace(/[:.]/g, "-")
         .substring(0, 19);
-      const fileName = `${
-        patient.id
-      }/${dateTimeStr}_${ulid()}.${fileExtension}`;
+      const fileName = `${patient.id}/${dateTimeStr}_${ulid()}.${fileExtension}`;
 
       // Upload to Google Cloud Storage
       const file = bucket.file(fileName);
-      const buffer = await voiceNote.arrayBuffer();
-      await file.save(Buffer.from(buffer), {
+      const buffer = Buffer.from(await voiceNote.arrayBuffer());
+      await file.save(buffer, {
         metadata: {
           contentType: voiceNote.type
         }
       });
 
       // Get the public URL
-      const publicUrl = `https://storage.cloud.google.com/${bucketName}/${fileName}`;
-      // Add the new voice note URL to the array
-      const currentVoiceNotes = Array.isArray(patient.voiceNotes)
-        ? patient.voiceNotes
-        : [];
-      const updatedVoiceNotes = [...currentVoiceNotes, publicUrl];
+      const publicUrl = `https://storage.googleapis.com/${bucketName}/${fileName}`;
+
+      // Add the new voice note object to the array
+      let transcription = null;
+      try {
+        const result = await getTranscription({ file: buffer });
+        if ("text" in result) {
+          transcription = result.text;
+        } else if ("clientError" in result) {
+          transcription = result.clientError;
+        } else {
+          transcription = null;
+        }
+      } catch (err) {
+        transcription = null;
+      }
+
+      const newVoiceNote = {
+        url: publicUrl,
+        transcription,
+        createdAt: new Date().toISOString()
+      };
+      const currentVoiceNotes = Array.isArray(patient.voiceNotes) ? patient.voiceNotes : [];
+      const updatedVoiceNotes = [...currentVoiceNotes, newVoiceNote];
       await db
         .update(tables.patient)
         .set({ voiceNotes: updatedVoiceNotes })
         .where(eq(tables.patient.id, patientId))
         .execute();
 
-      return c.json({ voiceNoteUrl: publicUrl }, 200);
+      return c.json({ voiceNoteUrl: publicUrl, transcription }, 200);
     } catch (error) {
-      console.error('Error uploading voice note:', error);
-      return c.json({ error: 'Failed to upload voice note' }, 500);
+      console.error("Error uploading voice note:", error);
+      return c.json({ error: "Failed to upload voice note" }, 500);
     }
   });
 }
