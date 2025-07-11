@@ -25,7 +25,7 @@ const GetEmrSuccessResponseSchema = z.object({
     socioEconomicHistory: z.record(z.unknown()),
     redFlags: z.record(z.unknown()),
     followupQuestions: z.record(z.unknown()),
-    proposedPlan: z.record(z.unknown()),
+    proposedPlan: z.array(z.record(z.unknown())),
     previousPregnancy: z.array(z.record(z.unknown())),
   }),
 });
@@ -78,8 +78,7 @@ const getEmrDetailsHandler = () => {
         socioEconomicHistory: tables.socioEconomicHistory,
         redFlags: tables.redFlags,
         followupQuestions: tables.followupQuestions,
-        proposedPlan: tables.proposedPlan,
-        hasExamination: sql<boolean>`CASE WHEN ${tables.examination.id} IS NOT NULL THEN TRUE ELSE FALSE END`,
+        hasExamination: sql<boolean>`CASE WHEN ${tables.examination.id} IS NOT NULL THEN TRUE ELSE FALSE END`
       })
       .from(tables.emr)
       .leftJoin(tables.examination, eq(tables.emr.id, tables.examination.id))
@@ -122,13 +121,9 @@ const getEmrDetailsHandler = () => {
         tables.followupQuestions,
         eq(tables.emr.id, tables.followupQuestions.emrId)
       )
-      .leftJoin(
-        tables.proposedPlan,
-        eq(tables.emr.id, tables.proposedPlan.emrId)
-      )
       .where(eq(tables.emr.id, id))
       .execute()
-      .then((res) => res.at(0));
+      .then(res => res.at(0));
 
     if (!emr) {
       return c.json({ error: `No Emr Record Found With Id ${id}` }, 404);
@@ -139,6 +134,13 @@ const getEmrDetailsHandler = () => {
       .select()
       .from(tables.previousPregnancy)
       .where(eq(tables.previousPregnancy.emrId, id))
+      .execute();
+
+    // Get all proposed plans separately
+    const proposedPlans = await db
+      .select()
+      .from(tables.proposedPlan)
+      .where(eq(tables.proposedPlan.emrId, id))
       .execute();
 
     // Transform the response to match the schema
@@ -160,8 +162,8 @@ const getEmrDetailsHandler = () => {
       socioEconomicHistory: emr.socioEconomicHistory || {},
       redFlags: emr.redFlags || {},
       followupQuestions: emr.followupQuestions || {},
-      proposedPlan: emr.proposedPlan || {},
-      previousPregnancy: previousPregnancies.map((pregnancy) => ({
+      proposedPlan: proposedPlans,
+      previousPregnancy: previousPregnancies.map(pregnancy => ({
         id: pregnancy.id,
         emrId: pregnancy.emrId,
         childAge: pregnancy.childAge,
@@ -210,10 +212,10 @@ const GetAllEmrsSuccessSchema = z.object({
       socioEconomicHistory: z.record(z.unknown()),
       redFlags: z.record(z.unknown()),
       followupQuestions: z.record(z.unknown()),
-      proposedPlan: z.record(z.unknown()),
-      previousPregnancy: z.array(z.record(z.unknown())),
+      proposedPlan: z.array(z.record(z.unknown())),
+      previousPregnancy: z.array(z.record(z.unknown()))
     })
-  ),
+  )
 });
 const GetAllEmrsNotFoundSchema = z.object({
   error: z
@@ -400,7 +402,7 @@ const getAllEmrsFromPhoneHandler = () => {
       followupQuestions,
       "emrId"
     );
-    const proposedPlansMap = createLookupMap(proposedPlans, "emrId");
+    const proposedPlansMap = createGroupedLookupMap(proposedPlans, "emrId");
 
     // Group previous pregnancies by EMR ID
     const previousPregnanciesByEmrId = allPreviousPregnancies.reduce(
@@ -434,7 +436,7 @@ const getAllEmrsFromPhoneHandler = () => {
       socioEconomicHistory: socioEconomicHistoriesMap[emr.id] || {},
       redFlags: redFlagsMap[emr.id] || [],
       followupQuestions: followupQuestionsMap[emr.id] || [],
-      proposedPlan: proposedPlansMap[emr.id] || {},
+      proposedPlan: proposedPlansMap[emr.id] || [],
       previousPregnancy: (previousPregnanciesByEmrId[emr.id] || []).map(
         (pregnancy) => ({
           id: pregnancy.id,
@@ -481,45 +483,45 @@ const GetAllEmrsFromCnicSuccessSchema = z.object({
       socioEconomicHistory: z.record(z.unknown()),
       redFlags: z.record(z.unknown()),
       followupQuestions: z.record(z.unknown()),
-      proposedPlan: z.record(z.unknown()),
+      proposedPlan: z.array(z.record(z.unknown())),
       previousPregnancy: z.array(z.record(z.unknown()))
     })
   )
 });
 const GetAllEmrsFromCnicNotFoundSchema = z.object({
-  error: z.string().openapi({ example: 'No EMR records found for this CNIC' })
+  error: z.string().openapi({ example: "No EMR records found for this CNIC" })
 });
 const getAllEmrsFromCnicRoute = createRoute({
-  method: 'get',
-  operationId: 'getAllEmrsFromCnic',
-  tags: ['EMR'],
-  path: '/emr/getAllEmrsFromCnic/{cnic}',
-  summary: 'Get All EMRs for a Patient by CNIC',
+  method: "get",
+  operationId: "getAllEmrsFromCnic",
+  tags: ["EMR"],
+  path: "/emr/getAllEmrsFromCnic/{cnic}",
+  summary: "Get All EMRs for a Patient by CNIC",
   security: [{ jwt: [] }],
   middleware: [jwtMiddleware],
   request: {
     params: z.object({
-      cnic: z.string().openapi({ example: '35202-1234567-8' })
+      cnic: z.string().openapi({ example: "35202-1234567-8" })
     })
   },
   responses: {
     200: {
       content: {
-        'application/json': { schema: GetAllEmrsFromCnicSuccessSchema }
+        "application/json": { schema: GetAllEmrsFromCnicSuccessSchema }
       },
-      description: 'Returns all EMR records for the given CNIC'
+      description: "Returns all EMR records for the given CNIC"
     },
     404: {
       content: {
-        'application/json': { schema: GetAllEmrsFromCnicNotFoundSchema }
+        "application/json": { schema: GetAllEmrsFromCnicNotFoundSchema }
       },
-      description: 'Not Found'
+      description: "Not Found"
     }
   }
 });
 const getAllEmrsFromCnicHandler = () => {
   app.openapi(getAllEmrsFromCnicRoute, async c => {
-    const { cnic } = c.req.valid('param');
+    const { cnic } = c.req.valid("param");
 
     // First, get the patient by CNIC
     const patient = await db
@@ -533,7 +535,7 @@ const getAllEmrsFromCnicHandler = () => {
       return c.json({ error: `No patient found with CNIC ${cnic}` }, 404);
     }
 
-    // Get all EMRs for this patient's phone number
+    // Get all EMRs for this patient"s phone number
     const emrs = await db
       .select({
         id: tables.emr.id,
@@ -655,28 +657,28 @@ const getAllEmrsFromCnicHandler = () => {
 
     const presentingComplaintsMap = createLookupMap(
       presentingComplaints,
-      'emrId'
+      "emrId"
     );
-    const currentPregnanciesMap = createLookupMap(currentPregnancies, 'emrId');
-    const trimestersMap = createLookupMap(trimesters, 'emrId');
-    const obsHistoriesMap = createLookupMap(obsHistories, 'emrId');
+    const currentPregnanciesMap = createLookupMap(currentPregnancies, "emrId");
+    const trimestersMap = createLookupMap(trimesters, "emrId");
+    const obsHistoriesMap = createLookupMap(obsHistories, "emrId");
     const gynecologicalHistoriesMap = createLookupMap(
       gynecologicalHistories,
-      'emrId'
+      "emrId"
     );
-    const surgicalHistoriesMap = createLookupMap(surgicalHistories, 'emrId');
-    const familyHistoriesMap = createLookupMap(familyHistories, 'emrId');
-    const personalHistoriesMap = createLookupMap(personalHistories, 'emrId');
+    const surgicalHistoriesMap = createLookupMap(surgicalHistories, "emrId");
+    const familyHistoriesMap = createLookupMap(familyHistories, "emrId");
+    const personalHistoriesMap = createLookupMap(personalHistories, "emrId");
     const socioEconomicHistoriesMap = createLookupMap(
       socioEconomicHistories,
-      'emrId'
+      "emrId"
     );
-    const redFlagsMap = createGroupedLookupMap(redFlags, 'emrId');
+    const redFlagsMap = createGroupedLookupMap(redFlags, "emrId");
     const followupQuestionsMap = createGroupedLookupMap(
       followupQuestions,
-      'emrId'
+      "emrId"
     );
-    const proposedPlansMap = createLookupMap(proposedPlans, 'emrId');
+    const proposedPlansMap = createGroupedLookupMap(proposedPlans, "emrId");
 
     // Group previous pregnancies by EMR ID
     const previousPregnanciesByEmrId = allPreviousPregnancies.reduce(
@@ -710,7 +712,7 @@ const getAllEmrsFromCnicHandler = () => {
       socioEconomicHistory: socioEconomicHistoriesMap[emr.id] || {},
       redFlags: redFlagsMap[emr.id] || [],
       followupQuestions: followupQuestionsMap[emr.id] || [],
-      proposedPlan: proposedPlansMap[emr.id] || {},
+      proposedPlan: proposedPlansMap[emr.id] || [],
       previousPregnancy: (previousPregnanciesByEmrId[emr.id] || []).map(
         pregnancy => ({
           id: pregnancy.id,
@@ -751,38 +753,38 @@ const validSections = new Set([
   "redFlags",
   "followupQuestions",
   "proposedPlan",
-  "previousPregnancy",
+  "previousPregnancy"
 ]);
 const UpdateEmrRequestSchema = z.object({
   id: z.string().uuid(),
   updates: z
     .array(
       z.object({
-        section: z.string().refine((val) => validSections.has(val), {
-          message: "Invalid section name",
+        section: z.string().refine(val => validSections.has(val), {
+          message: "Invalid section name"
         }),
-        content: z.object({}),
+        content: z.object({})
       })
     )
     .min(1)
     .refine(
-      (updates) => {
-        const sectionSet = new Set(updates.map((u) => u.section));
+      updates => {
+        const sectionSet = new Set(updates.map(u => u.section));
         return sectionSet.size === updates.length;
       },
       { message: "Duplicate sections are not allowed" }
-    ),
+    )
 });
 const UpdateEmrSuccessSchema = z.object({
   message: z.string(),
   updatedFields: z.array(z.string()),
-  lastmodified: z.string().datetime(),
+  lastmodified: z.string().datetime()
 });
 const UpdateEmrNotFoundSchema = z.object({
-  error: z.string().openapi({ example: "No EMR record found with this ID" }),
+  error: z.string().openapi({ example: "No EMR record found with this ID" })
 });
 const UpdateEmrInternalServerErrorSchema = z.object({
-  error: z.string().openapi({ example: "Internal server error" }),
+  error: z.string().openapi({ example: "Internal server error" })
 });
 const updateEmrRoute = createRoute({
   method: "put",
@@ -794,35 +796,35 @@ const updateEmrRoute = createRoute({
   middleware: [jwtMiddleware],
   request: {
     body: {
-      content: { "application/json": { schema: UpdateEmrRequestSchema } },
-    },
+      content: { "application/json": { schema: UpdateEmrRequestSchema } }
+    }
   },
   responses: {
     200: {
       content: { "application/json": { schema: UpdateEmrSuccessSchema } },
-      description: "Updated EMR Sections",
+      description: "Updated EMR Sections"
     },
     404: {
       content: { "application/json": { schema: UpdateEmrNotFoundSchema } },
-      description: "Not Found",
+      description: "Not Found"
     },
     500: {
       content: {
-        "application/json": { schema: UpdateEmrInternalServerErrorSchema },
+        "application/json": { schema: UpdateEmrInternalServerErrorSchema }
       },
-      description: "Internal Server Error",
-    },
-  },
+      description: "Internal Server Error"
+    }
+  }
 });
 const updateEmrHandler = () => {
-  app.openapi(updateEmrRoute, async (c) => {
+  app.openapi(updateEmrRoute, async c => {
     const { id, updates } = await c.req.json();
     const existingEmr = await db
       .select()
       .from(tables.emr)
       .where(eq(tables.emr.id, id))
       .execute()
-      .then((res) => res.at(0));
+      .then(res => res.at(0));
     if (!existingEmr) {
       return c.json({ error: `No EMR record found with ID ${id}` }, 404);
     }
@@ -837,7 +839,7 @@ const updateEmrHandler = () => {
       .where(eq(tables.emr.id, id))
       .returning({ updatedAt: tables.emr.updatedAt })
       .execute()
-      .then((res) => res.at(0)?.updatedAt?.toISOString());
+      .then(res => res.at(0)?.updatedAt?.toISOString());
     if (!lastmodified) {
       return c.json({ error: "Failed to retrieve updated timestamp" }, 500);
     }
