@@ -16,6 +16,7 @@ import { sendEmail } from '@/services/email';
 const RegisterRequestBodySchema = z.object({
   name: z.string().openapi({ example: 'Nazia' }),
   phoneNumber: z.string().openapi({ example: '03001234567' }),
+  email: z.string().email().openapi({ example: 'user@example.com' }),
   password: z.string().openapi({ example: 'xxxxxxxxx' }),
   hospitalId: z.string().uuid().optional().openapi({ example: 'uuid-1234' }),
   role: z
@@ -153,6 +154,7 @@ const registerHandler = () => {
         hospitalId: details.hospitalId,
         name: details.name,
         phoneNumber: details.phoneNumber,
+        email: details.email,
         encryptedPassword: (await sha256(details.password)) ?? '',
         role: details.role
       })
@@ -160,7 +162,8 @@ const registerHandler = () => {
         id: tables.user.id,
         phoneNumber: tables.user.phoneNumber,
         name: tables.user.name,
-        role: tables.user.role
+        role: tables.user.role,
+        email:tables.user.email
       });
 
     const jwtPayload: JwtPayload = {
@@ -525,7 +528,10 @@ const sendOtpHandler = () => {
       .set({ resetOtpHash: hash, resetOtpExpiry: expiresAt })
       .where(eq(tables.user.email, email))
       .execute();
-      await sendEmail(email, user, code)
+
+   await sendEmail(email, user, code)
+
+      
 
     return c.json({ message: 'OTP sent to email' }, 200);
   });
