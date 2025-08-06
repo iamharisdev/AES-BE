@@ -9,8 +9,7 @@ import { eq } from 'drizzle-orm';
 const SurgicalHistorySchema = z.object({
   id: z.string().uuid(),
   emrId: z.string().uuid(),
-  pastSurgeries: z.string().nullable(),
-  additionalInfo: z.string().nullable(),
+  surgicalHistory: z.string().nullable(),
   createdAt: z.date(),
   updatedAt: z.date()
 });
@@ -18,8 +17,7 @@ const SurgicalHistorySchema = z.object({
 // Create schema
 const CreateSurgicalHistorySchema = z.object({
   emrId: z.string().uuid(),
-  pastSurgeries: z.string().nullable(),
-  additionalInfo: z.string().nullable()
+  surgicalHistory: z.string().nullable()
 });
 
 // Update schema
@@ -166,7 +164,7 @@ const createSurgicalHistoryHandler = () => {
       .returning();
     return c.json(record, 201);
   });
-}
+};
 
 const getSurgicalHistoryHandler = () => {
   app.openapi(getSurgicalHistoryRoute, async c => {
@@ -183,7 +181,7 @@ const getSurgicalHistoryHandler = () => {
 
     return c.json(record);
   });
-}
+};
 
 const updateSurgicalHistoryHandler = () => {
   app.openapi(updateSurgicalHistoryRoute, async c => {
@@ -202,7 +200,7 @@ const updateSurgicalHistoryHandler = () => {
 
     return c.json(record);
   });
-}
+};
 
 const deleteSurgicalHistoryHandler = () => {
   app.openapi(deleteSurgicalHistoryRoute, async c => {
@@ -218,6 +216,11 @@ const deleteSurgicalHistoryHandler = () => {
 
     return c.body(null, 204);
   });
-}
+};
 
-export { createSurgicalHistoryHandler, getSurgicalHistoryHandler, updateSurgicalHistoryHandler, deleteSurgicalHistoryHandler }
+export {
+  createSurgicalHistoryHandler,
+  getSurgicalHistoryHandler,
+  updateSurgicalHistoryHandler,
+  deleteSurgicalHistoryHandler
+};

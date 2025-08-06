@@ -11,15 +11,14 @@ const CurrentPregnancySchema = z.object({
   emrId: z.string().uuid(),
   pregnancyDetectionMethod: z.string().nullable(),
   pregnancyConsent: z.string().nullable(),
+  pregnancyMethod: z.string().nullable(),
   pregnancyClinicalFindings: z.string().nullable(),
   urineTest: z.string().nullable(),
   ultrasound: z.string().nullable(),
   folicAcid: z.string().nullable(),
   bloodUrineTest: z.string().nullable(),
   bloodUrineTestTypes: z.string().nullable(),
-  earlyPregProblems: z.string().nullable(),
-  lastMenstruation: z.string().nullable(),
-  regularMenstruation: z.string().nullable(),
+  earlyPregnancySymptoms: z.string().nullable(),
   createdAt: z.date(),
   updatedAt: z.date()
 });
@@ -29,15 +28,14 @@ const CreateCurrentPregnancySchema = z.object({
   emrId: z.string().uuid(),
   pregnancyDetectionMethod: z.string().nullable(),
   pregnancyConsent: z.string().nullable(),
+  pregnancyMethod: z.string().nullable(),
   pregnancyClinicalFindings: z.string().nullable(),
   urineTest: z.string().nullable(),
   ultrasound: z.string().nullable(),
   folicAcid: z.string().nullable(),
   bloodUrineTest: z.string().nullable(),
   bloodUrineTestTypes: z.string().nullable(),
-  earlyPregProblems: z.string().nullable(),
-  lastMenstruation: z.string().nullable(),
-  regularMenstruation: z.string().nullable()
+  earlyPregnancySymptoms: z.string().nullable()
 });
 
 // Update schema
@@ -184,7 +182,7 @@ const createCurrentPregnancyHandler = () => {
       .returning();
     return c.json(record, 201);
   });
-}
+};
 
 const getCurrentPregnancyHandler = () => {
   app.openapi(getCurrentPregnancyRoute, async c => {
@@ -201,7 +199,7 @@ const getCurrentPregnancyHandler = () => {
 
     return c.json(record);
   });
-}
+};
 
 const updateCurrentPregnancyHandler = () => {
   app.openapi(updateCurrentPregnancyRoute, async c => {
@@ -220,7 +218,7 @@ const updateCurrentPregnancyHandler = () => {
 
     return c.json(record);
   });
-}
+};
 
 const deleteCurrentPregnancyHandler = () => {
   app.openapi(deleteCurrentPregnancyRoute, async c => {
@@ -236,6 +234,11 @@ const deleteCurrentPregnancyHandler = () => {
 
     return c.body(null, 204);
   });
-}
+};
 
-export { createCurrentPregnancyHandler, getCurrentPregnancyHandler, updateCurrentPregnancyHandler, deleteCurrentPregnancyHandler }
+export {
+  createCurrentPregnancyHandler,
+  getCurrentPregnancyHandler,
+  updateCurrentPregnancyHandler,
+  deleteCurrentPregnancyHandler
+};

@@ -9,9 +9,29 @@ import { eq } from 'drizzle-orm';
 const ObstetricHistorySchema = z.object({
   id: z.string().uuid(),
   emrId: z.string().uuid(),
-  previousPregnancies: z.string().optional(),
-  previousDeliveries: z.string().optional(),
-  previousComplications: z.string().optional(),
+  childAge: z.string().nullable(),
+  childGender: z.string().nullable(),
+  fullTermBirth: z.string().nullable(),
+  birthPlace: z.string().nullable(),
+  birthMethod: z.string().nullable(),
+  contractions: z.string().nullable(),
+  birthDuration: z.string().nullable(),
+  operationReason: z.string().nullable(),
+  birthWeight: z.string().nullable(),
+  postDeliveryProblems: z.string().nullable(),
+  childHealthStatus: z.string().nullable(),
+  childSchoolStatus: z.string().nullable(),
+  pregnancyProblems: z.string().nullable(),
+  childrenAges: z.string().nullable(),
+  childrenGenders: z.string().nullable(),
+  childrenBirthPlaces: z.string().nullable(),
+  childrenBirthMethods: z.string().nullable(),
+  childrenContractions: z.string().nullable(),
+  childrenBirthDurations: z.string().nullable(),
+  childrenOperationReasons: z.string().nullable(),
+  childrenBirthWeights: z.string().nullable(),
+  childrenHealthStatus: z.string().nullable(),
+  childrenSchoolStatus: z.string().nullable(),
   createdAt: z.date(),
   updatedAt: z.date()
 });
@@ -19,9 +39,29 @@ const ObstetricHistorySchema = z.object({
 // Create schema
 const CreateObstetricHistorySchema = z.object({
   emrId: z.string().uuid(),
-  previousPregnancies: z.string().optional(),
-  previousDeliveries: z.string().optional(),
-  previousComplications: z.string().optional()
+  childAge: z.string().nullable(),
+  childGender: z.string().nullable(),
+  fullTermBirth: z.string().nullable(),
+  birthPlace: z.string().nullable(),
+  birthMethod: z.string().nullable(),
+  contractions: z.string().nullable(),
+  birthDuration: z.string().nullable(),
+  operationReason: z.string().nullable(),
+  birthWeight: z.string().nullable(),
+  postDeliveryProblems: z.string().nullable(),
+  childHealthStatus: z.string().nullable(),
+  childSchoolStatus: z.string().nullable(),
+  pregnancyProblems: z.string().nullable(),
+  childrenAges: z.string().nullable(),
+  childrenGenders: z.string().nullable(),
+  childrenBirthPlaces: z.string().nullable(),
+  childrenBirthMethods: z.string().nullable(),
+  childrenContractions: z.string().nullable(),
+  childrenBirthDurations: z.string().nullable(),
+  childrenOperationReasons: z.string().nullable(),
+  childrenBirthWeights: z.string().nullable(),
+  childrenHealthStatus: z.string().nullable(),
+  childrenSchoolStatus: z.string().nullable()
 });
 
 // Update schema
@@ -162,10 +202,13 @@ const deleteObstetricHistoryRoute = createRoute({
 const createObstetricHistoryHandler = () => {
   app.openapi(createObstetricHistoryRoute, async c => {
     const data = c.req.valid('json');
-    const [record] = await db.insert(tables.obsHistory).values(data).returning();
+    const [record] = await db
+      .insert(tables.obsHistory)
+      .values(data)
+      .returning();
     return c.json(record, 201);
   });
-}
+};
 
 const getObstetricHistoryHandler = () => {
   app.openapi(getObstetricHistoryRoute, async c => {
@@ -182,7 +225,7 @@ const getObstetricHistoryHandler = () => {
 
     return c.json(record);
   });
-}
+};
 
 const updateObstetricHistoryHandler = () => {
   app.openapi(updateObstetricHistoryRoute, async c => {
@@ -201,7 +244,7 @@ const updateObstetricHistoryHandler = () => {
 
     return c.json(record);
   });
-}
+};
 
 const deleteObstetricHistoryHandler = () => {
   app.openapi(deleteObstetricHistoryRoute, async c => {
@@ -217,6 +260,11 @@ const deleteObstetricHistoryHandler = () => {
 
     return c.body(null, 204);
   });
-}
+};
 
-export { createObstetricHistoryHandler, getObstetricHistoryHandler, updateObstetricHistoryHandler, deleteObstetricHistoryHandler }
+export {
+  createObstetricHistoryHandler,
+  getObstetricHistoryHandler,
+  updateObstetricHistoryHandler,
+  deleteObstetricHistoryHandler
+};

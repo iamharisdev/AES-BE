@@ -10,9 +10,9 @@ const SocioEconomicHistorySchema = z.object({
   id: z.string().uuid(),
   emrId: z.string().uuid(),
   noFamilyMembers: z.string().nullable(),
-  familyType: z.string().nullable(),
+  financialSituation: z.string().nullable(),
   livingSituation: z.string().nullable(),
-  moreInfo: z.string().nullable(),
+  additionalInfo: z.string().nullable(),
   createdAt: z.date(),
   updatedAt: z.date()
 });
@@ -21,13 +21,14 @@ const SocioEconomicHistorySchema = z.object({
 const CreateSocioEconomicHistorySchema = z.object({
   emrId: z.string().uuid(),
   noFamilyMembers: z.string().nullable(),
-  familyType: z.string().nullable(),
+  financialSituation: z.string().nullable(),
   livingSituation: z.string().nullable(),
-  moreInfo: z.string().nullable()
+  additionalInfo: z.string().nullable()
 });
 
 // Update schema
-const UpdateSocioEconomicHistorySchema = CreateSocioEconomicHistorySchema.partial();
+const UpdateSocioEconomicHistorySchema =
+  CreateSocioEconomicHistorySchema.partial();
 
 // Create route
 const createSocioEconomicHistoryRoute = createRoute({
@@ -170,7 +171,7 @@ const createSocioEconomicHistoryHandler = () => {
       .returning();
     return c.json(record, 201);
   });
-}
+};
 
 const getSocioEconomicHistoryHandler = () => {
   app.openapi(getSocioEconomicHistoryRoute, async c => {
@@ -187,7 +188,7 @@ const getSocioEconomicHistoryHandler = () => {
 
     return c.json(record);
   });
-}
+};
 
 const updateSocioEconomicHistoryHandler = () => {
   app.openapi(updateSocioEconomicHistoryRoute, async c => {
@@ -206,7 +207,7 @@ const updateSocioEconomicHistoryHandler = () => {
 
     return c.json(record);
   });
-}
+};
 
 const deleteSocioEconomicHistoryHandler = () => {
   app.openapi(deleteSocioEconomicHistoryRoute, async c => {
@@ -222,6 +223,11 @@ const deleteSocioEconomicHistoryHandler = () => {
 
     return c.body(null, 204);
   });
-}
+};
 
-export { createSocioEconomicHistoryHandler, getSocioEconomicHistoryHandler, updateSocioEconomicHistoryHandler, deleteSocioEconomicHistoryHandler }
+export {
+  createSocioEconomicHistoryHandler,
+  getSocioEconomicHistoryHandler,
+  updateSocioEconomicHistoryHandler,
+  deleteSocioEconomicHistoryHandler
+};

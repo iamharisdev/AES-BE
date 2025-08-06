@@ -10,13 +10,22 @@ const TrimesterSchema = z.object({
   id: z.string().uuid(),
   emrId: z.string().uuid(),
   fetusMovement: z.string().nullable(),
+  movementReduction: z.string().nullable(),
   ultrasound: z.string().nullable(),
+  recentScan: z.string().nullable(),
+  scanResults: z.string().nullable(),
   checkupRegularity: z.string().nullable(),
+  bloodUrineTests: z.string().nullable(),
   hbLevel: z.string().nullable(),
-  trimesterProblems: z.string().nullable(),
-  sugarBloodPressure: z.string().nullable(),
+  hbSymptoms: z.string().nullable(),
+  sugarTest: z.string().nullable(),
+  sugarTestResult: z.string().nullable(),
+  sugarMedication: z.string().nullable(),
+  bloodPressure: z.string().nullable(),
+  bloodPressureResult: z.string().nullable(),
+  bpMedication: z.string().nullable(),
   strengthMeds: z.string().nullable(),
-  pregProblems: z.string().nullable(),
+  pregnancySymptoms: z.string().nullable(),
   additionalInfo: z.string().nullable(),
   createdAt: z.date(),
   updatedAt: z.date()
@@ -26,13 +35,22 @@ const TrimesterSchema = z.object({
 const CreateTrimesterSchema = z.object({
   emrId: z.string().uuid(),
   fetusMovement: z.string().nullable(),
+  movementReduction: z.string().nullable(),
   ultrasound: z.string().nullable(),
+  recentScan: z.string().nullable(),
+  scanResults: z.string().nullable(),
   checkupRegularity: z.string().nullable(),
+  bloodUrineTests: z.string().nullable(),
   hbLevel: z.string().nullable(),
-  trimesterProblems: z.string().nullable(),
-  sugarBloodPressure: z.string().nullable(),
+  hbSymptoms: z.string().nullable(),
+  sugarTest: z.string().nullable(),
+  sugarTestResult: z.string().nullable(),
+  sugarMedication: z.string().nullable(),
+  bloodPressure: z.string().nullable(),
+  bloodPressureResult: z.string().nullable(),
+  bpMedication: z.string().nullable(),
   strengthMeds: z.string().nullable(),
-  pregProblems: z.string().nullable(),
+  pregnancySymptoms: z.string().nullable(),
   additionalInfo: z.string().nullable()
 });
 
@@ -174,13 +192,10 @@ const deleteTrimesterRoute = createRoute({
 const createTrimesterHandler = () => {
   app.openapi(createTrimesterRoute, async c => {
     const data = c.req.valid('json');
-    const [record] = await db
-      .insert(tables.trimester)
-      .values(data)
-      .returning();
+    const [record] = await db.insert(tables.trimester).values(data).returning();
     return c.json(record, 201);
   });
-}
+};
 
 const getTrimesterHandler = () => {
   app.openapi(getTrimesterRoute, async c => {
@@ -197,7 +212,7 @@ const getTrimesterHandler = () => {
 
     return c.json(record);
   });
-}
+};
 
 const updateTrimesterHandler = () => {
   app.openapi(updateTrimesterRoute, async c => {
@@ -216,7 +231,7 @@ const updateTrimesterHandler = () => {
 
     return c.json(record);
   });
-}
+};
 
 const deleteTrimesterHandler = () => {
   app.openapi(deleteTrimesterRoute, async c => {
@@ -232,7 +247,11 @@ const deleteTrimesterHandler = () => {
 
     return c.body(null, 204);
   });
-}
+};
 
-
-export { createTrimesterHandler, getTrimesterHandler, updateTrimesterHandler, deleteTrimesterHandler }
+export {
+  createTrimesterHandler,
+  getTrimesterHandler,
+  updateTrimesterHandler,
+  deleteTrimesterHandler
+};

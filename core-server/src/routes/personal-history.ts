@@ -11,13 +11,11 @@ const PersonalHistorySchema = z.object({
   emrId: z.string().uuid(),
   allergyStatus: z.string().nullable(),
   allergyType: z.string().nullable(),
-  bloodGroup: z.string().nullable(),
-  currentWeight: z.string().nullable(),
   substanceUse: z.string().nullable(),
-  maritalStatus: z.string().nullable(),
-  sleepAndHunger: z.string().nullable(),
+  relationshipDomesticSituation: z.string().nullable(),
+  sleepIssues: z.string().nullable(),
+  hungerIssues: z.string().nullable(),
   diet: z.string().nullable(),
-  domesticAbuse: z.string().nullable(),
   createdAt: z.date(),
   updatedAt: z.date()
 });
@@ -27,13 +25,11 @@ const CreatePersonalHistorySchema = z.object({
   emrId: z.string().uuid(),
   allergyStatus: z.string().nullable(),
   allergyType: z.string().nullable(),
-  bloodGroup: z.string().nullable(),
-  currentWeight: z.string().nullable(),
   substanceUse: z.string().nullable(),
-  maritalStatus: z.string().nullable(),
-  sleepAndHunger: z.string().nullable(),
-  diet: z.string().nullable(),
-  domesticAbuse: z.string().nullable()
+  relationshipDomesticSituation: z.string().nullable(),
+  sleepIssues: z.string().nullable(),
+  hungerIssues: z.string().nullable(),
+  diet: z.string().nullable()
 });
 
 // Update schema
@@ -180,7 +176,7 @@ const createPersonalHistoryHandler = () => {
       .returning();
     return c.json(record, 201);
   });
-}
+};
 
 const getPersonalHistoryHandler = () => {
   app.openapi(getPersonalHistoryRoute, async c => {
@@ -197,7 +193,7 @@ const getPersonalHistoryHandler = () => {
 
     return c.json(record);
   });
-}
+};
 
 const updatePersonalHistoryHandler = () => {
   app.openapi(updatePersonalHistoryRoute, async c => {
@@ -216,7 +212,7 @@ const updatePersonalHistoryHandler = () => {
 
     return c.json(record);
   });
-}
+};
 
 const deletePersonalHistoryHandler = () => {
   app.openapi(deletePersonalHistoryRoute, async c => {
@@ -232,15 +228,20 @@ const deletePersonalHistoryHandler = () => {
 
     return c.body(null, 204);
   });
-}
+};
 
 const personalHistoryRoute = () => {
   createPersonalHistoryHandler();
   getPersonalHistoryHandler();
   updatePersonalHistoryHandler();
   deletePersonalHistoryHandler();
-}
+};
 
-export { createPersonalHistoryHandler, getPersonalHistoryHandler, updatePersonalHistoryHandler, deletePersonalHistoryHandler }
+export {
+  createPersonalHistoryHandler,
+  getPersonalHistoryHandler,
+  updatePersonalHistoryHandler,
+  deletePersonalHistoryHandler
+};
 
 export default personalHistoryRoute;

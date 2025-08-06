@@ -9,8 +9,6 @@ import { eq } from 'drizzle-orm';
 const FamilyHistorySchema = z.object({
   id: z.string().uuid(),
   emrId: z.string().uuid(),
-  currentMeds: z.string().nullable(),
-  sugarBloodPressure: z.string().nullable(),
   familyMedicalConditions: z.string().nullable(),
   twinsFamilyHistory: z.string().nullable(),
   createdAt: z.date(),
@@ -20,8 +18,6 @@ const FamilyHistorySchema = z.object({
 // Create schema
 const CreateFamilyHistorySchema = z.object({
   emrId: z.string().uuid(),
-  currentMeds: z.string().nullable(),
-  sugarBloodPressure: z.string().nullable(),
   familyMedicalConditions: z.string().nullable(),
   twinsFamilyHistory: z.string().nullable()
 });
@@ -170,7 +166,7 @@ const createFamilyHistoryHandler = () => {
       .returning();
     return c.json(record, 201);
   });
-}
+};
 
 const getFamilyHistoryHandler = () => {
   app.openapi(getFamilyHistoryRoute, async c => {
@@ -187,7 +183,7 @@ const getFamilyHistoryHandler = () => {
 
     return c.json(record);
   });
-}
+};
 
 const updateFamilyHistoryHandler = () => {
   app.openapi(updateFamilyHistoryRoute, async c => {
@@ -206,7 +202,7 @@ const updateFamilyHistoryHandler = () => {
 
     return c.json(record);
   });
-}
+};
 
 const deleteFamilyHistoryHandler = () => {
   app.openapi(deleteFamilyHistoryRoute, async c => {
@@ -222,6 +218,11 @@ const deleteFamilyHistoryHandler = () => {
 
     return c.body(null, 204);
   });
-}
+};
 
-export { createFamilyHistoryHandler, getFamilyHistoryHandler, updateFamilyHistoryHandler, deleteFamilyHistoryHandler }
+export {
+  createFamilyHistoryHandler,
+  getFamilyHistoryHandler,
+  updateFamilyHistoryHandler,
+  deleteFamilyHistoryHandler
+};

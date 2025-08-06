@@ -14,6 +14,7 @@ import { surgicalHistory } from './surgical-history';
 import { familyHistory } from './family-history';
 import { personalHistory } from './personal-history';
 import { socioEconomicHistory } from './socio-economic-history';
+import { medicalHistory } from './medical-history';
 import { vitals } from './vitals';
 import { redFlags } from './red-flags';
 import { followupQuestions } from './followup-questions';
@@ -44,6 +45,7 @@ export const tables = {
   familyHistory,
   personalHistory,
   socioEconomicHistory,
+  medicalHistory,
   vitals,
   redFlags,
   followupQuestions,

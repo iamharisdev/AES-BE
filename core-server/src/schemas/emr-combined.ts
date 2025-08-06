@@ -44,6 +44,16 @@ export const PatientProfileDataSchema = z
     miscarriage: YesNoEnum.optional().nullable(),
     first_pregnancy: YesNoEnum.optional().nullable(),
     family_marriage: YesNoEnum.optional().nullable(),
+    husband_phone_number: z.string().nullable(),
+    patient_blood_group: BloodGroupEnum.optional().nullable(),
+    husband_blood_group: BloodGroupEnum.optional().nullable(),
+    last_menstruation_date: z.string().nullable(),
+    total_pregnancies: z.string().nullable(),
+    miscarriages: z.string().nullable(),
+    miscarriage_timing: z.string().nullable(),
+    stillbirths: z.string().nullable(),
+    neonatal_deaths: z.string().nullable(),
+    living_children: z.string().nullable(),
     additional_info: z.string().nullable()
   })
   .openapi('PatientProfile');
@@ -60,25 +70,38 @@ export const CurrentPregnancyDataSchema = z
   .object({
     preg_how: z.string().nullable(),
     preg_consent: YesNoEnum.optional().nullable(),
+    preg_method: z.string().nullable(),
     preg_finding: z.string().nullable(),
     urine_test: YesNoEnum.optional().nullable(),
     ultrasound: YesNoEnum.optional().nullable(),
     folic_acid: YesNoEnum.optional().nullable(),
     blood_urine_test: YesNoEnum.optional().nullable(),
     blood_urine_test_types: z.string().nullable(),
-    early_preg_problems: z.string().nullable(),
-    last_menstruation: z.string().nullable(),
-    regular_menstruation: YesNoEnum.optional().nullable(),
+    early_pregnancy_symptoms: z.string().nullable(),
     additional_info: z.string().nullable()
   })
   .openapi('CurrentPregnancy');
 
 export const TrimesterDataSchema = z
   .object({
-    fetalMovement: z.string().optional(),
-    fetalHeartRate: z.number().optional(),
-    fundalHeight: z.number().optional(),
-    presentation: z.string().optional()
+    fetusMovement: z.string().optional(),
+    movementReduction: z.string().optional(),
+    ultrasound: z.string().optional(),
+    recentScan: z.string().optional(),
+    scanResults: z.string().optional(),
+    checkupRegularity: z.string().optional(),
+    bloodUrineTests: z.string().optional(),
+    hbLevel: z.string().optional(),
+    hbSymptoms: z.string().optional(),
+    sugarTest: z.string().optional(),
+    sugarTestResult: z.string().optional(),
+    sugarMedication: z.string().optional(),
+    bloodPressure: z.string().optional(),
+    bloodPressureResult: z.string().optional(),
+    bpMedication: z.string().optional(),
+    strengthMeds: z.string().optional(),
+    pregnancySymptoms: z.string().optional(),
+    additionalInfo: z.string().optional()
   })
   .openapi('Trimester');
 
@@ -91,13 +114,19 @@ export const GynecologicalHistoryDataSchema = z
   })
   .openapi('GynecologicalHistory');
 
-
 export const SurgicalHistoryDataSchema = z
   .object({
-    past_surgeries: z.string().nullable(),
-    additional_info: z.string().nullable()
+    surgical_history: z.string().nullable()
   })
   .openapi('SurgicalHistory');
+
+export const MedicalHistoryDataSchema = z
+  .object({
+    current_medications: z.string().nullable(),
+    medical_conditions: z.string().nullable(),
+    additional_info: z.string().nullable()
+  })
+  .openapi('MedicalHistory');
 
 export const FamilyHistoryDataSchema = z
   .object({
@@ -111,38 +140,36 @@ export const PersonalHistoryDataSchema = z
   .object({
     allergy_status: YesNoEnum.optional().nullable(),
     allergy_type: z.string().nullable(),
-    // blood_group: BloodGroupEnum.nullable(),
-    current_weight: z.number().nullable(),
     substance_use: YesNoEnum.optional().nullable(),
-    marital_status: z.string().nullable(),
-    sleep_and_hunger: z.string().nullable(),
-    diet: z.string().nullable(),
-    domestic_abuse: YesNoEnum.optional().nullable(),
-    additional_info: z.string().nullable()
+    relationship_domestic_situation: z.string().nullable(),
+    sleep_issues: z.string().nullable(),
+    hunger_issues: z.string().nullable(),
+    diet: z.string().nullable()
   })
   .openapi('PersonalHistory');
 
 export const SocioEconomicHistoryDataSchema = z
   .object({
     no_family_members: z.number().nullable(),
-    // family_type: FamilyTypeEnum.nullable(),
+    financial_situation: z.string().nullable(),
     living_situation: z.string().nullable(),
-    more_info: z.string().nullable(),
     additional_info: z.string().nullable()
   })
   .openapi('SocioEconomicHistory');
 
 export const PreviousPregnancyDataSchema = z.object({
   child_age: z.string().nullable(),
-  // child_gender: ChildGenderEnum.nullable(),
+  child_gender: ChildGenderEnum.optional().nullable(),
   full_term_birth: YesNoEnum.optional().nullable(),
-  // birth_method: BirthMethodEnum.nullable(),
   birth_place: z.string().nullable(),
+  birth_method: BirthMethodEnum.optional().nullable(),
   contractions: YesNoEnum.optional().nullable(),
   duration_birth: z.string().nullable(),
   operation_reason: z.string().nullable(),
+  birth_weight: z.string().nullable(),
   post_delivery_problems: z.string().nullable(),
   child_condition: z.string().nullable(),
+  child_school_status: z.string().nullable(),
   pregnancy_problems: z.string().nullable(),
   additional_info: z.string().nullable()
 });
@@ -153,6 +180,47 @@ export const PreviousPregnancySchema = z
   })
   .openapi('PreviousPregnancy');
 
+export const ObstetricHistoryDataSchema = z
+  .object({
+    // Single child fields
+    child_age: z.string().nullable(),
+    child_gender: ChildGenderEnum.optional().nullable(),
+    full_term_birth: YesNoEnum.optional().nullable(),
+    birth_place: z.string().nullable(),
+    birth_method: BirthMethodEnum.optional().nullable(),
+    contractions: YesNoEnum.optional().nullable(),
+    duration_birth: z.string().nullable(),
+    operation_reason: z.string().nullable(),
+    birth_weight: z.string().nullable(),
+    post_delivery_problems: z.string().nullable(),
+    child_condition: z.string().nullable(),
+    child_school_status: z.string().nullable(),
+    pregnancy_problems: z.string().nullable(),
+
+    // Multiple children fields (as text)
+    children_ages: z.string().nullable(),
+    children_genders: z.string().nullable(),
+    children_birth_places: z.string().nullable(),
+    children_birth_methods: z.string().nullable(),
+    children_contractions: z.string().nullable(),
+    children_birth_durations: z.string().nullable(),
+    children_operation_reasons: z.string().nullable(),
+    children_birth_weights: z.string().nullable(),
+    children_conditions: z.string().nullable(),
+    children_school_status: z.string().nullable(),
+
+    // Pregnancy outcomes
+    total_pregnancies: z.string().nullable(),
+    miscarriages: z.string().nullable(),
+    miscarriage_timing: z.string().nullable(),
+    stillbirths: z.string().nullable(),
+    neonatal_deaths: z.string().nullable(),
+    living_children: z.string().nullable(),
+
+    additional_info: z.string().nullable()
+  })
+  .openapi('ObstetricHistory');
+
 export const EMR = z
   .object({
     patientProfile: PatientProfileDataSchema.optional().nullable(),
@@ -160,10 +228,12 @@ export const EMR = z
     currentPregnancy: CurrentPregnancyDataSchema.optional().nullable(),
     trimester: TrimesterDataSchema.optional().nullable(),
     gynecologicalHistory: GynecologicalHistoryDataSchema.optional().nullable(),
+    medicalHistory: MedicalHistoryDataSchema.optional().nullable(),
     surgicalHistory: SurgicalHistoryDataSchema.optional().nullable(),
     familyHistory: FamilyHistoryDataSchema.optional().nullable(),
     personalHistory: PersonalHistoryDataSchema.optional().nullable(),
     socioEconomicHistory: SocioEconomicHistoryDataSchema.optional().nullable(),
+    obstetricHistory: ObstetricHistoryDataSchema.optional().nullable(),
     previousPregnancy: PreviousPregnancySchema.optional().nullable()
   })
   .openapi('EMR');
