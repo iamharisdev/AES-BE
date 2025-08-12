@@ -352,7 +352,17 @@ const EditPatientRequestSchema = z.object({
   pregnancyMonths: z.string().optional(),
   miscarriage: z.string().optional(),
   firstPregnancy: z.string().optional(),
-  familyMarriage: z.string().optional()
+  familyMarriage: z.string().optional(),
+  husbandPhoneNumber: z.string().optional(),
+  patientBloodGroup: z.string().optional(),
+  husbandBloodGroup: z.string().optional(),
+  lastMenstruationDate: z.string().optional(),
+  totalPregnancies: z.string().optional(),
+  miscarriages: z.string().optional(),
+  miscarriageTiming: z.string().optional(),
+  stillbirths: z.string().optional(),
+  neonatalDeaths: z.string().optional(),
+  livingChildren: z.string().optional(),
 });
 
 const EditPatientSuccessSchema = z.object({
@@ -372,6 +382,17 @@ const EditPatientSuccessSchema = z.object({
     miscarriage: z.string().nullable(),
     firstPregnancy: z.string().nullable(),
     familyMarriage: z.string().nullable(),
+    husbandPhoneNumber: z.string().nullable(),
+    patientBloodGroup: z.string().nullable(),
+    husbandBloodGroup: z.string().nullable(),
+    lastMenstruationDate: z.string().nullable(),
+    totalPregnancies: z.string().nullable(),
+    miscarriages: z.string().nullable(),
+    miscarriageTiming: z.string().nullable(),
+    stillbirths: z.string().nullable(),
+    neonatalDeaths: z.string().nullable(),
+    livingChildren: z.string().nullable(),
+    hospitalId: z.string().uuid().nullable(),
     updatedAt: z.date()
   })
 });
