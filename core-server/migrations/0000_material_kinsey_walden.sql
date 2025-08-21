@@ -162,6 +162,7 @@ CREATE TABLE IF NOT EXISTS "obs_history" (
 	"children_birth_weights" text,
 	"children_health_status" text,
 	"children_school_status" text,
+	"gravida_para" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );

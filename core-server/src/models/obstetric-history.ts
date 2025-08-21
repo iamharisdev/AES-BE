@@ -33,6 +33,8 @@ export const obsHistory = pgTable('obs_history', {
   childrenHealthStatus: text('children_health_status'), // Health status of all children - "Kya aapke tamam bachay ab theek hain?"
   childrenSchoolStatus: text('children_school_status'), // School status of all children - "Kya sab school jatay hain?"
 
+  gravidaPara: text('gravida_para'),
+  
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow()
 });

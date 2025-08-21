@@ -1,5 +1,5 @@
 {
-  "id": "9da541c8-3836-4c27-807c-18cb2d9bb3b3",
+  "id": "4fc3e367-9cd6-4899-a2eb-390938fafd40",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -1077,6 +1077,12 @@
         },
         "children_school_status": {
           "name": "children_school_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "gravida_para": {
+          "name": "gravida_para",
           "type": "text",
           "primaryKey": false,
           "notNull": false
