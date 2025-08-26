@@ -8,7 +8,7 @@ import { eq } from 'drizzle-orm';
 // Schema for files
 const FilesSchema = z.object({
   id: z.string().uuid(),
-  emrId: z.string().uuid(),
+  patientId: z.string().uuid(),
   fileName: z.string(),
   fileType: z.string(),
   fileSize: z.number(),
@@ -20,7 +20,7 @@ const FilesSchema = z.object({
 
 // Create schema
 const CreateFilesSchema = z.object({
-  emrId: z.string().uuid(),
+  patientId: z.string().uuid(),
   fileName: z.string(),
   fileType: z.string(),
   fileSize: z.number(),
@@ -170,7 +170,7 @@ const createFilesHandler = () => {
     const [record] = await db.insert(tables.files).values(data).returning();
     return c.json(record, 201);
   });
-}
+};
 
 // Get handler
 const getFilesHandler = () => {
@@ -188,7 +188,7 @@ const getFilesHandler = () => {
 
     return c.json(record);
   });
-}
+};
 
 // Update handler
 const updateFilesHandler = () => {
@@ -208,7 +208,7 @@ const updateFilesHandler = () => {
 
     return c.json(record);
   });
-}
+};
 
 // Delete handler
 const deleteFilesHandler = () => {
@@ -225,6 +225,11 @@ const deleteFilesHandler = () => {
 
     return c.body(null, 204);
   });
-}
+};
 
-export { createFilesHandler, getFilesHandler, updateFilesHandler, deleteFilesHandler }
+export {
+  createFilesHandler,
+  getFilesHandler,
+  updateFilesHandler,
+  deleteFilesHandler
+};

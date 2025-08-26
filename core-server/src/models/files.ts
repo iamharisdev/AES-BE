@@ -1,11 +1,9 @@
 import { pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
-import { emr } from './emr';
+import { patient } from './patient';
 
 export const files = pgTable('files', {
   id: uuid('id').primaryKey().defaultRandom(),
-  emrId: uuid('emr_id')
-    .notNull()
-    .references(() => emr.id),
+  patientId: uuid('patient_id').references(() => patient.id),
   fileName: text('file_name').notNull(), // Name of the uploaded file
   fileType: text('file_type').notNull(), // Type of file (image, pdf, etc.)
   fileUrl: text('file_url').notNull(), // URL where file is stored

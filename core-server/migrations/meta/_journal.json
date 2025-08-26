@@ -8,6 +8,13 @@
       "when": 1755759942287,
       "tag": "0000_material_kinsey_walden",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1756197875722,
+      "tag": "0001_bent_gauntlet",
+      "breakpoints": true
     }
   ]
 }

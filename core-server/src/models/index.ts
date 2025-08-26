@@ -22,6 +22,7 @@ import { files } from './files';
 import { previousPregnancy } from './previous-pregnancy';
 import { proposedPlan } from './proposed-plan';
 import { qrCode } from './qr-code';
+import { emrSectionProgress } from './section-progress';
 
 export const __migrations = pgTable('migrations', {
   id: serial('id').primaryKey().notNull(),
@@ -52,5 +53,6 @@ export const tables = {
   files,
   previousPregnancy,
   proposedPlan,
-  qrCode
+  qrCode,
+  emrSectionProgress
 } as const;
