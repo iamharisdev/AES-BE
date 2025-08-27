@@ -15,6 +15,13 @@
       "when": 1756197875722,
       "tag": "0001_bent_gauntlet",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1756281673917,
+      "tag": "0002_previous_johnny_blaze",
+      "breakpoints": true
     }
   ]
 }

@@ -7,6 +7,7 @@ export const files = pgTable('files', {
   fileName: text('file_name').notNull(), // Name of the uploaded file
   fileType: text('file_type').notNull(), // Type of file (image, pdf, etc.)
   fileUrl: text('file_url').notNull(), // URL where file is stored
+  summary: text('summary').notNull(), // Summary of the file
 
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow()

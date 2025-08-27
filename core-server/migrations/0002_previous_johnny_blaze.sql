@@ -1,0 +1,1 @@
+ALTER TABLE "files" ADD COLUMN "summary" text NOT NULL;
