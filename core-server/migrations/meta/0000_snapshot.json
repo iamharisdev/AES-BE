@@ -1,5 +1,5 @@
 {
-  "id": "4fc3e367-9cd6-4899-a2eb-390938fafd40",
+  "id": "1faa4f7c-1f69-4a8a-bdc9-c41556123862",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -41,6 +41,18 @@
         },
         "pregnancy_clinical_findings": {
           "name": "pregnancy_clinical_findings",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "uti_burn": {
+          "name": "uti_burn",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "bleeding": {
+          "name": "bleeding",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -596,11 +608,11 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
-        "emr_id": {
-          "name": "emr_id",
+        "patient_id": {
+          "name": "patient_id",
           "type": "uuid",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "file_name": {
           "name": "file_name",
@@ -616,6 +628,12 @@
         },
         "file_url": {
           "name": "file_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "summary": {
+          "name": "summary",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -637,12 +655,12 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "files_emr_id_emr_id_fk": {
-          "name": "files_emr_id_emr_id_fk",
+        "files_patient_id_patient_id_fk": {
+          "name": "files_patient_id_patient_id_fk",
           "tableFrom": "files",
-          "tableTo": "emr",
+          "tableTo": "patient",
           "columnsFrom": [
-            "emr_id"
+            "patient_id"
           ],
           "columnsTo": [
             "id"
@@ -1836,6 +1854,84 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
+    "public.emr_section_progress": {
+      "name": "emr_section_progress",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "emr_id": {
+          "name": "emr_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "section": {
+          "name": "section",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "section_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'incomplete'"
+        },
+        "answered_ids": {
+          "name": "answered_ids",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "skipped_ids": {
+          "name": "skipped_ids",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "last_question_id": {
+          "name": "last_question_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "emr_section_progress_emr_id_emr_id_fk": {
+          "name": "emr_section_progress_emr_id_emr_id_fk",
+          "tableFrom": "emr_section_progress",
+          "tableTo": "emr",
+          "columnsFrom": [
+            "emr_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
     "public.socio_economic_history": {
       "name": "socio_economic_history",
       "schema": "",
@@ -2309,7 +2405,16 @@
       "uniqueConstraints": {}
     }
   },
-  "enums": {},
+  "enums": {
+    "public.section_status": {
+      "name": "section_status",
+      "schema": "public",
+      "values": [
+        "incomplete",
+        "complete"
+      ]
+    }
+  },
   "schemas": {},
   "_meta": {
     "columns": {},

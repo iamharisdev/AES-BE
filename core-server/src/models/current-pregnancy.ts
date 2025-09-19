@@ -10,6 +10,8 @@ export const currentPregnancy = pgTable('current_pregnancy', {
   pregnancyConsent: text('pregnancy_consent'), // Whether pregnancy was consensual - "Kiya huml mein aapki marzi shamil thi?"
   pregnancyMethod: text('pregnancy_method'), // Whether pregnancy happened naturally or required medication - "Haml khudi hoa tha ya phir dawai khani pari?"
   pregnancyClinicalFindings: text('pregnancy_clinical_findings'), // Clinical findings during pregnancy
+  uti_burn: text('uti_burn'),
+  bleeding: text('bleeding'),
   urineTest: text('urine_test'), // Whether urine test was done - "Pishaab ka test kiya tha?"
   ultrasound: text('ultrasound'), // Whether ultrasound was done - "Shuru ke dino mein ultrasound karaya tha?"
   folicAcid: text('folic_acid'), // Whether folic acid was taken - "Aapne folic acid li huml se pehle aur shuru ke dino mein?"
