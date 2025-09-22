@@ -5,11 +5,11 @@ import { JwtPayload } from '@/middleware/jwt';
 import { tables } from '@/models';
 import { UserRole } from '@/models/user';
 import { createRoute, z } from '@hono/zod-openapi';
-import { eq, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { sign } from 'hono/jwt';
 import { sha256 } from 'hono/utils/crypto';
-import { jwtMiddleware } from '@/middleware/jwt';
 import { sendEmail } from '@/services/email';
+import { jwtMiddleware } from '@/middleware/jwt';
 
 
 // Register User Schema
@@ -148,6 +148,8 @@ const registerHandler = () => {
       );
     }
 
+    
+
     const [newRecord] = await db
       .insert(tables.user)
       .values({
@@ -187,7 +189,7 @@ const registerHandler = () => {
 
 // Login User Schema
 const LoginRequestBodySchema = z.object({
-  phoneNumber: z.string().openapi({ example: '03001234567' }),
+  email: z.string().email().openapi({ example: 'user@example.com' }),
   password: z.string().openapi({ example: 'xxxxxxxxx' })
 });
 
@@ -203,7 +205,7 @@ const LoginSuccessResponseSchema = z.object({
 });
 
 const UnauthorizedSchema = z.object({
-  error: z.string().openapi({ example: 'Invalid phone number or password' })
+  error: z.string().openapi({ example: 'Invalid email or password' })
 });
 
 const loginRoute = createRoute({
@@ -249,22 +251,22 @@ const loginHandler = () => {
     const user = await db
       .select()
       .from(tables.user)
-      .where(eq(tables.user.phoneNumber, details.phoneNumber))
+      .where(eq(tables.user.email, details.email))
       .then(user => user.at(0));
 
     if (!user) {
-      return c.json({ error: 'Invalid phone number or password' }, 401);
+      return c.json({ error: 'Invalid email or password' }, 401);
     }
 
     // Verify password
     const encryptedPassword = (await sha256(details.password)) ?? '';
     if (user.encryptedPassword !== encryptedPassword) {
-      return c.json({ error: 'Invalid phone number or password' }, 401);
+      return c.json({ error: 'Invalid email or password' }, 401);
     }
 
     const jwtPayload: JwtPayload = {
       id: user.id,
-      phoneNumber: details.phoneNumber,
+      phoneNumber: user.phoneNumber,
       name: user.name,
       role: user.role as UserRole
     };
@@ -531,8 +533,6 @@ const sendOtpHandler = () => {
 
    await sendEmail(email, user, code)
 
-      
-
     return c.json({ message: 'OTP sent to email' }, 200);
   });
 };
@@ -588,8 +588,7 @@ const verifyOtpHandler = () => {
   app.openapi(verifyOtpRoute, async c => {
     const { email, code } = c.req.valid('json');
     const user = await db.select().from(tables.user).where(eq(tables.user.email, email)).then(res => res.at(0));
-     console.log(user,"USERRR")
-    if (!user || !user.resetOtpHash || !user.resetOtpExpiry) {
+    if (!user?.resetOtpHash || !user?.resetOtpExpiry) {
       return c.json({ error: 'Invalid or expired OTP' }, 400);
     }
     const hash = await sha256(code);
@@ -643,6 +642,14 @@ const forgotPasswordRoute = createRoute({
         }
       },
       description: 'Invalid or expired OTP'
+    },
+    500: {
+      content: {
+        'application/json': {
+          schema: z.object({ error: z.string().openapi({ example: 'Failed to encrypt password' }) })
+        }
+      },
+      description: 'Server error'
     }
   }
 });
@@ -651,7 +658,7 @@ const forgotPasswordHandler = () => {
   app.openapi(forgotPasswordRoute, async c => {
     const { email, code, newPassword } = c.req.valid('json');
     const user = await db.select().from(tables.user).where(eq(tables.user.email, email)).then(res => res.at(0));
-    if (!user || !user.resetOtpHash || !user.resetOtpExpiry) {
+    if (!user?.resetOtpHash || !user?.resetOtpExpiry) {
       return c.json({ error: 'Invalid or expired OTP' }, 400);
     }
     const hash = await sha256(code);
