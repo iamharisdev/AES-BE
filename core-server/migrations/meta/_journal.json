@@ -8,6 +8,13 @@
       "when": 1758282881243,
       "tag": "0000_fair_thunderbird",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1760005382433,
+      "tag": "0001_brave_molten_man",
+      "breakpoints": true
     }
   ]
 }
