@@ -141,6 +141,14 @@ import {
   updateQRCodeHandler,
   deleteQRCodeHandler
 } from '@/routes/qr-code';
+import {
+  listPatientChatsHandler,
+  getPatientChatByIdHandler,
+  createPatientChatHandler,
+  updatePatientChatHandler,
+  deletePatientChatHandler,
+  addMessageToChatHandler
+} from '@/routes/patient-chats';
 
 export const registerRoutes = () => {
   homeRoute.getRoutingPath();
@@ -243,4 +251,10 @@ export const registerRoutes = () => {
   getQRCodeByPatientHandler();
   updateQRCodeHandler();
   deleteQRCodeHandler();
+  listPatientChatsHandler();
+  getPatientChatByIdHandler();
+  createPatientChatHandler();
+  updatePatientChatHandler();
+  deletePatientChatHandler();
+  addMessageToChatHandler();
 };

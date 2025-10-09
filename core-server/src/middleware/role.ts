@@ -8,3 +8,11 @@ export const requireSuperAdmin: MiddlewareHandler = async (c, next) => {
   }
   await next();
 };
+
+export const requireHealthWorker: MiddlewareHandler = async (c, next) => {
+  const { role } = c.get('jwtPayload');
+  if (role !== UserRole.HealthWorker) {
+    return c.json({ error: 'Forbidden: HealthWorker access required' }, 403);
+  }
+  await next();
+};
