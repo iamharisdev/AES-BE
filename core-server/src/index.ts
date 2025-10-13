@@ -44,9 +44,10 @@ app.use(
   cors({
     origin: (origin) => {
       const allowedOrigins = [
-        "http://localhost:3000",
-        "https://core-server-development-1036152259123.asia-southeast1.run.app",
-        "https://awaaz-e-sehat-admin-1036152259123.asia-southeast1.run.app",
+        'http://localhost:3000',
+        'https://core-server-development-1036152259123.asia-southeast1.run.app',
+        'https://awaaz-e-sehat-admin-1036152259123.asia-southeast1.run.app',
+        'https://app.awaazesehat.com'
       ];
       return allowedOrigins.includes(origin ?? "") ? origin : "";
     },
