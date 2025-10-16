@@ -1,0 +1,1 @@
+ALTER TABLE "examination" ADD COLUMN "physical_findings" varchar;

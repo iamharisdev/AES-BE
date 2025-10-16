@@ -1,22 +1,18 @@
-import {
-  pgTable,
-  text,
-  timestamp,
-  uuid,
-} from 'drizzle-orm/pg-core';
-import { emr } from './emr';
+import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { visits } from "./visit";
 
-export const vitals = pgTable('vitals', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  emrId: uuid('emr_id')
+// 2️⃣ Vitals Table
+export const vitals = pgTable("vitals", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  visitId: uuid("visit_id")
     .notNull()
-    .references(() => emr.id),
-  bloodPressure: text('blood_pressure'),
-  pulse: text('pulse'),
-  temperature: text('temperature'),
-  weight: text('weight'),
-  height: text('height'),
-  bmi: text('bmi'),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow()
+    .references(() => visits.id, { onDelete: "cascade" }),
+
+  presentingComplaint: text("presenting_complaint"),
+  bloodPressure: text("blood_pressure"),
+  pulseRate: text("pulse_rate"),
+  temperature: text("temperature"),
+  respiratoryRate: text("respiratory_rate"),
+  weight: text("weight"),
+  visitDate: text("visit_date"),
 });

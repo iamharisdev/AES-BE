@@ -1,26 +1,41 @@
-import { pgTable, timestamp, uuid, text } from 'drizzle-orm/pg-core';
-import { emr } from './emr';
+import { pgTable, timestamp, uuid, text } from "drizzle-orm/pg-core";
+import { emr } from "./emr";
 
-export const currentPregnancy = pgTable('current_pregnancy', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  emrId: uuid('emr_id')
+export const currentPregnancy = pgTable("current_pregnancy", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  emrId: uuid("emr_id")
     .notNull()
     .references(() => emr.id),
-  pregnancyDetectionMethod: text('pregnancy_detection_method'), // How pregnancy was detected - "Aapko haml kese pata chala hai?"
-  pregnancyConsent: text('pregnancy_consent'), // Whether pregnancy was consensual - "Kiya huml mein aapki marzi shamil thi?"
-  pregnancyMethod: text('pregnancy_method'), // Whether pregnancy happened naturally or required medication - "Haml khudi hoa tha ya phir dawai khani pari?"
-  pregnancyClinicalFindings: text('pregnancy_clinical_findings'), // Clinical findings during pregnancy
-  uti_burn: text('uti_burn'),
-  bleeding: text('bleeding'),
-  urineTest: text('urine_test'), // Whether urine test was done - "Pishaab ka test kiya tha?"
-  ultrasound: text('ultrasound'), // Whether ultrasound was done - "Shuru ke dino mein ultrasound karaya tha?"
-  folicAcid: text('folic_acid'), // Whether folic acid was taken - "Aapne folic acid li huml se pehle aur shuru ke dino mein?"
-  bloodUrineTest: text('blood_urine_test'), // Whether blood/urine tests were done - "Aapke koi khoon pishaab ke koi test hoye?"
-  bloodUrineTestTypes: text('blood_urine_test_types'), // Types of blood/urine tests - "If yes, then konse hoye?"
 
-  // Early pregnancy problems (consolidated)
-  earlyPregnancySymptoms: text('early_pregnancy_symptoms'), // Early pregnancy symptoms including fever, headache, vomiting, urinary issues, burning, blood, pain - "Hamal ke shuru ke dino mein kiya apko in main se koi alamaat mehsoos hui hain?"
+  // ✅ MATCHED FIELDS (from JSON)
+  currentProblems: text("current_problems"),
+  pregnancyDetectionMethod: text("pregnancy_detection_method"),
+  ultrasound: text("ultrasound"), // moved up from legacy for JSON match
+  folicAcid: text("folic_acid"),
+  bloodUrineTests: text("blood_urine_tests"), // matches blood_urine_test JSON id
+  earlyPregnancySymptoms: text("early_pregnancy_symptoms"),
+  pregnancyMethod: text("pregnancy_method"),
 
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow()
+  
+  // 📝 Remaining existing fields (not directly matched)
+  // bleeding: text("bleeding"),
+  // fever: text("fever"),
+  // headacheVision: text("headache_vision"),
+  // severePain: text("severe_pain"),
+  // convulsions: text("convulsions"),
+  // breathingDifficulty: text("breathing_difficulty"),
+  // otherConcerns: text("other_concerns"),
+  // earlyUltrasound: text("early_ultrasound"),
+  // ultrasoundLocation: text("ultrasound_location"),
+  // menstrualRegularity: text("menstrual_regularity"),
+  // testDetails: text("test_details"),
+  // pregnancyConsent: text("pregnancy_consent"),
+  // pregnancyClinicalFindings: text("pregnancy_clinical_findings"),
+  // uti_burn: text("uti_burn"),
+  // urineTest: text("urine_test"),
+  // bloodUrineTest: text("blood_urine_test"), // kept for backward compatibility
+  // bloodUrineTestTypes: text("blood_urine_test_types"),
+
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

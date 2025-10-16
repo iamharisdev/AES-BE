@@ -1,14 +1,22 @@
-import { pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
-import { emr } from './emr';
+import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { emr } from "./emr";
 
 export const gynecologicalHistory = pgTable('gynecological_history', {
   id: uuid('id').primaryKey().defaultRandom(),
   emrId: uuid('emr_id')
     .notNull()
     .references(() => emr.id),
-  familyPlanning: text('family_planning'), // Whether family planning methods were used - "Ap khandaani mansooba bandi k liye koi tareeq istemal kerti theen is se pehlay?"
-  familyPlanningMethod: text('family_planning_method'), // Specific family planning method used - "If yes, konsa?"
-  papSmearTest: text('pap_smear_test'), // Whether pap smear test was done - "Kiya ap nay kabhi bachaydaani k munh ka muaaiana (pap smear) kerwaya hain?"
+
+  // 🔹 Existing keys that match object id
+  menstrualRegularity: text('menstrual_regularity'),
+  familyPlanningMethod: text('family_planning_method'),
+  papSmearTest: text('pap_smear_test'),
+  papSmearDetails: text('pap_smear_details'),
+
+  //Not exist in the object
+  // familyPlanning: text("family_planning"), // Q: "Kya aap isse pehle khandaani mansooba bandi ka koi tareeqa istemal karti rahi hain?"
+  // papSmearResult: text("pap_smear_result"), // Q: "IF YES: Tafseelan batayein, sab theek tha?"
+
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow()
 });

@@ -10,21 +10,21 @@ const PersonalHistorySchema = z.object({
   id: z.string().uuid(),
   emrId: z.string().uuid(),
   allergyStatus: z.string().nullable(),
-  allergyType: z.string().nullable(),
+  // allergyType: z.string().nullable(),
   substanceUse: z.string().nullable(),
   relationshipDomesticSituation: z.string().nullable(),
   sleepIssues: z.string().nullable(),
   hungerIssues: z.string().nullable(),
   diet: z.string().nullable(),
   createdAt: z.date(),
-  updatedAt: z.date()
+  updatedAt: z.date(),
 });
 
 // Create schema
 const CreatePersonalHistorySchema = z.object({
   emrId: z.string().uuid(),
   allergyStatus: z.string().nullable(),
-  allergyType: z.string().nullable(),
+  // allergyType: z.string().nullable(),
   substanceUse: z.string().nullable(),
   relationshipDomesticSituation: z.string().nullable(),
   sleepIssues: z.string().nullable(),

@@ -1,32 +1,41 @@
 DO $$ BEGIN
+ CREATE TYPE "public"."advised_test_status" AS ENUM('not_submitted', 'submitted');
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
  CREATE TYPE "public"."section_status" AS ENUM('incomplete', 'complete');
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
 --> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "advised_tests" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"visit_id" uuid NOT NULL,
+	"test_name" text NOT NULL,
+	"status" "advised_test_status" DEFAULT 'not_submitted' NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now()
+);
+--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "current_pregnancy" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"emr_id" uuid NOT NULL,
+	"current_problems" text,
 	"pregnancy_detection_method" text,
-	"pregnancy_consent" text,
-	"pregnancy_method" text,
-	"pregnancy_clinical_findings" text,
-	"uti_burn" text,
-	"bleeding" text,
-	"urine_test" text,
 	"ultrasound" text,
 	"folic_acid" text,
-	"blood_urine_test" text,
-	"blood_urine_test_types" text,
+	"blood_urine_tests" text,
 	"early_pregnancy_symptoms" text,
+	"pregnancy_method" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "diagnostics" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"emr_id" uuid NOT NULL,
-	"diagnostics" json NOT NULL,
+	"visit_id" uuid NOT NULL,
+	"diagnostics" jsonb NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
@@ -42,20 +51,15 @@ CREATE TABLE IF NOT EXISTS "emr" (
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "examination" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"emr_id" uuid NOT NULL,
-	"user_id" uuid NOT NULL,
+	"visit_id" uuid NOT NULL,
 	"updated_by_user_id" uuid,
-	"blood_pressure" varchar,
-	"pr" varchar,
-	"rr" varchar,
-	"temperature" varchar,
 	"bilateral_pedal_edema" varchar,
 	"clubbing" varchar,
-	"jaundice" varchar,
 	"koilonychia" varchar,
 	"lymph_nodes" varchar,
 	"pallor" varchar,
 	"spine" varchar,
+	"abnormalSpine" varchar,
 	"nipple_deformity" varchar,
 	"nipple_discharge" varchar,
 	"size_comparison" varchar,
@@ -67,6 +71,7 @@ CREATE TABLE IF NOT EXISTS "examination" (
 	"hernial_orfices" varchar,
 	"lie" varchar,
 	"liquor" varchar,
+	"leukonychia" varchar,
 	"presentation" varchar,
 	"prominent_veins" varchar,
 	"pulsations" varchar,
@@ -76,8 +81,6 @@ CREATE TABLE IF NOT EXISTS "examination" (
 	"umbilicus" varchar,
 	"per_speculum_findings" varchar,
 	"per_vaginal_findings" varchar,
-	"cns" varchar,
-	"cvs" varchar,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
@@ -86,7 +89,6 @@ CREATE TABLE IF NOT EXISTS "family_history" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"emr_id" uuid NOT NULL,
 	"family_medical_conditions" text,
-	"twins_family_history" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
@@ -114,9 +116,10 @@ CREATE TABLE IF NOT EXISTS "followup_questions" (
 CREATE TABLE IF NOT EXISTS "gynecological_history" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"emr_id" uuid NOT NULL,
-	"family_planning" text,
+	"menstrual_regularity" text,
 	"family_planning_method" text,
 	"pap_smear_test" text,
+	"pap_smear_details" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
@@ -139,8 +142,8 @@ CREATE TABLE IF NOT EXISTS "migrations" (
 CREATE TABLE IF NOT EXISTS "medical_history" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"emr_id" uuid NOT NULL,
-	"current_medications" text,
 	"medical_conditions" text,
+	"current_medications" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
@@ -148,59 +151,54 @@ CREATE TABLE IF NOT EXISTS "medical_history" (
 CREATE TABLE IF NOT EXISTS "obs_history" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"emr_id" uuid NOT NULL,
-	"child_age" text,
-	"child_gender" text,
-	"full_term_birth" text,
-	"birth_place" text,
-	"birth_method" text,
-	"contractions" text,
-	"birth_duration" text,
-	"operation_reason" text,
-	"birth_weight" text,
-	"post_delivery_problems" text,
-	"child_health_status" text,
-	"child_school_status" text,
-	"pregnancy_problems" text,
+	"children_birth_methods" text,
+	"children_birth_details" text,
+	"oldest_child_age" text,
 	"children_ages" text,
 	"children_genders" text,
+	"children_full_term" text,
 	"children_birth_places" text,
-	"children_birth_methods" text,
-	"children_contractions" text,
-	"children_birth_durations" text,
-	"children_operation_reasons" text,
 	"children_birth_weights" text,
 	"children_health_status" text,
-	"children_school_status" text,
+	"previous_pregnancy_conditions" text,
+	"previous_pregnancy_complications" text,
 	"gravida_para" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "patient_chats" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"patient_id" text NOT NULL,
+	"session_started" timestamp with time zone NOT NULL,
+	"last_message_at" timestamp with time zone,
+	"messages" jsonb,
+	"created_at" timestamp with time zone DEFAULT now()
+);
+--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "patient" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"phone_number" text NOT NULL,
-	"husband_phone_number" text,
 	"name" text,
 	"age" text,
-	"marital_status" text,
-	"occupation" text,
-	"location" text,
 	"cnic" text,
+	"phone_number" text NOT NULL,
 	"education" text,
+	"location" text,
+	"occupation" text,
 	"married_years" text,
-	"pregnancy_months" text,
-	"miscarriage" text,
-	"first_pregnancy" text,
-	"family_marriage" text,
-	"patient_blood_group" text,
-	"husband_blood_group" text,
-	"last_menstruation_date" text,
 	"total_pregnancies" text,
+	"living_children" text,
+	"last_menstruation_date" text,
+	"pregnancy_months" text,
+	"first_pregnancy" text,
 	"miscarriages" text,
+	"miscarriage_count" text,
 	"miscarriage_timing" text,
 	"stillbirths" text,
+	"stillbirth_count" text,
 	"neonatal_deaths" text,
-	"living_children" text,
+	"neonatal_death_count" text,
+	"preterm_births" text,
 	"voice_notes" jsonb DEFAULT '[]',
 	"doctor_id" uuid,
 	"hospital_id" uuid,
@@ -212,12 +210,11 @@ CREATE TABLE IF NOT EXISTS "personal_history" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"emr_id" uuid NOT NULL,
 	"allergy_status" text,
-	"allergy_type" text,
+	"diet" text,
 	"substance_use" text,
 	"relationship_domestic_situation" text,
 	"sleep_issues" text,
 	"hunger_issues" text,
-	"diet" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
@@ -239,24 +236,20 @@ CREATE TABLE IF NOT EXISTS "previous_pregnancy" (
 	"full_term_birth" text,
 	"birth_method" text,
 	"birth_place" text,
-	"contractions" text,
-	"duration_birth" text,
-	"operation_reason" text,
+	"birth_weight" text,
 	"post_delivery_problems" text,
 	"child_condition" text,
-	"pregnancy_problems" text,
+	"past_pregnancy_complications" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "proposed_plan" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"emr_id" uuid NOT NULL,
+	"visit_id" uuid NOT NULL,
 	"general_plan" text,
-	"medications" text,
-	"instructions" text,
+	"medication" jsonb,
 	"next_follow_up_timing" date,
-	"next_follow_up_purpose" text,
 	"advised_lab_tests" text[],
 	"created_by" text DEFAULT 'AI' NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
@@ -298,10 +291,10 @@ CREATE TABLE IF NOT EXISTS "emr_section_progress" (
 CREATE TABLE IF NOT EXISTS "socio_economic_history" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"emr_id" uuid NOT NULL,
-	"no_family_members" text,
-	"financial_situation" text,
+	"hospital_accompaniment" text,
 	"living_situation" text,
-	"additional_info" text,
+	"financial_situation" text,
+	"monthly_income" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
@@ -318,22 +311,13 @@ CREATE TABLE IF NOT EXISTS "trimester" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"emr_id" uuid NOT NULL,
 	"fetus_movement" text,
-	"movement_reduction" text,
-	"ultrasound" text,
-	"recent_scan" text,
-	"scan_results" text,
+	"ultrasound_five_months" text,
 	"checkup_regularity" text,
-	"blood_urine_tests" text,
-	"hb_level" text,
-	"hb_symptoms" text,
 	"sugar_test" text,
-	"sugar_test_result" text,
-	"sugar_medication" text,
+	"sugar_medication" boolean,
 	"blood_pressure" text,
-	"blood_pressure_result" text,
-	"bp_medication" text,
-	"strength_meds" text,
-	"pregnancy_symptoms" text,
+	"bp_medication" boolean,
+	"recent_ultrasound" text,
 	"additional_info" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
@@ -353,18 +337,30 @@ CREATE TABLE IF NOT EXISTS "user" (
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "visits" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"patient_id" uuid NOT NULL,
+	"visit_date" timestamp with time zone DEFAULT now(),
+	"created_at" timestamp with time zone DEFAULT now()
+);
+--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "vitals" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"emr_id" uuid NOT NULL,
+	"visit_id" uuid NOT NULL,
+	"presenting_complaint" text,
 	"blood_pressure" text,
-	"pulse" text,
+	"pulse_rate" text,
 	"temperature" text,
+	"respiratory_rate" text,
 	"weight" text,
-	"height" text,
-	"bmi" text,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL
+	"visit_date" text
 );
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "advised_tests" ADD CONSTRAINT "advised_tests_visit_id_visits_id_fk" FOREIGN KEY ("visit_id") REFERENCES "public"."visits"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
 --> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "current_pregnancy" ADD CONSTRAINT "current_pregnancy_emr_id_emr_id_fk" FOREIGN KEY ("emr_id") REFERENCES "public"."emr"("id") ON DELETE no action ON UPDATE no action;
@@ -373,7 +369,7 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "diagnostics" ADD CONSTRAINT "diagnostics_emr_id_emr_id_fk" FOREIGN KEY ("emr_id") REFERENCES "public"."emr"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "diagnostics" ADD CONSTRAINT "diagnostics_visit_id_visits_id_fk" FOREIGN KEY ("visit_id") REFERENCES "public"."visits"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -385,13 +381,7 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "examination" ADD CONSTRAINT "examination_emr_id_emr_id_fk" FOREIGN KEY ("emr_id") REFERENCES "public"."emr"("id") ON DELETE cascade ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
- ALTER TABLE "examination" ADD CONSTRAINT "examination_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "examination" ADD CONSTRAINT "examination_visit_id_visits_id_fk" FOREIGN KEY ("visit_id") REFERENCES "public"."visits"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -463,7 +453,7 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "proposed_plan" ADD CONSTRAINT "proposed_plan_emr_id_emr_id_fk" FOREIGN KEY ("emr_id") REFERENCES "public"."emr"("id") ON DELETE cascade ON UPDATE no action;
+ ALTER TABLE "proposed_plan" ADD CONSTRAINT "proposed_plan_visit_id_visits_id_fk" FOREIGN KEY ("visit_id") REFERENCES "public"."visits"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -511,7 +501,13 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "vitals" ADD CONSTRAINT "vitals_emr_id_emr_id_fk" FOREIGN KEY ("emr_id") REFERENCES "public"."emr"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "visits" ADD CONSTRAINT "visits_patient_id_patient_id_fk" FOREIGN KEY ("patient_id") REFERENCES "public"."patient"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "vitals" ADD CONSTRAINT "vitals_visit_id_visits_id_fk" FOREIGN KEY ("visit_id") REFERENCES "public"."visits"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;

@@ -1,12 +1,12 @@
-import app from '@/app';
-import { db } from '@/db';
-import { jwtMiddleware } from '@/middleware/jwt';
-import { tables } from '@/models';
-import { createRoute, z } from '@hono/zod-openapi';
-import { eq, ilike, or, desc } from 'drizzle-orm';
-import { Storage } from '@google-cloud/storage';
-import { ulid } from 'ulidx';
-import { UserRole } from '@/models/user';
+import app from "@/app";
+import { db } from "@/db";
+import { jwtMiddleware } from "@/middleware/jwt";
+import { tables } from "@/models";
+import { createRoute, z } from "@hono/zod-openapi";
+import { eq, ilike, or, desc } from "drizzle-orm";
+import { Storage } from "@google-cloud/storage";
+import { ulid } from "ulidx";
+import { UserRole } from "@/models/user";
 import { getTranscription } from "@/services/transcription";
 
 // Initialize Google Cloud Storage
@@ -21,7 +21,7 @@ const bucket = storage.bucket(bucketName);
 const PatientSearchResponseSchema = z.array(
   z.object({
     patientId: z.string().uuid(),
-    phone: z.string(),
+    // phone: z.string(),
     name: z.string(),
     location: z.string(),
     cnic: z.string(),
@@ -113,60 +113,61 @@ const searchPatientsHandler = () => {
 
     return c.json(patients, 200);
   });
-}
+};
 
 // Get Patient Info Schema
 const SuccessResponseSchema = z.object({
   name: z.string().openapi({
-    example: 'Nazia',
+    example: "Nazia",
   }),
   phoneNumber: z.string().openapi({
-    example: '03001234567',
+    example: "03001234567",
   }),
   location: z.string().openapi({
-    example: '45 A, Society, Main Road, Karachi',
+    example: "45 A, Society, Main Road, Karachi",
   }),
   createdAt: z.string(),
 });
 
 const getPatientInfoRoute = createRoute({
-  method: 'get',
-  operationId: 'getPatientInfo',
-  tags: ['Patient'],
-  path: '/patient/info/{phoneNumber}',
-  summary: 'Allows the Healthcare Practitioner to Get Patient Info Such as Name and Location Based on their Phone',
+  method: "get",
+  operationId: "getPatientInfo",
+  tags: ["Patient"],
+  path: "/patient/info/{phoneNumber}",
+  summary:
+    "Allows the Healthcare Practitioner to Get Patient Info Such as Name and Location Based on their Phone",
   security: [{ jwt: [] }],
   middleware: [jwtMiddleware],
   request: {
     params: z.object({
       phoneNumber: z.string().openapi({
-        example: '03001234567',
+        example: "03001234567",
       }),
     }),
   },
   responses: {
     200: {
       content: {
-        'application/json': {
+        "application/json": {
           schema: SuccessResponseSchema,
         },
       },
-      description: 'Patient info',
+      description: "Patient info",
     },
     404: {
       content: {
-        'application/json': {
+        "application/json": {
           schema: NotFoundSchema,
         },
       },
-      description: 'Not Found',
+      description: "Not Found",
     },
   },
 });
 
 const getPatientInfoHandler = () => {
   app.openapi(getPatientInfoRoute, async (c) => {
-    const { phoneNumber } = c.req.valid('param');
+    const { phoneNumber } = c.req.valid("param");
 
     // Check if the patient record already exists
     const patient = await db
@@ -176,14 +177,19 @@ const getPatientInfoHandler = () => {
       .then((res) => res.at(0));
 
     if (!patient) {
-      return c.json({ error: `No Patient Info Record found with phone number ${phoneNumber}` }, 404);
+      return c.json(
+        {
+          error: `No Patient Info Record found with phone number ${phoneNumber}`,
+        },
+        404
+      );
     }
 
     const { ...response } = patient;
 
     return c.json(response, 200);
   });
-}
+};
 
 // Upload Voice Note Schema
 const UploadVoiceNoteSuccessResponseSchema = z.object({
@@ -239,7 +245,8 @@ const uploadVoiceNoteRoute = createRoute({
           schema: UploadVoiceNoteErrorResponseSchema,
         },
       },
-      description: "Forbidden - User does not have permission to upload for this patient",
+      description:
+        "Forbidden - User does not have permission to upload for this patient",
     },
     404: {
       content: {
@@ -289,15 +296,17 @@ const uploadVoiceNoteHandler = () => {
         .toISOString()
         .replace(/[:.]/g, "-")
         .substring(0, 19);
-      const fileName = `${patient.id}/${dateTimeStr}_${ulid()}.${fileExtension}`;
+      const fileName = `${
+        patient.id
+      }/${dateTimeStr}_${ulid()}.${fileExtension}`;
 
       // Upload to Google Cloud Storage
       const file = bucket.file(fileName);
       const buffer = Buffer.from(await voiceNote.arrayBuffer());
       await file.save(buffer, {
         metadata: {
-          contentType: voiceNote.type
-        }
+          contentType: voiceNote.type,
+        },
       });
 
       // Get the public URL
@@ -321,9 +330,11 @@ const uploadVoiceNoteHandler = () => {
       const newVoiceNote = {
         url: publicUrl,
         transcription,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       };
-      const currentVoiceNotes = Array.isArray(patient.voiceNotes) ? patient.voiceNotes : [];
+      const currentVoiceNotes = Array.isArray(patient.voiceNotes)
+        ? patient.voiceNotes
+        : [];
       const updatedVoiceNotes = [...currentVoiceNotes, newVoiceNote];
       await db
         .update(tables.patient)
@@ -337,7 +348,7 @@ const uploadVoiceNoteHandler = () => {
       return c.json({ error: "Failed to upload voice note" }, 500);
     }
   });
-}
+};
 
 // Edit Patient Schema
 const EditPatientRequestSchema = z.object({
@@ -393,58 +404,58 @@ const EditPatientSuccessSchema = z.object({
     neonatalDeaths: z.string().nullable(),
     livingChildren: z.string().nullable(),
     hospitalId: z.string().uuid().nullable(),
-    updatedAt: z.date()
-  })
+    updatedAt: z.date(),
+  }),
 });
 
 const EditPatientNotFoundSchema = z.object({
-  error: z.string().openapi({ example: 'Patient not found' })
+  error: z.string().openapi({ example: "Patient not found" }),
 });
 
 const editPatientRoute = createRoute({
-  method: 'put',
-  operationId: 'editPatient',
-  tags: ['Patient'],
-  path: '/patient/{patientId}',
-  summary: 'Edit patient information',
+  method: "put",
+  operationId: "editPatient",
+  tags: ["Patient"],
+  path: "/patient/{patientId}",
+  summary: "Edit patient information",
   security: [{ jwt: [] }],
   middleware: [jwtMiddleware],
   request: {
     params: z.object({
-      patientId: z.string().uuid()
+      patientId: z.string().uuid(),
     }),
     body: {
       content: {
-        'application/json': {
-          schema: EditPatientRequestSchema
-        }
-      }
-    }
+        "application/json": {
+          schema: EditPatientRequestSchema,
+        },
+      },
+    },
   },
   responses: {
     200: {
       content: {
-        'application/json': {
-          schema: EditPatientSuccessSchema
-        }
+        "application/json": {
+          schema: EditPatientSuccessSchema,
+        },
       },
-      description: 'Patient information updated successfully'
+      description: "Patient information updated successfully",
     },
     404: {
       content: {
-        'application/json': {
-          schema: EditPatientNotFoundSchema
-        }
+        "application/json": {
+          schema: EditPatientNotFoundSchema,
+        },
       },
-      description: 'Patient not found'
-    }
-  }
+      description: "Patient not found",
+    },
+  },
 });
 
 const editPatientHandler = () => {
   app.openapi(editPatientRoute, async (c) => {
-    const { patientId } = c.req.valid('param');
-    const updates = c.req.valid('json');
+    const { patientId } = c.req.valid("param");
+    const updates = c.req.valid("json");
 
     // Check if the patient exists
     const existingPatient = await db
@@ -454,7 +465,10 @@ const editPatientHandler = () => {
       .then((res) => res.at(0));
 
     if (!existingPatient) {
-      return c.json({ error: `No Patient Record found with ID ${patientId}` }, 404);
+      return c.json(
+        { error: `No Patient Record found with ID ${patientId}` },
+        404
+      );
     }
 
     // Update the patient record
@@ -464,11 +478,19 @@ const editPatientHandler = () => {
       .where(eq(tables.patient.id, patientId))
       .returning();
 
-    return c.json({
-      message: 'Patient updated successfully',
-      patient: updatedPatient
-    }, 200);
+    return c.json(
+      {
+        message: "Patient updated successfully",
+        patient: updatedPatient,
+      },
+      200
+    );
   });
-}
+};
 
-export {searchPatientsHandler,getPatientInfoHandler, editPatientHandler, uploadVoiceNoteHandler }
+export {
+  searchPatientsHandler,
+  getPatientInfoHandler,
+  editPatientHandler,
+  uploadVoiceNoteHandler,
+};

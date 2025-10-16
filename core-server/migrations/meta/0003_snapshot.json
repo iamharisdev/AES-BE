@@ -1,6 +1,6 @@
 {
-  "id": "5a6633ca-c443-4fb3-aac9-1064626f5f47",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "3932e8c0-9455-466c-b823-9141f6d208d0",
+  "prevId": "cb2def6f-19a0-4867-92a3-97c888376dbe",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -462,6 +462,12 @@
         },
         "per_vaginal_findings": {
           "name": "per_vaginal_findings",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "physical_findings": {
+          "name": "physical_findings",
           "type": "varchar",
           "primaryKey": false,
           "notNull": false

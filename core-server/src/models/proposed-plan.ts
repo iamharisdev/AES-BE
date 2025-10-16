@@ -1,21 +1,29 @@
-import { pgTable, text, timestamp, uuid, date } from 'drizzle-orm/pg-core';
-import { emr } from './emr';
-import { createdByEnum } from '../schemas/enums';
+import {
+  date,
+  jsonb,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from "drizzle-orm/pg-core";
+import { createdByEnum } from "../schemas/enums";
+import { visits } from "./visit";
 
-export const proposedPlan = pgTable('proposed_plan', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  emrId: uuid('emr_id')
+export const proposedPlan = pgTable("proposed_plan", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  // emrId: uuid("emr_id")
+  //   .notNull()
+  //   .references(() => visits.id, { onDelete: "cascade" }),
+  visitId: uuid("visit_id")
     .notNull()
-    .references(() => emr.id, { onDelete: 'cascade' }),
-  generalPlan: text('general_plan'),
-  medications: text('medications'),
-  instructions: text('instructions'),
-  nextFollowUpTiming: date('next_follow_up_timing'),
-  nextFollowUpPurpose: text('next_follow_up_purpose'),
-  advisedLabTests: text('advised_lab_tests').array(),
-  createdBy: text('created_by', { enum: createdByEnum })
+    .references(() => visits.id, { onDelete: "cascade" }),
+  generalPlan: text("general_plan"),
+  medication: jsonb("medication").$type<string[]>(),
+  nextFollowUpTiming: date("next_follow_up_timing"),
+  advisedLabTests: text("advised_lab_tests").array(),
+  createdBy: text("created_by", { enum: createdByEnum })
     .notNull()
-    .default('AI'),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow()
+    .default("AI"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

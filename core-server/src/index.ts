@@ -2,54 +2,30 @@ import app from "@/app";
 import { env } from "@/env";
 import { registerRoutes } from "@/routes";
 import { swaggerUI } from "@hono/swagger-ui";
-import { serve } from "bun";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 
-const allowedOrigins = [
-  "http://localhost:3000",
-  "https://core-server-development-1036152259123.asia-southeast1.run.app",
-];
-
-// // // ✅ Only register CORS **once**, and do it before any routes
-// app.use(
-//   '*',
-//   cors({
-//     origin: (origin) => {
-//       if (!origin) return ''; // For non-browser requests like curl
-//       return allowedOrigins.includes(origin) ? origin : '';
-//     },
-//     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-// 		allowHeaders: ['*'],
-//     // credentials: true, // If you're sending cookies or auth headers
-//     maxAge: 600,
-
-//   })
-// )
-
-// app.use(async (c, next) => {
-//   const corsMiddleware = cors({
-//     origin: 'http://localhost:3000',
-//     allowHeaders: ['Origin', 'Content-Type', 'Authorization'],
-//     allowMethods: ['GET', 'OPTIONS', 'POST', 'PUT', 'DELETE'],
-//     credentials: true,
-// 		exposeHeaders: ["Content-Length"], // 暴露的 headers
-//   })
-//   await corsMiddleware(c, next)
-// })
 app.use(logger());
-
 app.use(
   "*",
   cors({
     origin: (origin) => {
+      console.log("origin:=>  ",origin)
       const allowedOrigins = [
         'http://localhost:3000',
         'https://core-server-development-1036152259123.asia-southeast1.run.app',
         'https://awaaz-e-sehat-admin-1036152259123.asia-southeast1.run.app',
         'https://app.awaazesehat.com'
       ];
-      return allowedOrigins.includes(origin ?? "") ? origin : "";
+
+      if (!origin) return ""; // for server-to-server calls
+
+      // ✅ Allow ngrok tunnel dynamically in dev
+      if (origin.includes("ngrok-free.app")) {
+        return origin;
+      }
+
+      return allowedOrigins.includes(origin) ? origin : "";
     },
     allowHeaders: ["Content-Type", "Authorization"],
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
