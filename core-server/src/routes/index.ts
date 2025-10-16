@@ -95,6 +95,7 @@ import {
   getFilesHandler,
   updateFilesHandler,
   deleteFilesHandler,
+  uploadFileHandler,
 } from "@/routes/files";
 import generatePresignedUrls from "@/routes/generate-presigned-urls";
 import {
@@ -153,8 +154,8 @@ import {
   createPatientChatHandler,
   updatePatientChatHandler,
   deletePatientChatHandler,
-  addMessageToChatHandler
-} from '@/routes/patient-chats';
+  addMessageToChatHandler,
+} from "@/routes/patient-chats";
 
 import { audioToTextHandler } from "./audio-to-text";
 
@@ -198,6 +199,7 @@ export const registerRoutes = () => {
   getFollowupQuestionsHandler();
   updateFollowupQuestionsHandler();
   deleteFollowupQuestionsHandler();
+  uploadFileHandler();
   createFilesHandler();
   getFilesHandler();
   updateFilesHandler();
