@@ -1,0 +1,1 @@
+ALTER TABLE "patient" ADD COLUMN "miscarriage_count" text;
