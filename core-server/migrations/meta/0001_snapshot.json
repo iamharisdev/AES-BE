@@ -1,6 +1,6 @@
 {
-  "id": "4547d839-b448-43f4-ba41-15bbd7244be4",
-  "prevId": "5a6633ca-c443-4fb3-aac9-1064626f5f47",
+  "id": "b667e854-dc26-491b-aad9-7fc46ac459bc",
+  "prevId": "8ca99bdf-11fc-4561-b891-3e46b5575ab6",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1195,12 +1195,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "miscarriage_count": {
-          "name": "miscarriage_count",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
         "miscarriage_timing": {
           "name": "miscarriage_timing",
           "type": "text",
@@ -2196,6 +2190,12 @@
         "patient_id": {
           "name": "patient_id",
           "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "visit_number": {
+          "name": "visit_number",
+          "type": "serial",
           "primaryKey": false,
           "notNull": true
         },
