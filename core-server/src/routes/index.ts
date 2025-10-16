@@ -128,6 +128,7 @@ import {
   getDiagnosticsByEmrHandler,
   updateDiagnosticsHandler,
   deleteDiagnosticsHandler,
+  getAllDiagnosticsByPatientHandler,
 } from "@/routes/diagnostics";
 import {
   createMedicalHistoryHandler,
@@ -272,4 +273,5 @@ export const registerRoutes = () => {
   updatePatientChatHandler();
   deletePatientChatHandler();
   addMessageToChatHandler();
+  getAllDiagnosticsByPatientHandler();
 };

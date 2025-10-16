@@ -1,6 +1,6 @@
 {
-  "id": "cb2def6f-19a0-4867-92a3-97c888376dbe",
-  "prevId": "4547d839-b448-43f4-ba41-15bbd7244be4",
+  "id": "cfc2f0f6-5203-46e7-8185-452610f4708b",
+  "prevId": "b667e854-dc26-491b-aad9-7fc46ac459bc",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1556,12 +1556,6 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
-        "emr_id": {
-          "name": "emr_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
         "visit_id": {
           "name": "visit_id",
           "type": "uuid",
@@ -1616,19 +1610,6 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "proposed_plan_emr_id_visits_id_fk": {
-          "name": "proposed_plan_emr_id_visits_id_fk",
-          "tableFrom": "proposed_plan",
-          "tableTo": "visits",
-          "columnsFrom": [
-            "emr_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
         "proposed_plan_visit_id_visits_id_fk": {
           "name": "proposed_plan_visit_id_visits_id_fk",
           "tableFrom": "proposed_plan",
@@ -2215,6 +2196,12 @@
         "patient_id": {
           "name": "patient_id",
           "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "visit_number": {
+          "name": "visit_number",
+          "type": "serial",
           "primaryKey": false,
           "notNull": true
         },

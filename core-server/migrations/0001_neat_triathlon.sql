@@ -1,0 +1,1 @@
+ALTER TABLE "patient" DROP COLUMN IF EXISTS "miscarriage_count";

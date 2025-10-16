@@ -81,6 +81,7 @@ CREATE TABLE IF NOT EXISTS "examination" (
 	"umbilicus" varchar,
 	"per_speculum_findings" varchar,
 	"per_vaginal_findings" varchar,
+	"physical_findings" varchar,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
@@ -340,6 +341,7 @@ CREATE TABLE IF NOT EXISTS "user" (
 CREATE TABLE IF NOT EXISTS "visits" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"patient_id" uuid NOT NULL,
+	"visit_number" serial NOT NULL,
 	"visit_date" timestamp with time zone DEFAULT now(),
 	"created_at" timestamp with time zone DEFAULT now()
 );
