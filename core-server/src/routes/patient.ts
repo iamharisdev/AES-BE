@@ -3,7 +3,7 @@ import { db } from "@/db";
 import { jwtMiddleware } from "@/middleware/jwt";
 import { tables } from "@/models";
 import { createRoute, z } from "@hono/zod-openapi";
-import { eq, ilike, or, desc } from "drizzle-orm";
+import { eq, ilike, or, desc, sql } from "drizzle-orm";
 import { Storage } from "@google-cloud/storage";
 import { ulid } from "ulidx";
 import { UserRole } from "@/models/user";
