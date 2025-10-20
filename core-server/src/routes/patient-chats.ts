@@ -4,7 +4,7 @@ import { jwtMiddleware } from "@/middleware/jwt";
 import { requireHealthWorker } from "@/middleware/role";
 import { patientChats } from "@/models/patient-chats";
 import { createRoute, z } from "@hono/zod-openapi";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, gte } from "drizzle-orm";
 
 // Schemas
 const MessageSchema = z.object({
@@ -66,7 +66,14 @@ export const listPatientChatsHandler = () => {
   app.openapi(listPatientChatsRoute, async (c) => {
     const { patientId, limit } = c.req.valid("query");
 
-    let query = db.select().from(patientChats).orderBy(desc(patientChats.lastMessageAt));
+    // Filter date: Only chats from October 1st, 2025 onwards
+    const cutoffDate = new Date('2025-10-01T00:00:00Z');
+
+    let query = db
+      .select()
+      .from(patientChats)
+      .where(gte(patientChats.sessionStarted, cutoffDate))
+      .orderBy(desc(patientChats.lastMessageAt));
 
     if (patientId) {
       query = query.where(eq(patientChats.patientId, patientId)) as any;
@@ -118,6 +125,9 @@ export const getPatientChatByIdHandler = () => {
   app.openapi(getPatientChatByIdRoute, async (c) => {
     const { id } = c.req.valid("param");
 
+    // Filter date: Only chats from October 1st, 2025 onwards
+    const cutoffDate = new Date('2025-10-01T00:00:00Z');
+
     const [chat] = await db
       .select()
       .from(patientChats)
@@ -125,6 +135,11 @@ export const getPatientChatByIdHandler = () => {
       .execute();
 
     if (!chat) {
+      return c.json({ error: "Chat session not found" }, 404);
+    }
+
+    // Check if chat is from the allowed date range
+    if (chat.sessionStarted < cutoffDate) {
       return c.json({ error: "Chat session not found" }, 404);
     }
 
@@ -228,6 +243,9 @@ export const updatePatientChatHandler = () => {
     const { id } = c.req.valid("param");
     const { messages } = c.req.valid("json");
 
+    // Filter date: Only chats from October 1st, 2025 onwards
+    const cutoffDate = new Date('2025-10-01T00:00:00Z');
+
     const [existingChat] = await db
       .select()
       .from(patientChats)
@@ -235,6 +253,11 @@ export const updatePatientChatHandler = () => {
       .execute();
 
     if (!existingChat) {
+      return c.json({ error: "Chat session not found" }, 404);
+    }
+
+    // Check if chat is from the allowed date range
+    if (existingChat.sessionStarted < cutoffDate) {
       return c.json({ error: "Chat session not found" }, 404);
     }
 
@@ -291,6 +314,9 @@ export const deletePatientChatHandler = () => {
   app.openapi(deletePatientChatRoute, async (c) => {
     const { id } = c.req.valid("param");
 
+    // Filter date: Only chats from October 1st, 2025 onwards
+    const cutoffDate = new Date('2025-10-01T00:00:00Z');
+
     const [existingChat] = await db
       .select()
       .from(patientChats)
@@ -298,6 +324,11 @@ export const deletePatientChatHandler = () => {
       .execute();
 
     if (!existingChat) {
+      return c.json({ error: "Chat session not found" }, 404);
+    }
+
+    // Check if chat is from the allowed date range
+    if (existingChat.sessionStarted < cutoffDate) {
       return c.json({ error: "Chat session not found" }, 404);
     }
 
@@ -353,6 +384,9 @@ export const addMessageToChatHandler = () => {
     const { id } = c.req.valid("param");
     const newMessage = c.req.valid("json");
 
+    // Filter date: Only chats from October 1st, 2025 onwards
+    const cutoffDate = new Date('2025-10-01T00:00:00Z');
+
     const [existingChat] = await db
       .select()
       .from(patientChats)
@@ -360,6 +394,11 @@ export const addMessageToChatHandler = () => {
       .execute();
 
     if (!existingChat) {
+      return c.json({ error: "Chat session not found" }, 404);
+    }
+
+    // Check if chat is from the allowed date range
+    if (existingChat.sessionStarted < cutoffDate) {
       return c.json({ error: "Chat session not found" }, 404);
     }
 
