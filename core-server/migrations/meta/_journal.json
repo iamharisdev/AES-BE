@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1760612982192,
-      "tag": "0000_sad_white_queen",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1760615534360,
-      "tag": "0001_neat_triathlon",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1760615675550,
-      "tag": "0002_luxuriant_iron_monger",
+      "when": 1761032712264,
+      "tag": "0000_greedy_the_spike",
       "breakpoints": true
     }
   ]
