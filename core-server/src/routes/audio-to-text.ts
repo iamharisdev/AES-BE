@@ -39,8 +39,6 @@ const audioToTextHandler = () => {
       const form = await c.req.formData();
       const audioFile = form.get("file");
 
-      
-
       // ✅ Validate file
       if (!audioFile || typeof audioFile === "string") {
         console.error("⚠️ No audio file received or invalid format.");
@@ -49,22 +47,26 @@ const audioToTextHandler = () => {
 
       // ✅ Prepare the form for Whisper API
       const whisperForm = new FormData();
+      whisperForm.append("language", "en");
       whisperForm.append(
         "file",
         audioFile,
         // Bun/Node may not auto-assign filename — force one
         (audioFile as any).name || "recording.webm"
       );
-      whisperForm.append("model", "whisper-1");
+      whisperForm.append("model", "gpt-4o-transcribe");
 
       // ✅ Call OpenAI Whisper API
-      const response = await fetch("https://api.openai.com/v1/audio/transcriptions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY!}`,
-        },
-        body: whisperForm,
-      });
+      const response = await fetch(
+        "https://api.openai.com/v1/audio/transcriptions",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${process.env.OPENAI_API_KEY!}`,
+          },
+          body: whisperForm,
+        }
+      );
 
       if (!response.ok) {
         const errText = await response.text();

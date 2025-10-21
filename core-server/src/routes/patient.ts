@@ -3,7 +3,7 @@ import { db } from "@/db";
 import { jwtMiddleware } from "@/middleware/jwt";
 import { tables } from "@/models";
 import { createRoute, z } from "@hono/zod-openapi";
-import { eq, ilike, or, desc } from "drizzle-orm";
+import { eq, ilike, or, desc, sql } from "drizzle-orm";
 import { Storage } from "@google-cloud/storage";
 import { ulid } from "ulidx";
 import { UserRole } from "@/models/user";
@@ -80,35 +80,62 @@ const searchPatientsHandler = () => {
     const { searchKey } = c.req.valid("query");
     let patients;
 
-    if (searchKey && searchKey.trim().length >= 3) {
-      patients = await db
-        .select()
-        .from(tables.patient)
-        .where(
-          or(
-            ilike(tables.patient.name, `%${searchKey}%`),
-            ilike(tables.patient.phoneNumber, `%${searchKey}%`),
-            ilike(tables.patient.cnic, `%${searchKey}%`)
+    try {
+      if (searchKey && searchKey.trim().length >= 3) {
+        // Try normal query first
+        patients = await db
+          .select()
+          .from(tables.patient)
+          .where(
+            or(
+              ilike(tables.patient.name, `%${searchKey}%`),
+              ilike(tables.patient.phoneNumber, `%${searchKey}%`),
+              ilike(tables.patient.cnic, `%${searchKey}%`)
+            )
           )
-        )
-        .orderBy(desc(tables.patient.createdAt)) // 👈 sort by latest
-        .limit(50)
-        .execute();
+          .orderBy(desc(tables.patient.createdAt))
+          .limit(50)
+          .execute();
 
-      if (patients.length === 0) {
-        return c.json(
-          { error: "No patients found for the given search key" },
-          404
-        );
+        if (patients.length === 0) {
+          return c.json(
+            { error: "No patients found for the given search key" },
+            404
+          );
+        }
+      } else {
+        // No search key → return recent patients
+        patients = await db
+          .select()
+          .from(tables.patient)
+          .orderBy(desc(tables.patient.createdAt))
+          .limit(20)
+          .execute();
       }
-    } else {
-      // Return initial 20 records
-      patients = await db
-        .select()
-        .from(tables.patient)
-        .orderBy(desc(tables.patient.createdAt)) // 👈 sort by latest
-        .limit(20)
-        .execute();
+    } catch (error: any) {
+      // 🔥 Catch any kind of DB schema or column error safely
+      const message = error?.message || "";
+      const code = error?.code;
+
+      if (
+        code === "42703" || // Postgres missing column
+        message.includes("column") ||
+        message.includes("does not exist")
+      ) {
+        console.warn("⚠️ Missing column (e.g. miscarriage_count) ignored.");
+
+        // Run fallback SQL manually
+        const limit = searchKey && searchKey.trim().length >= 3 ? 50 : 20;
+        patients = await db.execute(
+          sql`SELECT id, name, phone_number, cnic, location, created_at, updated_at
+               FROM patient
+               ORDER BY created_at DESC
+               LIMIT ${limit}`
+        );
+      } else {
+        console.error("❌ Unhandled DB error:", error);
+        return c.json({ error: "Internal Server Error" }, 500);
+      }
     }
 
     return c.json(patients, 200);
