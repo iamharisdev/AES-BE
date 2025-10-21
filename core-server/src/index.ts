@@ -10,20 +10,16 @@ app.use(
   "*",
   cors({
     origin: (origin) => {
-      console.log("origin:=>  ",origin)
       const allowedOrigins = [
-        'http://localhost:3000',
-        'https://core-server-development-1036152259123.asia-southeast1.run.app',
-        'https://awaaz-e-sehat-admin-1036152259123.asia-southeast1.run.app',
-        'https://app.awaazesehat.com'
+        "http://localhost:3000",
+        "https://core-server-development-1036152259123.asia-southeast1.run.app",
+        "https://awaaz-e-sehat-admin-1036152259123.asia-southeast1.run.app",
+        "https://app.awaazesehat.com",
+        "https://aes-admin-1036152259123.us-central1.run.app",
+        "ngrok-free.app",
       ];
 
       if (!origin) return ""; // for server-to-server calls
-
-      // ✅ Allow ngrok tunnel dynamically in dev
-      if (origin.includes("ngrok-free.app")) {
-        return origin;
-      }
 
       return allowedOrigins.includes(origin) ? origin : "";
     },
