@@ -14,8 +14,8 @@ export const socioEconomicHistory = pgTable("socio_economic_history", {
   monthlyIncome: text("monthly_income"), // Q: "Ghar main andazan mahana tankhwa kitni aajati hogi?"
 
   // Legacy field not match with object
-  // additionalInfo: text("additional_info"), // Additional important information
-  // noFamilyMembers: text("no_family_members"), // Q: "Aapke ghar mein kitne afraad hain?"
+  additionalInfo: text("additional_info"), // Additional important information
+  noFamilyMembers: text("no_family_members"), // Q: "Aapke ghar mein kitne afraad hain?"
 
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),

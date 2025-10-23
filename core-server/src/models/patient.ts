@@ -36,17 +36,16 @@ export const patient = pgTable('patient', {
   voiceNotes: jsonb('voice_notes').default('[]'),
 
   // 🔹 Other existing fields (not in object currently)
-  // husbandPhoneNumber: text("husband_phone_number"),
-  // maritalStatus: text("marital_status"),
-  // familyMarriage: text("family_marriage"),
-  // patientBloodGroup: text("patient_blood_group"),
-  // husbandBloodGroup: text("husband_blood_group"),
-  // miscarriageTiming: text("miscarriage_timing"),
-  // miscarriage: text("miscarriage"), // legacy
+  husbandPhoneNumber: text("husband_phone_number"),
+  maritalStatus: text("marital_status"),
+  familyMarriage: text("family_marriage"),
+  patientBloodGroup: text("patient_blood_group"),
+  husbandBloodGroup: text("husband_blood_group"),
+  miscarriage: text("miscarriage"), // legacy
 
-  // currentProblems: text("current_problems"),
-  // medicalConditions: text("medical_conditions"),
-  // currentMedications: text("current_medications"),
+  currentProblems: text("current_problems"),
+  medicalConditions: text("medical_conditions"),
+  currentMedications: text("current_medications"),
 
   // Foreign Keys
   doctorId: uuid('doctor_id').references(() => user.id, {
