@@ -1,5 +1,5 @@
 {
-  "id": "5b342c2f-c7fe-4c51-925b-8fa81e1b9edd",
+  "id": "e3e48f18-5e17-4cc6-8562-90846a8aabdb",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -117,6 +117,108 @@
         },
         "pregnancy_method": {
           "name": "pregnancy_method",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "bleeding": {
+          "name": "bleeding",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fever": {
+          "name": "fever",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "headache_vision": {
+          "name": "headache_vision",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "severe_pain": {
+          "name": "severe_pain",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "convulsions": {
+          "name": "convulsions",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "breathing_difficulty": {
+          "name": "breathing_difficulty",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "other_concerns": {
+          "name": "other_concerns",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "early_ultrasound": {
+          "name": "early_ultrasound",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ultrasound_location": {
+          "name": "ultrasound_location",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "menstrual_regularity": {
+          "name": "menstrual_regularity",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "test_details": {
+          "name": "test_details",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pregnancy_consent": {
+          "name": "pregnancy_consent",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pregnancy_clinical_findings": {
+          "name": "pregnancy_clinical_findings",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "uti_burn": {
+          "name": "uti_burn",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "urine_test": {
+          "name": "urine_test",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "blood_urine_test": {
+          "name": "blood_urine_test",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "blood_urine_test_types": {
+          "name": "blood_urine_test_types",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -542,6 +644,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "twins_family_history": {
+          "name": "twins_family_history",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -751,6 +859,18 @@
         },
         "pap_smear_details": {
           "name": "pap_smear_details",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "family_planning": {
+          "name": "family_planning",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pap_smear_result": {
+          "name": "pap_smear_result",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -1012,6 +1132,144 @@
           "primaryKey": false,
           "notNull": false
         },
+        "past_pregnancy_conditions": {
+          "name": "past_pregnancy_conditions",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "single_child_delivery_type": {
+          "name": "single_child_delivery_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "single_child_contractions": {
+          "name": "single_child_contractions",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "single_child_birth_duration": {
+          "name": "single_child_birth_duration",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "single_child_operation_reason": {
+          "name": "single_child_operation_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "multiple_children_delivery_types": {
+          "name": "multiple_children_delivery_types",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "multiple_children_details": {
+          "name": "multiple_children_details",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "child_age": {
+          "name": "child_age",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "child_gender": {
+          "name": "child_gender",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "full_term_birth": {
+          "name": "full_term_birth",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "birth_place": {
+          "name": "birth_place",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "birth_weight": {
+          "name": "birth_weight",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "post_delivery_problems": {
+          "name": "post_delivery_problems",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "child_health_status": {
+          "name": "child_health_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "child_school_status": {
+          "name": "child_school_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "birth_method": {
+          "name": "birth_method",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "contractions": {
+          "name": "contractions",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "birth_duration": {
+          "name": "birth_duration",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "operation_reason": {
+          "name": "operation_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pregnancy_problems": {
+          "name": "pregnancy_problems",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "children_contractions": {
+          "name": "children_contractions",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "children_birth_durations": {
+          "name": "children_birth_durations",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "children_operation_reasons": {
+          "name": "children_operation_reasons",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "gravida_para": {
           "name": "gravida_para",
           "type": "text",
@@ -1244,6 +1502,60 @@
           "notNull": false,
           "default": "'[]'"
         },
+        "husband_phone_number": {
+          "name": "husband_phone_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "marital_status": {
+          "name": "marital_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "family_marriage": {
+          "name": "family_marriage",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "patient_blood_group": {
+          "name": "patient_blood_group",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "husband_blood_group": {
+          "name": "husband_blood_group",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "miscarriage": {
+          "name": "miscarriage",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "current_problems": {
+          "name": "current_problems",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "medical_conditions": {
+          "name": "medical_conditions",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "current_medications": {
+          "name": "current_medications",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "doctor_id": {
           "name": "doctor_id",
           "type": "uuid",
@@ -1339,6 +1651,24 @@
         },
         "hunger_issues": {
           "name": "hunger_issues",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "relationship_quality": {
+          "name": "relationship_quality",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "family_behavior": {
+          "name": "family_behavior",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "allergy_type": {
+          "name": "allergy_type",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -1507,6 +1837,36 @@
         },
         "past_pregnancy_complications": {
           "name": "past_pregnancy_complications",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "contractions": {
+          "name": "contractions",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "complications": {
+          "name": "complications",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "duration_birth": {
+          "name": "duration_birth",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "operation_reason": {
+          "name": "operation_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pregnancy_problems": {
+          "name": "pregnancy_problems",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -1892,6 +2252,18 @@
           "primaryKey": false,
           "notNull": false
         },
+        "additional_info": {
+          "name": "additional_info",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "no_family_members": {
+          "name": "no_family_members",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -2050,6 +2422,90 @@
         },
         "additional_info": {
           "name": "additional_info",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "movement_reduction": {
+          "name": "movement_reduction",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "checkup_visits": {
+          "name": "checkup_visits",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sugar_test_result": {
+          "name": "sugar_test_result",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "blood_pressure_check": {
+          "name": "blood_pressure_check",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "blood_pressure_result": {
+          "name": "blood_pressure_result",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "recent_ultrasound_issues": {
+          "name": "recent_ultrasound_issues",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "additional_pregnancy_info": {
+          "name": "additional_pregnancy_info",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ultrasound": {
+          "name": "ultrasound",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "scan_results": {
+          "name": "scan_results",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "blood_urine_tests": {
+          "name": "blood_urine_tests",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hb_level": {
+          "name": "hb_level",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hb_symptoms": {
+          "name": "hb_symptoms",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "strength_meds": {
+          "name": "strength_meds",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pregnancy_symptoms": {
+          "name": "pregnancy_symptoms",
           "type": "text",
           "primaryKey": false,
           "notNull": false
