@@ -21,11 +21,11 @@ export const previousPregnancy = pgTable("previous_pregnancy", {
   // 🆕 Potential new fields (none missing)
 
   // ⚠️ Extra fields (not in questions)
-  // contractions: text("contractions"),
-  //complications: text("complications"),
-  // durationBirth: text("duration_birth"),
-  // operationReason: text("operation_reason"),
-  // pregnancyProblems: text("pregnancy_problems"),
+  contractions: text("contractions"),
+  complications: text("complications"),
+  durationBirth: text("duration_birth"),
+  operationReason: text("operation_reason"),
+  pregnancyProblems: text("pregnancy_problems"),
 
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),

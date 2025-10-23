@@ -17,9 +17,9 @@ export const personalHistory = pgTable("personal_history", {
 
   // Legacy field not match with object
 
-  // relationshipQuality: text("relationship_quality"), // Q: "Aap ke apne shohar ke saath taluqaat kaisay hain?"
-  // familyBehavior: text("family_behavior"), // Q: "Aap kay baaki ghar walon ka rawayya aap ke saath kaisy hai?"
-  // allergyType: text("allergy_type"), // Follow-up if yes
+  relationshipQuality: text("relationship_quality"), // Q: "Aap ke apne shohar ke saath taluqaat kaisay hain?"
+  familyBehavior: text("family_behavior"), // Q: "Aap kay baaki ghar walon ka rawayya aap ke saath kaisy hai?"
+  allergyType: text("allergy_type"), // Follow-up if yes
 
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
