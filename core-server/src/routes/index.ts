@@ -161,8 +161,6 @@ import {
 import { audioToTextHandler } from "./audio-to-text";
 
 export const registerRoutes = () => {
-  homeRoute.getRoutingPath();
-  generatePresignedUrls.getRoutingPath();
   createPresentingComplaintHandler();
   getPresentingComplaintHandler();
   updatePresentingComplaintHandler();
@@ -244,7 +242,6 @@ export const registerRoutes = () => {
   updateRedFlagsHandler();
   deleteRedFlagsHandler();
   getMajorRedFlags();
-  changePasswordHandler();
   changePasswordHandler();
   sendOtpHandler();
   verifyOtpHandler();
