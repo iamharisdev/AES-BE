@@ -95,7 +95,7 @@ import {
   getFilesHandler,
   updateFilesHandler,
   deleteFilesHandler,
-  uploadFileHandler,
+//  uploadFileHandler,
 } from "@/routes/files";
 import generatePresignedUrls from "@/routes/generate-presigned-urls";
 import {
@@ -198,7 +198,7 @@ export const registerRoutes = () => {
   getFollowupQuestionsHandler();
   updateFollowupQuestionsHandler();
   deleteFollowupQuestionsHandler();
-  uploadFileHandler();
+  // uploadFileHandler();
   createFilesHandler();
   getFilesHandler();
   updateFilesHandler();
