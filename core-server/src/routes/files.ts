@@ -10,25 +10,25 @@ import { Readable } from "stream";
 import path from "path";
 import fs from "fs";
 
-// Build absolute path to credentials file
-const credentialsPath = path.resolve(
-  process.cwd(),
-  process.env.GOOGLE_APPLICATION_CREDENTIALS || ""
-);
+// // Build absolute path to credentials file
+// const credentialsPath = path.resolve(
+//   process.cwd(),
+//   process.env.GOOGLE_APPLICATION_CREDENTIALS || ""
+// );
 
-let storage;
+// let storage;
 
-// ✅ Use credentials file if it exists, otherwise fallback to default
-if (fs.existsSync(credentialsPath)) {
-  storage = new Storage({ keyFilename: credentialsPath });
-  console.info(`🧩 Using GCS credentials from: ${credentialsPath}`);
-} else {
-  storage = new Storage();
-  console.info("☁️ Using default GCS credentials (Cloud Run)");
-}
+// // ✅ Use credentials file if it exists, otherwise fallback to default
+// if (fs.existsSync(credentialsPath)) {
+//   storage = new Storage({ keyFilename: credentialsPath });
+//   console.info(`🧩 Using GCS credentials from: ${credentialsPath}`);
+// } else {
+//   storage = new Storage();
+//   console.info("☁️ Using default GCS credentials (Cloud Run)");
+// }
 
-const bucketName = process.env.GCS_BUCKET_NAME!;
-const bucket = storage.bucket(bucketName);
+// const bucketName = process.env.GCS_BUCKET_NAME!;
+// const bucket = storage.bucket(bucketName);
 
 // Schema for files
 const FilesSchema = z.object({
@@ -252,37 +252,37 @@ const deleteFilesHandler = () => {
   });
 };
 
-//upload file route
-const uploadFileRoute = createRoute({
-  method: "post",
-  path: "/files/upload",
-  tags: ["Files"],
-  security: [{ jwt: [] }],
-  middleware: [jwtMiddleware],
-  request: {
-    body: {
-      content: {
-        "multipart/form-data": {
-          schema: z.object({
-            patientId: z.string().uuid(),
-            file: z.any(),
-            description: z.string().optional(),
-          }),
-        },
-      },
-    },
-  },
-  responses: {
-    201: {
-      content: {
-        "application/json": {
-          schema: FilesSchema,
-        },
-      },
-      description: "File uploaded successfully",
-    },
-  },
-});
+// //upload file route
+// const uploadFileRoute = createRoute({
+//   method: "post",
+//   path: "/files/upload",
+//   tags: ["Files"],
+//   security: [{ jwt: [] }],
+//   middleware: [jwtMiddleware],
+//   request: {
+//     body: {
+//       content: {
+//         "multipart/form-data": {
+//           schema: z.object({
+//             patientId: z.string().uuid(),
+//             file: z.any(),
+//             description: z.string().optional(),
+//           }),
+//         },
+//       },
+//     },
+//   },
+//   responses: {
+//     201: {
+//       content: {
+//         "application/json": {
+//           schema: FilesSchema,
+//         },
+//       },
+//       description: "File uploaded successfully",
+//     },
+//   },
+// });
 
 async function getFileBuffer(rawFile: unknown) {
   if (rawFile instanceof File) {
@@ -321,89 +321,89 @@ async function getFileBuffer(rawFile: unknown) {
 }
 // --- Upload handler ---
 
-const uploadFileHandler = () => {
-  app.openapi(uploadFileRoute, async (c) => {
-    try {
-      const formData = await c.req.formData();
-      const patientId = formData.get("patientId") as string;
-      const description = (formData.get("description") as string) || "";
-      const rawFile = formData.get("file");
+// const uploadFileHandler = () => {
+//   app.openapi(uploadFileRoute, async (c) => {
+//     try {
+//       const formData = await c.req.formData();
+//       const patientId = formData.get("patientId") as string;
+//       const description = (formData.get("description") as string) || "";
+//       const rawFile = formData.get("file");
 
-      if (!rawFile) return c.json({ error: "No file uploaded" }, 400);
-      if (!patientId) return c.json({ error: "Patient ID required" }, 400);
+//       if (!rawFile) return c.json({ error: "No file uploaded" }, 400);
+//       if (!patientId) return c.json({ error: "Patient ID required" }, 400);
 
-      // Convert to buffer safely
-      const { buffer, name, type, size } = await getFileBuffer(rawFile);
+//       // Convert to buffer safely
+//       const { buffer, name, type, size } = await getFileBuffer(rawFile);
 
-      // Unique filename
-      const uniqueName = `${randomUUID()}-${name}`;
-      const blob = bucket.file(uniqueName);
+//       // Unique filename
+//       const uniqueName = `${randomUUID()}-${name}`;
+//       const blob = bucket.file(uniqueName);
 
-      // Upload file to GCS
-      const stream = new Readable();
-      stream.push(buffer);
-      stream.push(null);
+//       // Upload file to GCS
+//       const stream = new Readable();
+//       stream.push(buffer);
+//       stream.push(null);
 
-      await new Promise<void>((resolve, reject) => {
-        stream
-          .pipe(
-            blob.createWriteStream({
-              contentType: type,
-              resumable: false,
-              metadata: {
-                cacheControl: "public, max-age=31536000",
-              },
-            })
-          )
-          .on("error", reject)
-          .on("finish", resolve);
-      });
+//       await new Promise<void>((resolve, reject) => {
+//         stream
+//           .pipe(
+//             blob.createWriteStream({
+//               contentType: type,
+//               resumable: false,
+//               metadata: {
+//                 cacheControl: "public, max-age=31536000",
+//               },
+//             })
+//           )
+//           .on("error", reject)
+//           .on("finish", resolve);
+//       });
 
-      // ✅ Generate signed URL (instead of makePublic)
-      const [signedUrl] = await blob.getSignedUrl({
-        action: "read",
-        expires: Date.now() + 1000 * 60 * 60 * 24 * 30, // valid for 30 days
-      });
+//       // ✅ Generate signed URL (instead of makePublic)
+//       const [signedUrl] = await blob.getSignedUrl({
+//         action: "read",
+//         expires: Date.now() + 1000 * 60 * 60 * 24 * 30, // valid for 30 days
+//       });
 
-      // Save record in DB
-      const [record] = await db
-        .insert(tables.files)
-        .values({
-          patientId,
-          fileName: name,
-          fileType: type,
-          fileUrl: signedUrl,
-          summary: description,
-        })
-        .returning();
+//       // Save record in DB
+//       const [record] = await db
+//         .insert(tables.files)
+//         .values({
+//           patientId,
+//           fileName: name,
+//           fileType: type,
+//           fileUrl: signedUrl,
+//           summary: description,
+//         })
+//         .returning();
 
-      // Return response
-      const response = {
-        id: record.id,
-        patientId: record.patientId,
-        fileName: record.fileName,
-        fileType: record.fileType,
-        fileSize: size,
-        fileUrl: record.fileUrl,
-        description,
-        createdAt: record.createdAt,
-        updatedAt: record.updatedAt,
-      };
+//       // Return response
+//       const response = {
+//         id: record.id,
+//         patientId: record.patientId,
+//         fileName: record.fileName,
+//         fileType: record.fileType,
+//         fileSize: size,
+//         fileUrl: record.fileUrl,
+//         description,
+//         createdAt: record.createdAt,
+//         updatedAt: record.updatedAt,
+//       };
 
-      return c.json(response, 201);
-    } catch (err: any) {
-      console.error("File upload error:", err);
-      return c.json({ error: err.message || "File upload failed" }, 500);
-    }
-  });
-};
+//       return c.json(response, 201);
+//     } catch (err: any) {
+//       console.error("File upload error:", err);
+//       return c.json({ error: err.message || "File upload failed" }, 500);
+//     }
+//   });
+// };
 
-export default uploadFileHandler;
+// export default uploadFileHandler;
 
 export {
   createFilesHandler,
   getFilesHandler,
   updateFilesHandler,
   deleteFilesHandler,
-  uploadFileHandler,
+ // uploadFileHandler,
 };
