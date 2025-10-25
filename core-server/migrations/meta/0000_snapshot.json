@@ -1,5 +1,5 @@
 {
-  "id": "e3e48f18-5e17-4cc6-8562-90846a8aabdb",
+  "id": "c998aa13-ee76-41dc-9594-9227b0fab014",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -296,21 +296,7 @@
         }
       },
       "indexes": {},
-      "foreignKeys": {
-        "diagnostics_visit_id_visits_id_fk": {
-          "name": "diagnostics_visit_id_visits_id_fk",
-          "tableFrom": "diagnostics",
-          "tableTo": "visits",
-          "columnsFrom": [
-            "visit_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
@@ -591,19 +577,6 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "examination_visit_id_visits_id_fk": {
-          "name": "examination_visit_id_visits_id_fk",
-          "tableFrom": "examination",
-          "tableTo": "visits",
-          "columnsFrom": [
-            "visit_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
         "examination_updated_by_user_id_user_id_fk": {
           "name": "examination_updated_by_user_id_user_id_fk",
           "tableFrom": "examination",
@@ -1946,6 +1919,13 @@
           "primaryKey": false,
           "notNull": false
         },
+        "editable": {
+          "name": "editable",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
         "created_by": {
           "name": "created_by",
           "type": "text",
@@ -1969,21 +1949,7 @@
         }
       },
       "indexes": {},
-      "foreignKeys": {
-        "proposed_plan_visit_id_visits_id_fk": {
-          "name": "proposed_plan_visit_id_visits_id_fk",
-          "tableFrom": "proposed_plan",
-          "tableTo": "visits",
-          "columnsFrom": [
-            "visit_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
@@ -2398,7 +2364,7 @@
         },
         "sugar_medication": {
           "name": "sugar_medication",
-          "type": "boolean",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
@@ -2410,7 +2376,7 @@
         },
         "bp_medication": {
           "name": "bp_medication",
-          "type": "boolean",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
@@ -2428,6 +2394,12 @@
         },
         "movement_reduction": {
           "name": "movement_reduction",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "recent_scan": {
+          "name": "recent_scan",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -2756,21 +2728,7 @@
         }
       },
       "indexes": {},
-      "foreignKeys": {
-        "vitals_visit_id_visits_id_fk": {
-          "name": "vitals_visit_id_visits_id_fk",
-          "tableFrom": "vitals",
-          "tableTo": "visits",
-          "columnsFrom": [
-            "visit_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     }

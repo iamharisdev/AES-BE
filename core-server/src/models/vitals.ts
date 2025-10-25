@@ -5,8 +5,7 @@ import { visits } from "./visit";
 export const vitals = pgTable("vitals", {
   id: uuid("id").primaryKey().defaultRandom(),
   visitId: uuid("visit_id")
-    .notNull()
-    .references(() => visits.id, { onDelete: "cascade" }),
+    .notNull(),
 
   presentingComplaint: text("presenting_complaint"),
   bloodPressure: text("blood_pressure"),

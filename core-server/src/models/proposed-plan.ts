@@ -16,8 +16,7 @@ export const proposedPlan = pgTable("proposed_plan", {
   //   .notNull()
   //   .references(() => visits.id, { onDelete: "cascade" }),
   visitId: uuid("visit_id")
-    .notNull()
-    .references(() => visits.id, { onDelete: "cascade" }),
+    .notNull(),
   generalPlan: text("general_plan"),
   medication: jsonb("medication").$type<string[]>(),
   nextFollowUpTiming: date("next_follow_up_timing"),
