@@ -18,8 +18,7 @@ export type DiagnosticsContent = z.infer<typeof DiagnosticsWrapperSchema>;
 export const diagnostics = pgTable("diagnostics", {
   id: uuid("id").primaryKey().defaultRandom(),
   visitId: uuid("visit_id")
-    .notNull()
-    .references(() => visits.id, { onDelete: "cascade" }),
+    .notNull(),
 
   diagnostics: jsonb("diagnostics").$type<DiagnosticsContent>().notNull(), // matches Zod wrapper
 
