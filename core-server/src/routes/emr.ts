@@ -263,6 +263,8 @@ const getAllEmrsFromPhoneHandler = () => {
       .where(eq(tables.emr.phone, phoneNumber))
       .execute();
 
+      console.log("EMRS:=>  ",emrs)
+
     if (emrs.length === 0) {
       return c.json(
         { error: `No EMR records found for phone number ${phoneNumber}` },

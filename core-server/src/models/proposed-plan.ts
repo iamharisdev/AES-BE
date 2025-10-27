@@ -21,7 +21,8 @@ export const proposedPlan = pgTable("proposed_plan", {
   medication: jsonb("medication").$type<string[]>(),
   nextFollowUpTiming: date("next_follow_up_timing"),
   advisedLabTests: text("advised_lab_tests").array(),
-   editable: boolean("editable").notNull().default(false),
+  editable: boolean("editable").notNull().default(false),
+  doctorNotes: text("doctorNotes"),
   createdBy: text("created_by", { enum: createdByEnum })
     .notNull()
     .default("AI"),

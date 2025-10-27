@@ -1,10 +1,6 @@
 {
-<<<<<<< Updated upstream
-  "id": "c998aa13-ee76-41dc-9594-9227b0fab014",
-=======
-  "id": "8b1f7899-5354-4661-8eb9-8e004a3406dc",
->>>>>>> Stashed changes
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "c9539dd8-bb83-4353-af18-7a4bb6b48141",
+  "prevId": "8b1f7899-5354-4661-8eb9-8e004a3406dc",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -300,7 +296,21 @@
         }
       },
       "indexes": {},
-      "foreignKeys": {},
+      "foreignKeys": {
+        "diagnostics_visit_id_visits_id_fk": {
+          "name": "diagnostics_visit_id_visits_id_fk",
+          "tableFrom": "diagnostics",
+          "tableTo": "visits",
+          "columnsFrom": [
+            "visit_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
@@ -581,6 +591,19 @@
       },
       "indexes": {},
       "foreignKeys": {
+        "examination_visit_id_visits_id_fk": {
+          "name": "examination_visit_id_visits_id_fk",
+          "tableFrom": "examination",
+          "tableTo": "visits",
+          "columnsFrom": [
+            "visit_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
         "examination_updated_by_user_id_user_id_fk": {
           "name": "examination_updated_by_user_id_user_id_fk",
           "tableFrom": "examination",
@@ -1370,6 +1393,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "gestational_age": {
+          "name": "gestational_age",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
         "education": {
           "name": "education",
           "type": "text",
@@ -1930,15 +1959,12 @@
           "notNull": true,
           "default": false
         },
-<<<<<<< Updated upstream
-=======
         "doctorNotes": {
           "name": "doctorNotes",
           "type": "text",
           "primaryKey": false,
           "notNull": false
         },
->>>>>>> Stashed changes
         "created_by": {
           "name": "created_by",
           "type": "text",
@@ -1962,7 +1988,21 @@
         }
       },
       "indexes": {},
-      "foreignKeys": {},
+      "foreignKeys": {
+        "proposed_plan_visit_id_visits_id_fk": {
+          "name": "proposed_plan_visit_id_visits_id_fk",
+          "tableFrom": "proposed_plan",
+          "tableTo": "visits",
+          "columnsFrom": [
+            "visit_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
@@ -2377,7 +2417,7 @@
         },
         "sugar_medication": {
           "name": "sugar_medication",
-          "type": "text",
+          "type": "boolean",
           "primaryKey": false,
           "notNull": false
         },
@@ -2389,7 +2429,7 @@
         },
         "bp_medication": {
           "name": "bp_medication",
-          "type": "text",
+          "type": "boolean",
           "primaryKey": false,
           "notNull": false
         },
@@ -2407,12 +2447,6 @@
         },
         "movement_reduction": {
           "name": "movement_reduction",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "recent_scan": {
-          "name": "recent_scan",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -2741,7 +2775,21 @@
         }
       },
       "indexes": {},
-      "foreignKeys": {},
+      "foreignKeys": {
+        "vitals_visit_id_visits_id_fk": {
+          "name": "vitals_visit_id_visits_id_fk",
+          "tableFrom": "vitals",
+          "tableTo": "visits",
+          "columnsFrom": [
+            "visit_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     }
