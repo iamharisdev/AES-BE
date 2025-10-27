@@ -37,6 +37,39 @@ const NotFoundSchema = z.object({
   }),
 });
 
+
+const CreatePatientRequestSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  phoneNumber: z
+    .string()
+    .min(10, "Phone number must be at least 10 digits")
+    .max(15)
+    .regex(/^[0-9]+$/, "Phone number must contain only digits"),
+  cnic: z.string().min(13, "CNIC must be 13 digits").max(15),
+  age: z.string().optional(),
+  gestationalAge: z.string().optional(),
+});
+
+const CreatePatientResponseSchema = z.object({
+  message: z.string(),
+  patient: z.object({
+    id: z.string().uuid(),
+    name: z.string(),
+    phoneNumber: z.string(),
+    cnic: z.string(),
+    age: z.string().nullable(),
+    gestationalAge: z.string().nullable(),
+    location: z.string().nullable(),
+    createdAt: z.date(),
+  }),
+});
+
+const CreatePatientConflictSchema = z.object({
+  error: z.string().openapi({
+    example: "Patient already exists with this phone number",
+  }),
+});
+
 const searchPatientsRoute = createRoute({
   method: "get",
   operationId: "searchPatients",
@@ -515,9 +548,107 @@ const editPatientHandler = () => {
   });
 };
 
+
+const createPatientRoute = createRoute({
+  method: "post",
+  operationId: "createPatient",
+  tags: ["Patient"],
+  path: "/patient",
+  summary: "Create a new patient record",
+  security: [{ jwt: [] }],
+  middleware: [jwtMiddleware],
+  request: {
+    body: {
+      content: {
+        "application/json": {
+          schema: CreatePatientRequestSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    201: {
+      content: {
+        "application/json": {
+          schema: CreatePatientResponseSchema,
+        },
+      },
+      description: "Patient created successfully",
+    },
+    409: {
+      content: {
+        "application/json": {
+          schema: CreatePatientConflictSchema,
+        },
+      },
+      description: "Duplicate patient found",
+    },
+    400: {
+      content: {
+        "application/json": {
+          schema: z.object({ error: z.string() }),
+        },
+      },
+      description: "Invalid input data",
+    },
+  },
+});
+
+const createPatientHandler = () => {
+  app.openapi(createPatientRoute, async (c) => {
+    try {
+      const body = c.req.valid("json");
+      const { name, phoneNumber, cnic, age, gestationalAge } = body;
+
+      // Check for existing patient by phone number
+      const existing = await db
+        .select()
+        .from(tables.patient)
+        .where(eq(tables.patient.phoneNumber, phoneNumber))
+        .then((res) => res.at(0));
+
+      if (existing) {
+        return c.json(
+          { error: "Patient already exists with this phone number" },
+          409
+        );
+      }
+
+      // Create patient record
+      const [newPatient] = await db
+        .insert(tables.patient)
+        .values({
+          name,
+          phoneNumber,
+          cnic,
+          age: age || null,
+          gestationalAge: gestationalAge || null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .returning();
+
+      return c.json(
+        {
+          message: "Patient created successfully",
+          patient: newPatient,
+        },
+        201
+      );
+    } catch (error: any) {
+      console.error("Error creating patient:", error);
+      return c.json({ error: "Failed to create patient" }, 500);
+    }
+  });
+};
+
+
+
+
 export {
   searchPatientsHandler,
   getPatientInfoHandler,
   editPatientHandler,
   uploadVoiceNoteHandler,
+  createPatientHandler,
 };

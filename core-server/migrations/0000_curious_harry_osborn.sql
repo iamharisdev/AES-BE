@@ -226,6 +226,7 @@ CREATE TABLE IF NOT EXISTS "patient" (
 	"age" text,
 	"cnic" text,
 	"phone_number" text NOT NULL,
+	"gestational_age" text,
 	"education" text,
 	"location" text,
 	"occupation" text,
@@ -313,6 +314,7 @@ CREATE TABLE IF NOT EXISTS "proposed_plan" (
 	"next_follow_up_timing" date,
 	"advised_lab_tests" text[],
 	"editable" boolean DEFAULT false NOT NULL,
+	"doctorNotes" text,
 	"created_by" text DEFAULT 'AI' NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL

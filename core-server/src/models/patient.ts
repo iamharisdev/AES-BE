@@ -10,12 +10,11 @@ import { user } from "./user";
 
 export const patient = pgTable('patient', {
   id: uuid('id').primaryKey().defaultRandom(),
-
-  // 🔹 Existing keys that match object ids
   name: text('name'),
   age: text('age'),
   cnic: text('cnic'),
   phoneNumber: text('phone_number').notNull(),
+  gestationalAge: text('gestational_age'),
   education: text('education'),
   location: text('location'),
   occupation: text('occupation'),

@@ -1,5 +1,5 @@
 {
-  "id": "c998aa13-ee76-41dc-9594-9227b0fab014",
+  "id": "6565c62d-8663-4f9c-be07-8386e544777d",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -1366,6 +1366,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "gestational_age": {
+          "name": "gestational_age",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "education": {
           "name": "education",
           "type": "text",
@@ -1925,6 +1931,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": false
+        },
+        "doctorNotes": {
+          "name": "doctorNotes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "created_by": {
           "name": "created_by",
