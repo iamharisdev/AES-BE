@@ -14,7 +14,7 @@ export const patient = pgTable('patient', {
   age: text('age'),
   cnic: text('cnic'),
   phoneNumber: text('phone_number').notNull(),
-  gestationalAge: text('gestational_age').notNull(),
+  gestationalAge: text('gestational_age'),
   education: text('education'),
   location: text('location'),
   occupation: text('occupation'),
