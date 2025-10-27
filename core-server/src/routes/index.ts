@@ -12,6 +12,7 @@ import {
   deleteHospitalHandler,
 } from "@/routes/hospital";
 import {
+  createPatientHandler,
   editPatientHandler,
   getPatientInfoHandler,
   searchPatientsHandler,
@@ -224,6 +225,7 @@ export const registerRoutes = () => {
   getAllEmrsFromPhoneHandler();
   getAllEmrsFromCnicHandler();
   updateEmrHandler();
+  createPatientHandler();
   searchPatientsHandler();
   getPatientInfoHandler();
   editPatientHandler();
