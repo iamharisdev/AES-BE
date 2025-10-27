@@ -1,1 +1,0 @@
-ALTER TABLE "patient" ADD COLUMN "gestational_age" text NOT NULL;
