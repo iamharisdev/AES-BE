@@ -1,9 +1,13 @@
 {
+<<<<<<< HEAD
 <<<<<<< Updated upstream
   "id": "c998aa13-ee76-41dc-9594-9227b0fab014",
 =======
   "id": "8b1f7899-5354-4661-8eb9-8e004a3406dc",
 >>>>>>> Stashed changes
+=======
+  "id": "c998aa13-ee76-41dc-9594-9227b0fab014",
+>>>>>>> development
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -1930,6 +1934,7 @@
           "notNull": true,
           "default": false
         },
+<<<<<<< HEAD
 <<<<<<< Updated upstream
 =======
         "doctorNotes": {
@@ -1939,6 +1944,8 @@
           "notNull": false
         },
 >>>>>>> Stashed changes
+=======
+>>>>>>> development
         "created_by": {
           "name": "created_by",
           "type": "text",

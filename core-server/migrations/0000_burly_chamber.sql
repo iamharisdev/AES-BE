@@ -313,7 +313,10 @@ CREATE TABLE IF NOT EXISTS "proposed_plan" (
 	"next_follow_up_timing" date,
 	"advised_lab_tests" text[],
 	"editable" boolean DEFAULT false NOT NULL,
+<<<<<<<< HEAD:core-server/migrations/0000_burly_chamber.sql
 	"doctorNotes" text,
+========
+>>>>>>>> development:core-server/migrations/0000_normal_wolfsbane.sql
 	"created_by" text DEFAULT 'AI' NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
@@ -379,12 +382,16 @@ CREATE TABLE IF NOT EXISTS "trimester" (
 	"ultrasound_five_months" text,
 	"checkup_regularity" text,
 	"sugar_test" text,
-	"sugar_medication" boolean,
+	"sugar_medication" text,
 	"blood_pressure" text,
-	"bp_medication" boolean,
+	"bp_medication" text,
 	"recent_ultrasound" text,
 	"additional_info" text,
 	"movement_reduction" text,
+<<<<<<<< HEAD:core-server/migrations/0000_burly_chamber.sql
+========
+	"recent_scan" text,
+>>>>>>>> development:core-server/migrations/0000_normal_wolfsbane.sql
 	"checkup_visits" text,
 	"sugar_test_result" text,
 	"blood_pressure_check" text,
@@ -449,19 +456,7 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "diagnostics" ADD CONSTRAINT "diagnostics_visit_id_visits_id_fk" FOREIGN KEY ("visit_id") REFERENCES "public"."visits"("id") ON DELETE cascade ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
  ALTER TABLE "emr" ADD CONSTRAINT "emr_patient_id_patient_id_fk" FOREIGN KEY ("patient_id") REFERENCES "public"."patient"("id") ON DELETE no action ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
- ALTER TABLE "examination" ADD CONSTRAINT "examination_visit_id_visits_id_fk" FOREIGN KEY ("visit_id") REFERENCES "public"."visits"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
@@ -533,12 +528,6 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "proposed_plan" ADD CONSTRAINT "proposed_plan_visit_id_visits_id_fk" FOREIGN KEY ("visit_id") REFERENCES "public"."visits"("id") ON DELETE cascade ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
  ALTER TABLE "qr_code" ADD CONSTRAINT "qr_code_patient_id_patient_id_fk" FOREIGN KEY ("patient_id") REFERENCES "public"."patient"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
@@ -582,12 +571,6 @@ END $$;
 --> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "visits" ADD CONSTRAINT "visits_patient_id_patient_id_fk" FOREIGN KEY ("patient_id") REFERENCES "public"."patient"("id") ON DELETE cascade ON UPDATE no action;
-EXCEPTION
- WHEN duplicate_object THEN null;
-END $$;
---> statement-breakpoint
-DO $$ BEGIN
- ALTER TABLE "vitals" ADD CONSTRAINT "vitals_visit_id_visits_id_fk" FOREIGN KEY ("visit_id") REFERENCES "public"."visits"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
