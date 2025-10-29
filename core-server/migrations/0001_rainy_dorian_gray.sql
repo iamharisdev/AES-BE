@@ -1,0 +1,1 @@
+ALTER TABLE "patient" ADD COLUMN "edit_once" boolean DEFAULT true;
