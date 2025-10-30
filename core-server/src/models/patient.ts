@@ -15,7 +15,6 @@ export const patient = pgTable('patient', {
   age: text('age'),
   cnic: text('cnic'),
   phoneNumber: text('phone_number').notNull(),
-  gestationalAge: text('gestational_age'),
   education: text('education'),
   location: text('location'),
   occupation: text('occupation'),
@@ -34,7 +33,7 @@ export const patient = pgTable('patient', {
   neonatalDeathCount: text('neonatal_death_count'),
   pretermBirths: text('preterm_births'),
   voiceNotes: jsonb('voice_notes').default('[]'),
-  editOnce:boolean('edit_once').default(true),
+ 
 
   // 🔹 Other existing fields (not in object currently)
   husbandPhoneNumber: text("husband_phone_number"),

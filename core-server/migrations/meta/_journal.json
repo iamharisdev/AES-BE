@@ -15,6 +15,13 @@
       "when": 1761719063505,
       "tag": "0001_rainy_dorian_gray",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1761803837779,
+      "tag": "0002_charming_steve_rogers",
+      "breakpoints": true
     }
   ]
 }
