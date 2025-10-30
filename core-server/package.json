@@ -10,7 +10,8 @@
         "db:pull": "bun drizzle-kit pull",
         "db:migrate": "bun drizzle-kit migrate",
         "db:studio": "bun drizzle-kit studio --verbose",
-        "create:user": "bun run ./src/scripts/create-user.ts"
+        "create:user": "bun run ./src/scripts/create-user.ts",
+        "seed:reminders": "bun run src/seeds/reminders.seed.ts"
     },
     "dependencies": {
         "@google-cloud/storage": "^7.12.1",

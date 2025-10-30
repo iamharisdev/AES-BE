@@ -26,6 +26,9 @@ import { emrSectionProgress } from './section-progress';
 import { visits } from './visit';
 import { advisedTest } from './advised-test';
 import { patientChats } from "./patient-chats";
+import { reminderTemplate } from './reminder-template';
+import { reminderRule } from './reminder-rule';
+import { reminderDelivery } from './reminder-delivery';
 
 export const __migrations = pgTable('migrations', {
   id: serial('id').primaryKey().notNull(),
@@ -61,4 +64,7 @@ export const tables = {
   visits,
   advisedTest,
   patientChats,
+  reminderTemplate,
+  reminderRule,
+  reminderDelivery,
 } as const;

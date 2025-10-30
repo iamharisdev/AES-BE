@@ -8,6 +8,13 @@
       "when": 1761567098550,
       "tag": "0000_curious_harry_osborn",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1761734044768,
+      "tag": "0001_foamy_the_professor",
+      "breakpoints": true
     }
   ]
 }
