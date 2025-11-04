@@ -211,8 +211,6 @@ const createVisitHandler = () => {
   app.openapi(createVisitRoute, async (c) => {
     const payload: any = c.req.valid("json");
 
-    console.log("payload:=>  ", JSON.stringify(payload));
-
     try {
       // 🧩 Run all insert operations inside a transaction for safety
       const result = await db.transaction(async (tx) => {

@@ -309,6 +309,12 @@ const getAllEmrsFromPhoneHandler = () => {
       .where(inArray(tables.gynecologicalHistory.emrId, emrIds))
       .execute();
 
+        const medicalHistory = await db
+      .select()
+      .from(tables.medicalHistory)
+      .where(inArray(tables.medicalHistory.emrId, emrIds))
+      .execute();
+
     const surgicalHistories = await db
       .select()
       .from(tables.surgicalHistory)
@@ -386,6 +392,7 @@ const getAllEmrsFromPhoneHandler = () => {
     const currentPregnanciesMap = createLookupMap(currentPregnancies, "emrId");
     const trimestersMap = createLookupMap(trimesters, "emrId");
     const obsHistoriesMap = createLookupMap(obsHistories, "emrId");
+    const medicalHistoryMap = createLookupMap(medicalHistory,'emrId');
     const gynecologicalHistoriesMap = createLookupMap(
       gynecologicalHistories,
       "emrId"
@@ -429,6 +436,7 @@ const getAllEmrsFromPhoneHandler = () => {
       currentPregnancy: currentPregnanciesMap[emr.id] || {},
       trimester: trimestersMap[emr.id] || {},
       obsHistory: obsHistoriesMap[emr.id] || {},
+      medicalHistory:medicalHistoryMap[emr.id]||{},
       gynecologicalHistory: gynecologicalHistoriesMap[emr.id] || {},
       surgicalHistory: surgicalHistoriesMap[emr.id] || {},
       familyHistory: familyHistoriesMap[emr.id] || {},
@@ -976,6 +984,7 @@ const createEmrHandler = () => {
       await insertJsonSection(tables.surgicalHistory, body.surgicalHistory);
       await insertJsonSection(tables.familyHistory, body.familyHistory);
       await insertJsonSection(tables.personalHistory, body.personalHistory);
+      await insertJsonSection(tables.medicalHistory, body.medicalHistory);
       await insertJsonSection(
         tables.socioEconomicHistory,
         body.socioEconomicHistory
@@ -1137,6 +1146,7 @@ const updateEmrDataHandler = () => {
       await upsertSection(tables.surgicalHistory, body.surgicalHistory);
       await upsertSection(tables.familyHistory, body.familyHistory);
       await upsertSection(tables.personalHistory, body.personalHistory);
+       await upsertSection(tables.medicalHistory, body.medicalHistory);
       await upsertSection(
         tables.socioEconomicHistory,
         body.socioEconomicHistory
