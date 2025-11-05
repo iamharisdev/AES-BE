@@ -1,10 +1,11 @@
 import app from "@/app";
 import { db } from "@/db";
 import { jwtMiddleware } from "@/middleware/jwt";
+import { tables } from "@/models";
 import { proposedPlan } from "@/models/proposed-plan";
 import { createdByEnum } from "@/schemas/enums";
 import { createRoute, z } from "@hono/zod-openapi";
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 
 const ProposedPlanSchema = z.object({
   generalPlan: z.string().openapi({
@@ -361,10 +362,113 @@ const deleteProposedPlanHandler = () => {
   });
 };
 
+
+
+export const getAllDoctorNotesByPatientRoute = createRoute({
+  method: "get",
+  operationId: "getAllDoctorNotesByPatient",
+  tags: ["Doctor Notes"],
+  path: "/doctor-notes/patient/{patientId}",
+  summary: "Get all doctor notes for a specific patient",
+  security: [{ jwt: [] }],
+  middleware: [jwtMiddleware],
+  request: {
+    params: z.object({
+      patientId: z.string().uuid()
+    })
+  },
+  responses: {
+    200: {
+      description: "List of doctor notes grouped by visits",
+      content: {
+        "application/json": {
+          schema: z.array(
+            z.object({
+              title: z.string(), // e.g. "Visit 3"
+              notes: z.array(
+                z.object({
+                  content: z.string(),
+                  createdAt: z.string().datetime().optional()
+                })
+              )
+            })
+          )
+        }
+      }
+    },
+    404: {
+      description: "Patient not found or no doctor notes found",
+      content: {
+        "application/json": {
+          schema: z.object({ error: z.string() })
+        }
+      }
+    },
+    500: {
+      description: "Internal server error",
+      content: {
+        "application/json": {
+          schema: z.object({ error: z.string() })
+        }
+      }
+    }
+  }
+});
+
+
+
+const getAllDoctorNotesByPatientHandler = () => {
+  app.openapi(getAllDoctorNotesByPatientRoute, async (c) => {
+    try {
+      const { patientId } = c.req.valid("param");
+
+      // 1️⃣ Get all visits + doctorNotes for this patient in a single query
+      const records = await db
+        .select({
+          visitNumber: tables.visits.visitNumber,
+          doctorNotes: tables.proposedPlan.doctorNotes,
+        })
+        .from(tables.visits)
+        .leftJoin(
+          tables.proposedPlan,
+          eq(tables.visits.id, tables.proposedPlan.visitId)
+        )
+        .where(eq(tables.visits.patientId, patientId))
+        .orderBy(desc(tables.visits.visitNumber));
+
+      // 2️⃣ Transform and filter valid results
+      const result = records
+        .filter((r) => r.doctorNotes && r.doctorNotes.trim() !== "")
+        .map((r) => ({
+          title: `Visit ${r.visitNumber}`,
+          notes: [
+            {
+              content: r.doctorNotes,
+            },
+          ],
+        }));
+
+      // 3️⃣ Handle empty state
+      if (result.length === 0) {
+        return c.json({ message: "No doctor notes found for this patient" }, 404);
+      }
+
+      // 4️⃣ Return formatted response
+      return c.json(result);
+    } catch (error) {
+      console.error("Error fetching doctor notes by patient:", error);
+      return c.json({ error: "Failed to fetch doctor notes" }, 500);
+    }
+  });
+};
+
+
+
 export {
   createProposedPlanHandler,
   getProposedPlansByEmrHandler,
   getProposedPlanByIdHandler,
   updateProposedPlanHandler,
-  deleteProposedPlanHandler
+  deleteProposedPlanHandler,
+  getAllDoctorNotesByPatientHandler
 };

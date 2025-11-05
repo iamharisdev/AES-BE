@@ -71,6 +71,7 @@ const CreateVisitRequestSchema = z.object({
     .object({
       generalPlan: z.string().optional(),
       medication: z.array(z.string()).optional(),
+      doctorNotes:z.string().optional(),
       nextFollowUpTiming: z.string().optional(), // ISO date string
       advisedLabTests: z.array(z.string()).optional(),
       createdBy: z.enum(["AI", "Doctor"]).optional(),
@@ -150,6 +151,7 @@ const ProposedPlanResponseSchema = z.object({
   medication: z.array(z.string()).nullable(),
   nextFollowUpTiming: z.string().nullable(),
   advisedLabTests: z.array(z.string()).nullable(),
+  doctorNote:z.string().nullable(),
   createdBy: z.string(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),

@@ -8,7 +8,6 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { createdByEnum } from "../schemas/enums";
-import { visits } from "./visit";
 
 export const proposedPlan = pgTable("proposed_plan", {
   id: uuid("id").primaryKey().defaultRandom(),
