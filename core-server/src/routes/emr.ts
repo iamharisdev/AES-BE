@@ -279,15 +279,11 @@ const getAllEmrsFromPhoneHandler = () => {
       .where(eq(tables.patient.phoneNumber, phoneNumber))
       .execute();
 
-    
-
     const presentingComplaints = await db
       .select()
       .from(tables.presentingComplaint)
       .where(inArray(tables.presentingComplaint.emrId, emrIds))
       .execute();
-
-   
 
     const currentPregnancies = await db
       .select()
@@ -295,15 +291,11 @@ const getAllEmrsFromPhoneHandler = () => {
       .where(inArray(tables.currentPregnancy.emrId, emrIds))
       .execute();
 
-        
-
     const trimesters = await db
       .select()
       .from(tables.trimester)
       .where(inArray(tables.trimester.emrId, emrIds))
       .execute();
-
-
 
     const obsHistories = await db
       .select()
@@ -317,7 +309,11 @@ const getAllEmrsFromPhoneHandler = () => {
       .where(inArray(tables.gynecologicalHistory.emrId, emrIds))
       .execute();
 
-     
+        const medicalHistory = await db
+      .select()
+      .from(tables.medicalHistory)
+      .where(inArray(tables.medicalHistory.emrId, emrIds))
+      .execute();
 
     const surgicalHistories = await db
       .select()
@@ -330,8 +326,6 @@ const getAllEmrsFromPhoneHandler = () => {
       .from(tables.familyHistory)
       .where(inArray(tables.familyHistory.emrId, emrIds))
       .execute();
-
-     
 
     const personalHistories = await db
       .select()
@@ -369,7 +363,7 @@ const getAllEmrsFromPhoneHandler = () => {
       .where(inArray(tables.previousPregnancy.emrId, emrIds))
       .execute();
 
-   // Create lookup maps for efficient data retrieval
+    // Create lookup maps for efficient data retrieval
     const createLookupMap = (data: any[], key: string) => {
       return data.reduce((acc, item) => {
         const emrId = item[key];
@@ -398,6 +392,7 @@ const getAllEmrsFromPhoneHandler = () => {
     const currentPregnanciesMap = createLookupMap(currentPregnancies, "emrId");
     const trimestersMap = createLookupMap(trimesters, "emrId");
     const obsHistoriesMap = createLookupMap(obsHistories, "emrId");
+    const medicalHistoryMap = createLookupMap(medicalHistory,'emrId');
     const gynecologicalHistoriesMap = createLookupMap(
       gynecologicalHistories,
       "emrId"
@@ -414,9 +409,9 @@ const getAllEmrsFromPhoneHandler = () => {
       followupQuestions,
       "emrId"
     );
-   // const proposedPlansMap = createGroupedLookupMap(proposedPlans, "emrId");
+    // const proposedPlansMap = createGroupedLookupMap(proposedPlans, "emrId");
 
-   // Group previous pregnancies by EMR ID
+    // Group previous pregnancies by EMR ID
     const previousPregnanciesByEmrId = allPreviousPregnancies.reduce(
       (acc, pregnancy) => {
         const emrId = pregnancy.emrId;
@@ -441,6 +436,7 @@ const getAllEmrsFromPhoneHandler = () => {
       currentPregnancy: currentPregnanciesMap[emr.id] || {},
       trimester: trimestersMap[emr.id] || {},
       obsHistory: obsHistoriesMap[emr.id] || {},
+      medicalHistory:medicalHistoryMap[emr.id]||{},
       gynecologicalHistory: gynecologicalHistoriesMap[emr.id] || {},
       surgicalHistory: surgicalHistoriesMap[emr.id] || {},
       familyHistory: familyHistoriesMap[emr.id] || {},
@@ -448,7 +444,7 @@ const getAllEmrsFromPhoneHandler = () => {
       socioEconomicHistory: socioEconomicHistoriesMap[emr.id] || {},
       redFlags: redFlagsMap[emr.id] || [],
       followupQuestions: followupQuestionsMap[emr.id] || [],
-    //  proposedPlan: proposedPlansMap[emr.id] || [],
+      //  proposedPlan: proposedPlansMap[emr.id] || [],
       previousPregnancy: (previousPregnanciesByEmrId[emr.id] || []).map(
         (pregnancy) => ({
           id: pregnancy.id,
@@ -866,9 +862,334 @@ const updateEmrHandler = () => {
   });
 };
 
+// --- Create EMR Schema ---
+const CreateEmrRequestSchema = z.object({
+  phone: z.string(),
+  patientId: z.string(),
+  visit: z.number(),
+  patient: z.record(z.unknown()).optional(),
+  currentPregnancy: z.record(z.unknown()).optional(),
+  obsHistory: z.record(z.unknown()).optional(),
+  gynecologicalHistory: z.record(z.unknown()).optional(),
+  surgicalHistory: z.record(z.unknown()).optional(),
+  familyHistory: z.record(z.unknown()).optional(),
+  personalHistory: z.record(z.unknown()).optional(),
+  socioEconomicHistory: z.record(z.unknown()).optional(),
+  previousPregnancy: z.array(z.record(z.unknown())).optional(),
+});
+
+const CreateEmrSuccessSchema = z.object({
+  message: z.string(),
+  emrId: z.string().uuid(),
+  createdAt: z.string().datetime(),
+});
+
+// --- Create EMR Route ---
+const createEmrRoute = createRoute({
+  method: "post",
+  operationId: "createEmr",
+  tags: ["EMR"],
+  path: "/emr/create",
+  summary: "Create a new EMR record",
+  security: [{ jwt: [] }],
+  middleware: [jwtMiddleware],
+  request: {
+    body: {
+      content: { "application/json": { schema: CreateEmrRequestSchema } },
+    },
+  },
+  responses: {
+    200: {
+      content: { "application/json": { schema: CreateEmrSuccessSchema } },
+      description: "EMR created successfully",
+    },
+    500: {
+      content: {
+        "application/json": { schema: z.object({ error: z.string() }) },
+      },
+      description: "Internal Server Error",
+    },
+  },
+});
+
+const createEmrHandler = () => {
+  app.openapi(createEmrRoute, async (c) => {
+    try {
+      const body = await c.req.json();
+      const { patientId, phone, patient } = body;
+
+      // 1️⃣ Check if patient exists (by ID or phone)
+      const existingPatient = await db
+        .select()
+        .from(tables.patient)
+        .where(
+          patientId
+            ? eq(tables.patient.id, patientId)
+            : eq(tables.patient.phoneNumber, phone)
+        )
+        .then((res) => res.at(0));
+
+      let finalPatientId = patientId;
+
+      if (existingPatient) {
+        finalPatientId = existingPatient.id;
+
+        // 2️⃣ Update existing patient with any new info provided
+        if (patient && Object.keys(patient).length > 0) {
+          await db
+            .update(tables.patient)
+            .set({
+              ...patient,
+              updatedAt: new Date(),
+            })
+            .where(eq(tables.patient.id, finalPatientId))
+            .execute();
+        }
+      }
+
+      // 4️⃣ Create EMR for that patient
+      const [insertedEmr] = await db
+        .insert(tables.emr)
+        .values({
+          phone,
+          patientId: finalPatientId,
+          visit: body.visit || 1,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .returning({
+          id: tables.emr.id,
+          createdAt: tables.emr.createdAt,
+        });
+
+      const emrId = insertedEmr.id;
+
+      // 5️⃣ Helper for inserting JSON sections
+      const insertJsonSection = async (table: any, data: any) => {
+        if (data && Object.keys(data).length > 0) {
+          await db
+            .insert(table)
+            .values({ emrId, ...data })
+            .execute();
+        }
+      };
+
+      // 6️⃣ Insert related sections
+      await insertJsonSection(tables.currentPregnancy, body.currentPregnancy);
+      await insertJsonSection(tables.obsHistory, body.obsHistory);
+      await insertJsonSection(
+        tables.gynecologicalHistory,
+        body.gynecologicalHistory
+      );
+      await insertJsonSection(tables.surgicalHistory, body.surgicalHistory);
+      await insertJsonSection(tables.familyHistory, body.familyHistory);
+      await insertJsonSection(tables.personalHistory, body.personalHistory);
+      await insertJsonSection(tables.medicalHistory, body.medicalHistory);
+      await insertJsonSection(
+        tables.socioEconomicHistory,
+        body.socioEconomicHistory
+      );
+
+      // 7️⃣ Handle previousPregnancy array
+      if (
+        Array.isArray(body.previousPregnancy) &&
+        body.previousPregnancy.length > 0
+      ) {
+        const pregnancies = body.previousPregnancy.map((p) => ({
+          emrId,
+          ...p,
+        }));
+        await db.insert(tables.previousPregnancy).values(pregnancies).execute();
+      }
+
+      // 8️⃣ Respond success
+      return c.json(
+        {
+          message: "EMR created successfully",
+          patientId: finalPatientId,
+          emrId,
+          createdAt:
+            insertedEmr.createdAt instanceof Date
+              ? insertedEmr.createdAt.toISOString()
+              : new Date().toISOString(),
+        },
+        200
+      );
+    } catch (err: any) {
+      console.error("❌ Error creating EMR:", err);
+      return c.json({ error: err.message || "Internal Server Error" }, 500);
+    }
+  });
+};
+
+const UpdateEmrDataRequestSchema = CreateEmrRequestSchema.omit({ visit: true }) // we don’t want visit enforced for updates
+  .extend({
+    emrId: z.string().uuid().optional(), // only required for update
+  });
+
+const updateEmrDataRoute = createRoute({
+  method: "patch",
+  path: "/emr/update",
+  operationId: "updateEmr",
+  tags: ["EMR"],
+  summary: "Update an existing EMR record",
+  security: [{ jwt: [] }],
+  middleware: [jwtMiddleware],
+  request: {
+    body: {
+      content: { "application/json": { schema: UpdateEmrDataRequestSchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: "EMR updated successfully",
+      content: { "application/json": { schema: CreateEmrSuccessSchema } },
+    },
+    404: {
+      description: "EMR not found",
+      content: {
+        "application/json": { schema: z.object({ error: z.string() }) },
+      },
+    },
+    500: {
+      description: "Internal Server Error",
+      content: {
+        "application/json": { schema: z.object({ error: z.string() }) },
+      },
+    },
+  },
+});
+
+// ✅ Update Handler
+const updateEmrDataHandler = () => {
+  app.openapi(updateEmrDataRoute, async (c) => {
+    try {
+      const body = await c.req.json();
+      const { emrId, patientId, phone, patient } = body;
+
+      // 🛑 1️⃣ Validate EMR ID
+      if (!emrId) return c.json({ error: "emrId is required for update" }, 400);
+
+      // 2️⃣ Check if EMR exists
+      const existingEmr = await db
+        .select()
+        .from(tables.emr)
+        .where(eq(tables.emr.id, emrId))
+        .then((res) => res.at(0));
+
+      if (!existingEmr) {
+        return c.json({ error: "EMR not found" }, 404);
+      }
+
+      // 🧹 Utility: remove timestamp/id fields that cause Drizzle errors
+      const sanitize = (obj: any) => {
+        if (!obj || typeof obj !== "object") return obj;
+        const { id, emrId, createdAt, updatedAt, ...rest } = obj;
+        return rest;
+      };
+
+      // 3️⃣ Update patient (if provided)
+      if (patientId && patient && Object.keys(patient).length > 0) {
+        const safePatient = sanitize(patient);
+        await db
+          .update(tables.patient)
+          .set({
+            ...safePatient,
+            updatedAt: new Date(),
+          })
+          .where(eq(tables.patient.id, patientId))
+          .execute();
+      }
+
+      // 4️⃣ Update EMR base record
+      await db
+        .update(tables.emr)
+        .set({
+          phone,
+          updatedAt: new Date(),
+        })
+        .where(eq(tables.emr.id, emrId))
+        .execute();
+
+      // 5️⃣ Helper for updating/inserting JSON sections
+      const upsertSection = async (table: any, data: any) => {
+        if (!data || Object.keys(data).length === 0) return;
+        const cleanData = sanitize(data);
+
+        const existingSection = await db
+          .select()
+          .from(table)
+          .where(eq(table.emrId, emrId))
+          .then((res) => res.at(0));
+
+        if (existingSection) {
+          await db
+            .update(table)
+            .set(cleanData)
+            .where(eq(table.emrId, emrId))
+            .execute();
+        } else {
+          await db
+            .insert(table)
+            .values({ emrId, ...cleanData })
+            .execute();
+        }
+      };
+
+      // 6️⃣ Update or insert related sections
+      await upsertSection(tables.currentPregnancy, body.currentPregnancy);
+      await upsertSection(tables.obsHistory, body.obsHistory);
+      await upsertSection(
+        tables.gynecologicalHistory,
+        body.gynecologicalHistory
+      );
+      await upsertSection(tables.surgicalHistory, body.surgicalHistory);
+      await upsertSection(tables.familyHistory, body.familyHistory);
+      await upsertSection(tables.personalHistory, body.personalHistory);
+       await upsertSection(tables.medicalHistory, body.medicalHistory);
+      await upsertSection(
+        tables.socioEconomicHistory,
+        body.socioEconomicHistory
+      );
+
+      // 7️⃣ Handle previousPregnancy array (replace all existing)
+      if (Array.isArray(body.previousPregnancy)) {
+        await db
+          .delete(tables.previousPregnancy)
+          .where(eq(tables.previousPregnancy.emrId, emrId));
+        if (body.previousPregnancy.length > 0) {
+          const pregnancies = body.previousPregnancy.map((p) => ({
+            emrId,
+            ...sanitize(p),
+          }));
+          await db
+            .insert(tables.previousPregnancy)
+            .values(pregnancies)
+            .execute();
+        }
+      }
+
+      // ✅ Success
+      return c.json(
+        {
+          message: "EMR updated successfully",
+          emrId,
+          updatedAt: new Date().toISOString(),
+        },
+        200
+      );
+    } catch (err: any) {
+      console.error("❌ Error updating EMR:", err);
+      return c.json({ error: err.message || "Internal Server Error" }, 500);
+    }
+  });
+};
+
 export {
   getEmrDetailsHandler,
   getAllEmrsFromPhoneHandler,
   getAllEmrsFromCnicHandler,
   updateEmrHandler,
+  createEmrHandler,
+  updateEmrDataHandler,
 };

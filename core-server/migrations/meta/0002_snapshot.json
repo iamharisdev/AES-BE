@@ -1,6 +1,6 @@
 {
-  "id": "7346cfb5-973e-4fea-852b-0c5fc1d8d6c4",
-  "prevId": "6565c62d-8663-4f9c-be07-8386e544777d",
+  "id": "8d4d5b65-a604-4b5d-b13c-ef6c60301763",
+  "prevId": "7346cfb5-973e-4fea-852b-0c5fc1d8d6c4",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1366,12 +1366,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "gestational_age": {
-          "name": "gestational_age",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
         "education": {
           "name": "education",
           "type": "text",
@@ -1480,13 +1474,6 @@
           "primaryKey": false,
           "notNull": false,
           "default": "'[]'"
-        },
-        "edit_once": {
-          "name": "edit_once",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false,
-          "default": true
         },
         "husband_phone_number": {
           "name": "husband_phone_number",

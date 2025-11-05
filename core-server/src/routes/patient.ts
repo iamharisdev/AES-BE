@@ -622,7 +622,7 @@ const createPatientHandler = () => {
           phoneNumber,
           cnic,
           age: age || null,
-          gestationalAge: gestationalAge || null,
+          pregnancyMonths: gestationalAge || null,
           createdAt: new Date(),
           updatedAt: new Date(),
         })

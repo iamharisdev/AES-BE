@@ -23,6 +23,8 @@ import {
   getAllEmrsFromCnicHandler,
   getEmrDetailsHandler,
   updateEmrHandler,
+  createEmrHandler,
+  updateEmrDataHandler,
 } from "@/routes/emr";
 import {
   createPresentingComplaintHandler,
@@ -96,7 +98,7 @@ import {
   getFilesHandler,
   updateFilesHandler,
   deleteFilesHandler,
-uploadFileHandler,
+  uploadFileHandler,
 } from "@/routes/files";
 import generatePresignedUrls from "@/routes/generate-presigned-urls";
 import {
@@ -225,6 +227,8 @@ export const registerRoutes = () => {
   getAllEmrsFromPhoneHandler();
   getAllEmrsFromCnicHandler();
   updateEmrHandler();
+  createEmrHandler();
+  updateEmrDataHandler();
   createPatientHandler();
   searchPatientsHandler();
   getPatientInfoHandler();

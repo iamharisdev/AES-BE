@@ -2,11 +2,12 @@ import {
   jsonb,
   pgTable,
   text,
+  boolean,
   timestamp,
   uuid,
-  boolean,
 } from "drizzle-orm/pg-core";
 import { user } from "./user";
+
 
 export const patient = pgTable('patient', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -14,7 +15,6 @@ export const patient = pgTable('patient', {
   age: text('age'),
   cnic: text('cnic'),
   phoneNumber: text('phone_number').notNull(),
-  gestationalAge: text('gestational_age'),
   education: text('education'),
   location: text('location'),
   occupation: text('occupation'),
@@ -33,6 +33,7 @@ export const patient = pgTable('patient', {
   neonatalDeathCount: text('neonatal_death_count'),
   pretermBirths: text('preterm_births'),
   voiceNotes: jsonb('voice_notes').default('[]'),
+ 
 
   // 🔹 Other existing fields (not in object currently)
   husbandPhoneNumber: text("husband_phone_number"),
