@@ -107,6 +107,7 @@ import {
   getProposedPlanByIdHandler,
   updateProposedPlanHandler,
   deleteProposedPlanHandler,
+  getAllDoctorNotesByPatientHandler,
 } from "@/routes/proposed-plan";
 import {
   changePasswordHandler,
@@ -232,6 +233,7 @@ export const registerRoutes = () => {
   createPatientHandler();
   searchPatientsHandler();
   getPatientInfoHandler();
+  getAllDoctorNotesByPatientHandler();
   editPatientHandler();
   uploadVoiceNoteHandler();
   createCurrentPregnancyHandler();

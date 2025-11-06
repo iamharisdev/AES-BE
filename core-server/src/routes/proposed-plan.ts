@@ -9,13 +9,13 @@ import { desc, eq } from "drizzle-orm";
 
 const ProposedPlanSchema = z.object({
   generalPlan: z.string().openapi({
-    example: "Improve hemoglobin, maternal nutrition, avoid high-risk habits"
+    example: "Improve hemoglobin, maternal nutrition, avoid high-risk habits",
   }),
   medications: z
     .string()
     .openapi({ example: "Iron supplements, folic acid, calcium tablets" }),
   instructions: z.string().openapi({
-    example: "Take medications with food, avoid alcohol and smoking"
+    example: "Take medications with food, avoid alcohol and smoking",
   }),
   nextFollowUpTiming: z.string().openapi({ example: "2024-02-15" }),
   nextFollowUpPurpose: z
@@ -24,13 +24,13 @@ const ProposedPlanSchema = z.object({
   advisedLabTests: z
     .array(z.string())
     .openapi({ example: ["Urine test", "Blood test", "Glucose test"] }),
-  createdBy: z.enum(createdByEnum).openapi({ example: "AI" })
+  createdBy: z.enum(createdByEnum).openapi({ example: "AI" }),
 });
 
 // --- create-proposed-plan ---
 const CreateProposedPlanRequestSchema = z.object({
   emrId: z.string().uuid(),
-  ...ProposedPlanSchema.shape
+  ...ProposedPlanSchema.shape,
 });
 
 const createProposedPlanRoute = createRoute({
@@ -45,10 +45,10 @@ const createProposedPlanRoute = createRoute({
     body: {
       content: {
         "application/json": {
-          schema: CreateProposedPlanRequestSchema
-        }
-      }
-    }
+          schema: CreateProposedPlanRequestSchema,
+        },
+      },
+    },
   },
   responses: {
     201: {
@@ -58,23 +58,23 @@ const createProposedPlanRoute = createRoute({
             id: z.string().uuid(),
             ...CreateProposedPlanRequestSchema.shape,
             createdAt: z.date(),
-            updatedAt: z.date()
-          })
-        }
+            updatedAt: z.date(),
+          }),
+        },
       },
-      description: "Proposed plan created successfully"
+      description: "Proposed plan created successfully",
     },
     500: {
       content: {
-        "application/json": { schema: z.object({ error: z.string() }) }
+        "application/json": { schema: z.object({ error: z.string() }) },
       },
-      description: "Internal server error"
-    }
-  }
+      description: "Internal server error",
+    },
+  },
 });
 
 const createProposedPlanHandler = () => {
-  app.openapi(createProposedPlanRoute, async c => {
+  app.openapi(createProposedPlanRoute, async (c) => {
     const body = c.req.valid("json");
 
     try {
@@ -88,7 +88,7 @@ const createProposedPlanHandler = () => {
           nextFollowUpTiming: body.nextFollowUpTiming,
           nextFollowUpPurpose: body.nextFollowUpPurpose,
           advisedLabTests: body.advisedLabTests,
-          createdBy: body.createdBy
+          createdBy: body.createdBy,
         })
         .returning();
 
@@ -110,8 +110,8 @@ const getProposedPlansByEmrRoute = createRoute({
   middleware: [jwtMiddleware],
   request: {
     params: z.object({
-      emrId: z.string().uuid()
-    })
+      emrId: z.string().uuid(),
+    }),
   },
   responses: {
     200: {
@@ -124,25 +124,25 @@ const getProposedPlansByEmrRoute = createRoute({
                 emrId: z.string().uuid(),
                 ...ProposedPlanSchema.shape,
                 createdAt: z.date(),
-                updatedAt: z.date()
+                updatedAt: z.date(),
               })
-            )
-          })
-        }
+            ),
+          }),
+        },
       },
-      description: "Proposed plans retrieved successfully"
+      description: "Proposed plans retrieved successfully",
     },
     500: {
       content: {
-        "application/json": { schema: z.object({ error: z.string() }) }
+        "application/json": { schema: z.object({ error: z.string() }) },
       },
-      description: "Internal server error"
-    }
-  }
+      description: "Internal server error",
+    },
+  },
 });
 
 const getProposedPlansByEmrHandler = () => {
-  app.openapi(getProposedPlansByEmrRoute, async c => {
+  app.openapi(getProposedPlansByEmrRoute, async (c) => {
     const { emrId } = c.req.valid("param");
 
     try {
@@ -168,8 +168,8 @@ const getProposedPlanByIdRoute = createRoute({
   middleware: [jwtMiddleware],
   request: {
     params: z.object({
-      id: z.string().uuid()
-    })
+      id: z.string().uuid(),
+    }),
   },
   responses: {
     200: {
@@ -180,29 +180,29 @@ const getProposedPlanByIdRoute = createRoute({
             emrId: z.string().uuid(),
             ...ProposedPlanSchema.shape,
             createdAt: z.date(),
-            updatedAt: z.date()
-          })
-        }
+            updatedAt: z.date(),
+          }),
+        },
       },
-      description: "Proposed plan retrieved successfully"
+      description: "Proposed plan retrieved successfully",
     },
     404: {
       content: {
-        "application/json": { schema: z.object({ error: z.string() }) }
+        "application/json": { schema: z.object({ error: z.string() }) },
       },
-      description: "Proposed plan not found"
+      description: "Proposed plan not found",
     },
     500: {
       content: {
-        "application/json": { schema: z.object({ error: z.string() }) }
+        "application/json": { schema: z.object({ error: z.string() }) },
       },
-      description: "Internal server error"
-    }
-  }
+      description: "Internal server error",
+    },
+  },
 });
 
 const getProposedPlanByIdHandler = () => {
-  app.openapi(getProposedPlanByIdRoute, async c => {
+  app.openapi(getProposedPlanByIdRoute, async (c) => {
     const { id } = c.req.valid("param");
 
     try {
@@ -233,15 +233,15 @@ const updateProposedPlanRoute = createRoute({
   middleware: [jwtMiddleware],
   request: {
     params: z.object({
-      id: z.string().uuid()
+      id: z.string().uuid(),
     }),
     body: {
       content: {
         "application/json": {
-          schema: ProposedPlanSchema
-        }
-      }
-    }
+          schema: ProposedPlanSchema,
+        },
+      },
+    },
   },
   responses: {
     200: {
@@ -252,29 +252,29 @@ const updateProposedPlanRoute = createRoute({
             emrId: z.string().uuid(),
             ...ProposedPlanSchema.shape,
             createdAt: z.date(),
-            updatedAt: z.date()
-          })
-        }
+            updatedAt: z.date(),
+          }),
+        },
       },
-      description: "Proposed plan updated successfully"
+      description: "Proposed plan updated successfully",
     },
     404: {
       content: {
-        "application/json": { schema: z.object({ error: z.string() }) }
+        "application/json": { schema: z.object({ error: z.string() }) },
       },
-      description: "Proposed plan not found"
+      description: "Proposed plan not found",
     },
     500: {
       content: {
-        "application/json": { schema: z.object({ error: z.string() }) }
+        "application/json": { schema: z.object({ error: z.string() }) },
       },
-      description: "Internal server error"
-    }
-  }
+      description: "Internal server error",
+    },
+  },
 });
 
 const updateProposedPlanHandler = () => {
-  app.openapi(updateProposedPlanRoute, async c => {
+  app.openapi(updateProposedPlanRoute, async (c) => {
     const { id } = c.req.valid("param");
     const body = c.req.valid("json");
 
@@ -289,7 +289,7 @@ const updateProposedPlanHandler = () => {
           nextFollowUpPurpose: body.nextFollowUpPurpose,
           advisedLabTests: body.advisedLabTests,
           createdBy: body.createdBy,
-          updatedAt: new Date()
+          updatedAt: new Date(),
         })
         .where(eq(proposedPlan.id, id))
         .returning();
@@ -316,33 +316,33 @@ const deleteProposedPlanRoute = createRoute({
   middleware: [jwtMiddleware],
   request: {
     params: z.object({
-      id: z.string().uuid()
-    })
+      id: z.string().uuid(),
+    }),
   },
   responses: {
     200: {
       content: {
-        "application/json": { schema: z.object({ message: z.string() }) }
+        "application/json": { schema: z.object({ message: z.string() }) },
       },
-      description: "Proposed plan deleted successfully"
+      description: "Proposed plan deleted successfully",
     },
     404: {
       content: {
-        "application/json": { schema: z.object({ error: z.string() }) }
+        "application/json": { schema: z.object({ error: z.string() }) },
       },
-      description: "Proposed plan not found"
+      description: "Proposed plan not found",
     },
     500: {
       content: {
-        "application/json": { schema: z.object({ error: z.string() }) }
+        "application/json": { schema: z.object({ error: z.string() }) },
       },
-      description: "Internal server error"
-    }
-  }
+      description: "Internal server error",
+    },
+  },
 });
 
 const deleteProposedPlanHandler = () => {
-  app.openapi(deleteProposedPlanRoute, async c => {
+  app.openapi(deleteProposedPlanRoute, async (c) => {
     const { id } = c.req.valid("param");
 
     try {
@@ -362,8 +362,6 @@ const deleteProposedPlanHandler = () => {
   });
 };
 
-
-
 export const getAllDoctorNotesByPatientRoute = createRoute({
   method: "get",
   operationId: "getAllDoctorNotesByPatient",
@@ -374,8 +372,8 @@ export const getAllDoctorNotesByPatientRoute = createRoute({
   middleware: [jwtMiddleware],
   request: {
     params: z.object({
-      patientId: z.string().uuid()
-    })
+      patientId: z.string().uuid(),
+    }),
   },
   responses: {
     200: {
@@ -388,40 +386,38 @@ export const getAllDoctorNotesByPatientRoute = createRoute({
               notes: z.array(
                 z.object({
                   content: z.string(),
-                  createdAt: z.string().datetime().optional()
+                  createdAt: z.string().datetime().optional(),
                 })
-              )
+              ),
             })
-          )
-        }
-      }
+          ),
+        },
+      },
     },
     404: {
       description: "Patient not found or no doctor notes found",
       content: {
         "application/json": {
-          schema: z.object({ error: z.string() })
-        }
-      }
+          schema: z.object({ error: z.string() }),
+        },
+      },
     },
     500: {
       description: "Internal server error",
       content: {
         "application/json": {
-          schema: z.object({ error: z.string() })
-        }
-      }
-    }
-  }
+          schema: z.object({ error: z.string() }),
+        },
+      },
+    },
+  },
 });
-
-
 
 const getAllDoctorNotesByPatientHandler = () => {
   app.openapi(getAllDoctorNotesByPatientRoute, async (c) => {
     try {
       const { patientId } = c.req.valid("param");
-
+      console.log("patientId:=>  ", patientId);
       // 1️⃣ Get all visits + doctorNotes for this patient in a single query
       const records = await db
         .select({
@@ -450,7 +446,10 @@ const getAllDoctorNotesByPatientHandler = () => {
 
       // 3️⃣ Handle empty state
       if (result.length === 0) {
-        return c.json({ message: "No doctor notes found for this patient" }, 404);
+        return c.json(
+          { message: "No doctor notes found for this patient" },
+          404
+        );
       }
 
       // 4️⃣ Return formatted response
@@ -462,13 +461,11 @@ const getAllDoctorNotesByPatientHandler = () => {
   });
 };
 
-
-
 export {
   createProposedPlanHandler,
   getProposedPlansByEmrHandler,
   getProposedPlanByIdHandler,
   updateProposedPlanHandler,
   deleteProposedPlanHandler,
-  getAllDoctorNotesByPatientHandler
+  getAllDoctorNotesByPatientHandler,
 };
