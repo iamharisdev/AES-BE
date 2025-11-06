@@ -1,4 +1,4 @@
-import { table } from '@/models'
+import { tables } from '@/models'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import { env } from './env'
@@ -16,4 +16,4 @@ const queryClient = postgres(databaseConnectionString, {
 	connect_timeout: 30, // Increase connection timeout
 })
 
-export const db = drizzle(queryClient, { schema: table })
+export const db = drizzle(queryClient, { schema: tables })

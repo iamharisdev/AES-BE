@@ -1,27 +1,35 @@
 {
-	"name": "core-server",
-	"scripts": {
-		"dev": "bun run --hot src/index.ts",
-		"build": "bun build ./src/index.ts --target=bun --minify --sourcemap --outfile=build/server.js",
-		"start": "bun run build/server.js",
-		"db:generate": "bun drizzle-kit generate",
-		"db:push": "bun drizzle-kit push",
-		"db:migrate": "bun drizzle-kit migrate",
-		"db:studio": "bun drizzle-kit studio --verbose"
-	},
-	"dependencies": {
-		"@google-cloud/storage": "^7.12.1",
-		"@hono/swagger-ui": "^0.4.0",
-		"@hono/zod-openapi": "^0.15.2",
-		"@lifeomic/attempt": "^3.1.0",
-		"drizzle-kit": "0.24.0",
-		"drizzle-orm": "^0.33.0",
-		"hono": "^4.5.4",
-		"openai": "^4.55.7",
-		"postgres": "^3.4.4",
-		"ulidx": "^2.4.0"
-	},
-	"devDependencies": {
-		"@types/bun": "latest"
-	}
+    "name": "core-server",
+    "scripts": {
+        "dev": "bun run --hot src/index.ts",
+        "build": "bun build ./src/index.ts --target=bun --minify --sourcemap --outfile=build/server.js",
+        "start": "bun run build/server.js",
+        "db:generate": "bun drizzle-kit generate",
+        "db:check": "bun drizzle-kit check",
+        "db:push": "bun drizzle-kit push",
+        "db:pull": "bun drizzle-kit pull",
+        "db:migrate": "bun drizzle-kit migrate",
+        "db:studio": "bun drizzle-kit studio --verbose",
+        "create:user": "bun run ./src/scripts/create-user.ts",
+        "seed:reminders": "bun run src/seeds/reminders.seed.ts"
+    },
+    "dependencies": {
+        "@google-cloud/storage": "^7.12.1",
+        "@hono/swagger-ui": "^0.4.0",
+        "@hono/zod-openapi": "^0.15.2",
+        "@lifeomic/attempt": "^3.1.0",
+        "@types/mime-types": "^3.0.1",
+        "drizzle-kit": "0.22.8",
+        "drizzle-orm": "^0.33.0",
+        "hono": "^4.5.4",
+        "node-fetch": "^3.3.2",
+        "nodemailer": "^7.0.4",
+        "openai": "^4.55.7",
+        "postgres": "^3.4.4",
+        "ulidx": "^2.4.0"
+    },
+    "devDependencies": {
+        "@types/bun": "latest",
+        "@types/nodemailer": "^6.4.17"
+    }
 }

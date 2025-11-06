@@ -36,15 +36,3 @@ export const surgicalHistory = z.object({
 	operationAllergies: yesNoEnum,
 	additionalInfo: z.string().optional(),
 })
-
-export const medicalHistoryEMR = z.object({
-	diabetes: yesNoEnum,
-	recurrentUti: yesNoEnum,
-	cardiacProblem: yesNoEnum,
-	hemoglobinopathy: yesNoEnum,
-	endocrineDysfunction: yesNoEnum,
-	anemia: yesNoEnum,
-	hepatitis: yesNoEnum,
-	hypertension: yesNoEnum,
-	additionalInfo: z.string().optional(),
-})
