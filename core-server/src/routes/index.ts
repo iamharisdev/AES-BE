@@ -152,6 +152,7 @@ import {
   getAdvisedTestsHandler,
   getAllVisitsHandler,
   getVisitDetailsHandler,
+  updateVisitHandler,
 } from "@/routes/visits";
 import {
   listPatientChatsHandler,
@@ -194,6 +195,7 @@ export const registerRoutes = () => {
   updateSocioEconomicHistoryHandler();
   deleteSocioEconomicHistoryHandler();
   createVitalsHandler();
+  updateVisitHandler();
   listVitalsHandler();
   getVitalsByIdHandler();
   updateVitalsHandler();

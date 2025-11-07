@@ -10,4 +10,5 @@ export const visits = pgTable("visits", {
  visitNumber: serial("visit_number").notNull(),
   visitDate: timestamp("visit_date", { withTimezone: true }).defaultNow(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });

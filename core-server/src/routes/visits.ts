@@ -2,168 +2,188 @@ import app from "@/app";
 import { db } from "@/db";
 import { jwtMiddleware } from "@/middleware/jwt";
 import { tables } from "@/models";
-import { DiagnosticsContentSchema } from "@/models/diagnostics";
 import { createRoute, z } from "@hono/zod-openapi";
 
 import { desc, eq } from "drizzle-orm";
-import { json } from "stream/consumers";
-
 const CreateVisitRequestSchema = z.object({
   patientId: z.string().uuid(),
   visitDate: z.string().datetime().optional(),
 
-  // ✅ VITALS (matches vitals table)
+  // ✅ VITALS
   vitals: z
     .object({
-      presentingComplaint: z.string().optional(),
-      bloodPressure: z.string().optional(),
-      pulseRate: z.string().optional(),
-      temperature: z.string().optional(),
-      respiratoryRate: z.string().optional(),
-      weight: z.string().optional(),
-      visitDate: z.string().optional(),
+      presentingComplaint: z.string().nullable().optional(),
+      bloodPressure: z.string().nullable().optional(),
+      pulseRate: z.string().nullable().optional(),
+      temperature: z.string().nullable().optional(),
+      respiratoryRate: z.string().nullable().optional(),
+      weight: z.string().nullable().optional(),
+      visitDate: z.string().nullable().optional(),
     })
     .optional(),
 
-  // ✅ EXAMINATION (matches examination table)
+  // ✅ EXAMINATION
   examination: z
     .object({
-      bilateralPedalEdema: z.string().optional(),
-      clubbing: z.string().optional(),
-      koilonychia: z.string().optional(),
-      lymphNodes: z.string().optional(),
-      pallor: z.string().optional(),
-      spine: z.string().optional(),
-      abnormalSpine: z.string().optional(),
-      nippleDeformity: z.string().optional(),
-      nippleDischarge: z.string().optional(),
-      sizeComparison: z.string().optional(),
-      swelling: z.string().optional(),
-      abdominalWallEdema: z.string().optional(),
-      estimatedFetalWeight: z.string().optional(),
-      fetalHeartRate: z.string().optional(),
-      fundalHeight: z.string().optional(),
-      hernialOrfices: z.string().optional(),
-      lie: z.string().optional(),
-      liquor: z.string().optional(),
-      leukonychia: z.string().optional(),
-      presentation: z.string().optional(),
-      prominentVeins: z.string().optional(),
-      pulsations: z.string().optional(),
-      scarTenderness: z.string().optional(),
-      shapeOfAbdomen: z.string().optional(),
-      striae: z.string().optional(),
-      umbilicus: z.string().optional(),
-      perSpeculumFindings: z.string().optional(),
-      perVaginalFindings: z.string().optional(),
-      physicalFindings: z.string().optional(),
+      bilateralPedalEdema: z.string().nullable().optional(),
+      clubbing: z.string().nullable().optional(),
+      koilonychia: z.string().nullable().optional(),
+      lymphNodes: z.string().nullable().optional(),
+      pallor: z.string().nullable().optional(),
+      spine: z.string().nullable().optional(),
+      abnormalSpine: z.string().nullable().optional(),
+      nippleDeformity: z.string().nullable().optional(),
+      nippleDischarge: z.string().nullable().optional(),
+      sizeComparison: z.string().nullable().optional(),
+      swelling: z.string().nullable().optional(),
+      abdominalWallEdema: z.string().nullable().optional(),
+      estimatedFetalWeight: z.string().nullable().optional(),
+      fetalHeartRate: z.string().nullable().optional(),
+      fundalHeight: z.string().nullable().optional(),
+      hernialOrfices: z.string().nullable().optional(),
+      lie: z.string().nullable().optional(),
+      liquor: z.string().nullable().optional(),
+      leukonychia: z.string().nullable().optional(),
+      presentation: z.string().nullable().optional(),
+      prominentVeins: z.string().nullable().optional(),
+      pulsations: z.string().nullable().optional(),
+      scarTenderness: z.string().nullable().optional(),
+      shapeOfAbdomen: z.string().nullable().optional(),
+      striae: z.string().nullable().optional(),
+      umbilicus: z.string().nullable().optional(),
+      perSpeculumFindings: z.string().nullable().optional(),
+      perVaginalFindings: z.string().nullable().optional(),
+      physicalFindings: z.string().nullable().optional(),
     })
     .optional(),
 
+  // ✅ DIAGNOSTICS
   diagnostics: z
     .object({
-      diagnostics: DiagnosticsContentSchema,
+      diagnostics: z
+        .array(
+          z.object({
+            name: z.string().nullable().optional(),
+            uri: z.string().nullable().optional(),
+          })
+        )
+        .nullable()
+        .optional(),
     })
     .optional(),
 
-  // ✅ PROPOSED PLAN (matches proposed_plan table)
+  // ✅ PROPOSED PLAN
   proposedPlan: z
     .object({
-      generalPlan: z.string().optional(),
-      medication: z.array(z.string()).optional(),
-      doctorNotes:z.string().optional(),
-      nextFollowUpTiming: z.string().optional(), // ISO date string
-      advisedLabTests: z.array(z.string()).optional(),
-      createdBy: z.enum(["AI", "Doctor"]).optional(),
+      generalPlan: z.string().nullable().optional(),
+      medication: z.array(z.string()).nullable().optional(),
+      doctorNotes: z.string().nullable().optional(),
+      nextFollowUpTiming: z.string().nullable().optional(),
+      advisedLabTests: z.array(z.string()).nullable().optional(),
+      createdBy: z.enum(["AI", "Doctor"]).nullable().optional(),
     })
     .optional(),
 });
 
+
+
 // 🟩 Vitals Response
 const VitalsResponseSchema = z.object({
-  id: z.string().uuid(),
-  visitId: z.string().uuid(),
-  presentingComplaint: z.string().nullable(),
-  bloodPressure: z.string().nullable(),
-  pulseRate: z.string().nullable(),
-  temperature: z.string().nullable(),
-  respiratoryRate: z.string().nullable(),
-  weight: z.string().nullable(),
-  visitDate: z.string().nullable(),
+  id: z.string().uuid().optional(),
+  visitId: z.string().uuid().optional(),
+  presentingComplaint: z.string().nullable().optional(),
+  bloodPressure: z.string().nullable().optional(),
+  pulseRate: z.string().nullable().optional(),
+  temperature: z.string().nullable().optional(),
+  respiratoryRate: z.string().nullable().optional(),
+  weight: z.string().nullable().optional(),
+  visitDate: z.string().nullable().optional(),
 });
 
 // 🟩 Examination Response
 const ExaminationResponseSchema = z.object({
-  id: z.string().uuid(),
-  visitId: z.string().uuid(),
-  bilateralPedalEdema: z.string().nullable(),
-  clubbing: z.string().nullable(),
-  koilonychia: z.string().nullable(),
-  lymphNodes: z.string().nullable(),
-  pallor: z.string().nullable(),
-  spine: z.string().nullable(),
-  abnormalSpine: z.string().nullable(),
-  nippleDeformity: z.string().nullable(),
-  nippleDischarge: z.string().nullable(),
-  sizeComparison: z.string().nullable(),
-  swelling: z.string().nullable(),
-  abdominalWallEdema: z.string().nullable(),
-  estimatedFetalWeight: z.string().nullable(),
-  fetalHeartRate: z.string().nullable(),
-  fundalHeight: z.string().nullable(),
-  hernialOrfices: z.string().nullable(),
-  lie: z.string().nullable(),
-  liquor: z.string().nullable(),
-  leukonychia: z.string().nullable(),
-  presentation: z.string().nullable(),
-  prominentVeins: z.string().nullable(),
-  pulsations: z.string().nullable(),
-  scarTenderness: z.string().nullable(),
-  shapeOfAbdomen: z.string().nullable(),
-  striae: z.string().nullable(),
-  umbilicus: z.string().nullable(),
-  perSpeculumFindings: z.string().nullable(),
-  perVaginalFindings: z.string().nullable(),
-  physicalFindings: z.string().optional(),
-  createdAt: z.string().datetime(),
-  updatedAt: z.string().datetime(),
+  id: z.string().uuid().optional(),
+  visitId: z.string().uuid().optional(),
+
+  bilateralPedalEdema: z.string().nullable().optional(),
+  clubbing: z.string().nullable().optional(),
+  koilonychia: z.string().nullable().optional(),
+  lymphNodes: z.string().nullable().optional(),
+  pallor: z.string().nullable().optional(),
+  spine: z.string().nullable().optional(),
+  abnormalSpine: z.string().nullable().optional(),
+  nippleDeformity: z.string().nullable().optional(),
+  nippleDischarge: z.string().nullable().optional(),
+  sizeComparison: z.string().nullable().optional(),
+  swelling: z.string().nullable().optional(),
+  abdominalWallEdema: z.string().nullable().optional(),
+  estimatedFetalWeight: z.string().nullable().optional(),
+  fetalHeartRate: z.string().nullable().optional(),
+  fundalHeight: z.string().nullable().optional(),
+  hernialOrfices: z.string().nullable().optional(),
+  lie: z.string().nullable().optional(),
+  liquor: z.string().nullable().optional(),
+  leukonychia: z.string().nullable().optional(),
+  presentation: z.string().nullable().optional(),
+  prominentVeins: z.string().nullable().optional(),
+  pulsations: z.string().nullable().optional(),
+  scarTenderness: z.string().nullable().optional(),
+  shapeOfAbdomen: z.string().nullable().optional(),
+  striae: z.string().nullable().optional(),
+  umbilicus: z.string().nullable().optional(),
+  perSpeculumFindings: z.string().nullable().optional(),
+  perVaginalFindings: z.string().nullable().optional(),
+  physicalFindings: z.string().nullable().optional(),
+
+  createdAt: z.string().datetime().optional(),
+  updatedAt: z.string().datetime().optional(),
 });
 
-// 🟩 Diagnostics Response
+
+// ✅ Diagnostics Response
 const DiagnosticsResponseSchema = z.object({
-  id: z.string().uuid(),
-  visitId: z.string().uuid(),
-  diagnostics: z.array(
-    z.object({
-      name: z.string(),
-      uri: z.string().nullable().optional(),
-    })
-  ),
-  createdAt: z.string().datetime(),
-  updatedAt: z.string().datetime(),
+  id: z.string().uuid().optional(),
+  visitId: z.string().uuid().optional(),
+
+  diagnostics: z
+    .array(
+      z.object({
+        name: z.string().optional(),
+        uri: z.string().nullable().optional(),
+      })
+    )
+    .optional(),
+
+  createdAt: z.string().datetime().optional(),
+  updatedAt: z.string().datetime().optional(),
 });
 
-// 🟩 Proposed Plan Response
+
+// ✅ Proposed Plan Response
 const ProposedPlanResponseSchema = z.object({
-  id: z.string().uuid(),
-  visitId: z.string().uuid(),
-  generalPlan: z.string().nullable(),
-  medication: z.array(z.string()).nullable(),
-  nextFollowUpTiming: z.string().nullable(),
-  advisedLabTests: z.array(z.string()).nullable(),
-  doctorNote:z.string().nullable(),
-  createdBy: z.string(),
-  createdAt: z.string().datetime(),
-  updatedAt: z.string().datetime(),
+  id: z.string().uuid().optional(),
+  visitId: z.string().uuid().optional(),
+
+  generalPlan: z.string().nullable().optional(),
+  medication: z.array(z.string()).nullable().optional(),
+  nextFollowUpTiming: z.string().nullable().optional(),
+  advisedLabTests: z.array(z.string()).nullable().optional(),
+  doctorNote: z.string().nullable().optional(),
+  createdBy: z.string().nullable().optional(),
+
+  createdAt: z.string().datetime().optional(),
+  updatedAt: z.string().datetime().optional(),
 });
 
-// 🟩 Visit Response
+
+// ✅ Visit Response
 const VisitResponseSchema = z.object({
-  id: z.string().uuid(),
-  patientId: z.string().uuid(),
-  visitDate: z.string().datetime(),
-  createdAt: z.string().datetime(),
+  id: z.string().uuid().optional(),
+  patientId: z.string().uuid().optional(),
+  visitDate: z.string().datetime().optional(),
+  createdAt: z.string().datetime().optional(),
 });
+
 
 export const CreateVisitResponseSchema = z.object({
   message: z
@@ -244,8 +264,6 @@ const createVisitHandler = () => {
         }
 
         if (payload.examination) {
-          console.log(payload.examination);
-
           [examination] = await tx
             .insert(tables.examination)
             .values({
@@ -391,9 +409,6 @@ const getVisitDetailsRoute = createRoute({
 const getVisitDetailsHandler = () => {
   app.openapi(getVisitDetailsRoute, async (c) => {
     const { id } = c.req.valid("param");
-
-    console.log("params:=>  ", id);
-
     try {
       // 1️⃣ Fetch main visit record
 
@@ -504,9 +519,223 @@ const getAdvisedTestsHandler = () => {
   });
 };
 
-export {
-  createVisitHandler,
-  getAllVisitsHandler,
-  getVisitDetailsHandler,
-  getAdvisedTestsHandler,
+// ✅ Update Visit Request Schema (PATCH)
+export const UpdateVisitRequestSchema = CreateVisitRequestSchema.extend({
+  visitId: z.string().uuid(),
+});
+
+// ✅ Update Visit Response Schema
+export const UpdateVisitResponseSchema = z.object({
+  message: z.string(),
+  visit: VisitResponseSchema,
+  vitals: VitalsResponseSchema.optional(),
+  examination: ExaminationResponseSchema.optional(),
+  diagnostics: DiagnosticsResponseSchema.optional(),
+  proposedPlan: ProposedPlanResponseSchema.optional(),
+  advisedTests: z.any().optional(),
+});
+
+// ✅ ROUTE
+export const updateVisitRoute = createRoute({
+  method: "patch",
+  path: "/visits/:visitId",
+  summary:
+    "Update visit (PATCH) with vitals, exam, diagnostics & proposed plan",
+  tags: ["Visits"],
+  security: [{ jwt: [] }],
+  middleware: [jwtMiddleware],
+  request: {
+    params: z.object({
+      visitId: z.string().uuid(),
+    }),
+    body: {
+      content: {
+        "application/json": { schema: UpdateVisitRequestSchema },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: "Visit updated successfully",
+      content: {
+        "application/json": { schema: UpdateVisitResponseSchema },
+      },
+    },
+    404: {
+      description: "Visit not found",
+    },
+  },
+});
+
+// ✅ HANDLER
+const updateVisitHandler = () => {
+  app.openapi(updateVisitRoute, async (c) => {
+    const { visitId } = c.req.valid("param");
+    const payload = c.req.valid("json");
+
+    try {
+      const updatedData = await db.transaction(async (tx) => {
+        // ✅ Check if visit exists
+        const [existingVisit] = await tx
+          .select()
+          .from(tables.visits)
+          .where(eq(tables.visits.id, visitId));
+
+        if (!existingVisit) {
+          return c.json({ error: "Visit not found" }, 404);
+        }
+
+        // ✅ 1: Update Visit (only if values provided)
+        let [visit] = await tx
+          .update(tables.visits)
+          .set({
+            visitDate: payload.visitDate
+              ? new Date(payload.visitDate)
+              : existingVisit.visitDate,
+            updatedAt: new Date(),
+          })
+          .where(eq(tables.visits.id, visitId))
+          .returning();
+
+        // ✅ 2: Vitals — PATCH style (update if exist, else insert)
+        let vitals;
+        if (payload.vitals) {
+          const [existingVitals] = await tx
+            .select()
+            .from(tables.vitals)
+            .where(eq(tables.vitals.visitId, visitId));
+
+          if (existingVitals) {
+            [vitals] = await tx
+              .update(tables.vitals)
+              .set(payload.vitals)
+              .where(eq(tables.vitals.visitId, visitId))
+              .returning();
+          } else {
+            [vitals] = await tx
+              .insert(tables.vitals)
+              .values({ visitId, ...payload.vitals })
+              .returning();
+          }
+        }
+
+        // ✅ 3: Examination
+        let examination;
+        if (payload.examination) {
+          const [existingExam] = await tx
+            .select()
+            .from(tables.examination)
+            .where(eq(tables.examination.visitId, visitId));
+
+          if (existingExam) {
+            [examination] = await tx
+              .update(tables.examination)
+              .set(payload.examination)
+              .where(eq(tables.examination.visitId, visitId))
+              .returning();
+          } else {
+            [examination] = await tx
+              .insert(tables.examination)
+              .values({ visitId, ...payload.examination })
+              .returning();
+          }
+        }
+
+        // ✅ 4: Diagnostics
+        let diagnostics;
+        if (payload.diagnostics) {
+          const [existingDiag] = await tx
+            .select()
+            .from(tables.diagnostics)
+            .where(eq(tables.diagnostics.visitId, visitId));
+
+          if (existingDiag) {
+            [diagnostics] = await tx
+              .update(tables.diagnostics)
+              .set({
+                diagnostics: payload.diagnostics.diagnostics,
+              })
+              .where(eq(tables.diagnostics.visitId, visitId))
+              .returning();
+          } else {
+            [diagnostics] = await tx
+              .insert(tables.diagnostics)
+              .values({
+                visitId,
+                diagnostics: payload.diagnostics.diagnostics,
+              })
+              .returning();
+          }
+        }
+
+        // ✅ 5: Proposed Plan
+        let proposedPlan;
+        if (payload.proposedPlan) {
+          const [existingPlan] = await tx
+            .select()
+            .from(tables.proposedPlan)
+            .where(eq(tables.proposedPlan.visitId, visitId));
+
+          if (existingPlan) {
+            [proposedPlan] = await tx
+              .update(tables.proposedPlan)
+              .set(payload.proposedPlan)
+              .where(eq(tables.proposedPlan.visitId, visitId))
+              .returning();
+          } else {
+            [proposedPlan] = await tx
+              .insert(tables.proposedPlan)
+              .values({ visitId, ...payload.proposedPlan })
+              .returning();
+          }
+        }
+
+        // ✅ 6: Advised Lab Tests — delete old → insert new
+        // ✅ 6: Advised Lab Tests — delete old → insert new
+        // ✅ 6: Advised Lab Tests — delete old → insert new
+        let advisedTests: (typeof tables.advisedTest.$inferSelect)[] = [];
+
+        if (payload.proposedPlan?.advisedLabTests) {
+          await tx
+            .delete(tables.advisedTest)
+            .where(eq(tables.advisedTest.visitId, visitId));
+
+          advisedTests = await tx
+            .insert(tables.advisedTest)
+            .values(
+              payload.proposedPlan.advisedLabTests.map((test: string) => ({
+                visitId,
+                testName: test,
+                status: "not_submitted" as const,
+              }))
+            )
+            .returning();
+        }
+
+        return {
+          message: "Visit updated successfully",
+          visit,
+          vitals,
+          examination,
+          diagnostics,
+          proposedPlan,
+          advisedTests,
+        };
+      });
+
+      return c.json(updatedData, 200);
+    } catch (error) {
+      console.error("❌ Error updating visit:", error);
+      return c.json(
+        { error: "Internal Server Error", details: String(error) },
+        500
+      );
+    }
+  });
 };
+
+export {
+  createVisitHandler, getAdvisedTestsHandler, getAllVisitsHandler,
+  getVisitDetailsHandler, updateVisitHandler
+};
+
