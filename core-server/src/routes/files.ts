@@ -383,7 +383,7 @@ const uploadFileHandler = () => {
 
       return c.json(response, 201);
     } catch (err: any) {
-      console.error("File upload error:", err);
+      console.error("File upload error::=> ", err);
       return c.json({ error: err.message || "File upload failed" }, 500);
     }
   });
