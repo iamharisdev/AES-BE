@@ -4,6 +4,7 @@ on:
   push:
     branches:
     - patient-centric-workflow
+    - development
 
     paths:
     - core-server/**

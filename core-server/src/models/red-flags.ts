@@ -1,12 +1,15 @@
-import { RedFlagsSchema } from '@/schemas/red-flags'
-import { z } from '@hono/zod-openapi'
-import { json, pgTable, text, timestamp } from 'drizzle-orm/pg-core'
+import { pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { emr } from './emr';
 
-type redflags = z.infer<typeof RedFlagsSchema>
-// doctor is for easy aliasing. This table actually stores details of Health Practitioners
-
-export const redFlagsTable = pgTable('red_flags', {
-	emrId: text('emr_id').notNull().primaryKey(),
-	generationTime: timestamp('generation_time').notNull().defaultNow(),
-	redFlags: json('red_flags').$type<redflags>().notNull(),
-})
+export const redFlags = pgTable('red_flags', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  emrId: uuid('emr_id')
+    .notNull()
+    .references(() => emr.id),
+  flag: text('flag'),
+  justification: text('justification'),
+  severity: text('severity'),
+  actionTaken: text('action_taken'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow()
+});

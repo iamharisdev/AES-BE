@@ -1,5 +1,5 @@
 import { db } from '@/db'
-import { table } from '@/models'
+import { tables } from '@/models'
 import { describe, expect, it } from 'bun:test'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
@@ -33,9 +33,9 @@ describe('example test case', () => {
 
 		// do db clean up like this to avoid chunking up db records
 		await db
-			.delete(table.patient.info)
+			.delete(tables.patient.info)
 			.where(
-				eq(table.patient.info.phoneNumber, 'the phone number that needs to be cleaned'),
+				eq(tables.patient.info.phoneNumber, 'the phone number that needs to be cleaned'),
 			)
 	})
 })

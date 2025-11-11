@@ -3,11 +3,11 @@ FROM oven/bun:latest as builder
 
 WORKDIR /app
 
-COPY package.json bun.lockb /app/
+COPY package.json bun.lock /app/
 RUN bun install
 
 COPY . .
-RUN bun build src/index.ts --minify --sourcemap --target=bun --outfile index.js 
+RUN bun build src/index.ts --minify --sourcemap --target=bun --outfile index.js
 
 # Stage 2: Serve the application
 FROM oven/bun:latest as final

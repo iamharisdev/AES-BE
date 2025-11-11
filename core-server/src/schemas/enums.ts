@@ -41,3 +41,5 @@ export const nmcEnum = z.enum(['Regular', 'Irregular']).nullable()
 
 // Optional number with .nullable() applied
 export const optionalNumber = z.number().nullable()
+
+export const createdByEnum = ['Doctor', 'AI'] as const;
