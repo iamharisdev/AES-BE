@@ -352,7 +352,8 @@ const uploadFileHandler = () => {
 
     try {
       // 3️⃣ Generate unique filename
-      uniqueName = `${randomUUID()}-${name}`;
+      const safeName = name.replace(/[\/\\]+/g, "_");
+      uniqueName = `${randomUUID()}-${safeName}`;
       console.log("Unique filename:", uniqueName);
       blob = bucket.file(uniqueName);
     } catch (err: any) {
@@ -361,16 +362,28 @@ const uploadFileHandler = () => {
     }
 
     try {
-      console.log("Uploading file to GCS (buffer.save)...");
-      await blob.save(buffer, {
-        contentType: type,
-        resumable: false,
-        metadata: { cacheControl: "public, max-age=31536000" },
+      // 4️⃣ Upload to GCS
+      console.log("Uploading file to GCS...");
+      const stream = new Readable();
+      stream.push(buffer);
+      stream.push(null);
+
+      await new Promise<void>((resolve, reject) => {
+        stream
+          .pipe(
+            blob.createWriteStream({
+              contentType: type,
+              resumable: false,
+              metadata: { cacheControl: "public, max-age=31536000" },
+            })
+          )
+          .on("error", reject)
+          .on("finish", resolve);
       });
       console.log("GCS upload finished.");
     } catch (err: any) {
       console.error("GCS upload failed:", err);
-      return c.json({ error: err.message, step: "GCS upload" }, 500);
+      return c.json({ error: err.message, step: "GCS uploaded" }, 500);
     }
 
     try {
