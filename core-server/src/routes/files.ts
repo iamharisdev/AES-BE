@@ -9,6 +9,7 @@ import { randomUUID } from "crypto";
 import { Readable } from "stream";
 import path from "path";
 import fs from "fs";
+import formidable from "formidable";
 
 // Build absolute path to credentials file
 const credentialsPath = path.resolve(
@@ -285,7 +286,6 @@ const uploadFileRoute = createRoute({
 });
 
 async function getFileBuffer(rawFile: unknown) {
-
   // Case 1: Browser-native or File API object (when using client-side upload)
   if (typeof File !== "undefined" && rawFile instanceof File) {
     return {
@@ -300,53 +300,42 @@ async function getFileBuffer(rawFile: unknown) {
 }
 // --- Upload handler ---
 
+
 const uploadFileHandler = () => {
   app.openapi(uploadFileRoute, async (c) => {
     try {
       const formData = await c.req.formData();
       const patientId = formData.get("patientId") as string;
       const description = (formData.get("description") as string) || "";
-      const rawFile = formData.get("file");
+      const file = formData.get("file");
 
-    
-
-      if (!rawFile) return c.json({ error: "No file uploaded" }, 400);
       if (!patientId) return c.json({ error: "Patient ID required" }, 400);
+      if (!file || !(file instanceof File))
+        return c.json({ error: "No file uploaded" }, 400);
 
-      // Convert file to buffer safely
-      const { buffer, name, type, size } = await getFileBuffer(rawFile);
+      // Convert browser File → Buffer
+      const buffer = Buffer.from(await file.arrayBuffer());
+      const name = file.name;
+      const type = file.type;
+      const size = buffer.byteLength;
 
-      // Generate unique name
       const uniqueName = `${randomUUID()}-${name}`;
       const blob = bucket.file(uniqueName);
 
       // Upload to GCS
-      const stream = new Readable();
-      stream.push(buffer);
-      stream.push(null);
-
-      await new Promise<void>((resolve, reject) => {
-        stream
-          .pipe(
-            blob.createWriteStream({
-              contentType: type,
-              resumable: false,
-              metadata: {
-                cacheControl: "public, max-age=31536000",
-              },
-            })
-          )
-          .on("error", reject)
-          .on("finish", resolve);
+      await blob.save(buffer, {
+        resumable: false,
+        contentType: type,
+        metadata: { cacheControl: "public, max-age=31536000" },
       });
 
-      // Generate signed URL
+      // Signed URL
       const [signedUrl] = await blob.getSignedUrl({
         action: "read",
-        expires: Date.now() + 1000 * 60 * 60 * 24 * 30, // 30 days
+        expires: Date.now() + 1000 * 60 * 60 * 24 * 30,
       });
 
-      // Save file record
+      // DB insert
       const [record] = await db
         .insert(tables.files)
         .values({
@@ -358,25 +347,26 @@ const uploadFileHandler = () => {
         })
         .returning();
 
-      const response = {
+      return c.json({
         id: record.id,
-        patientId: record.patientId,
-        fileName: record.fileName,
-        fileType: record.fileType,
+        patientId,
+        fileName: name,
+        fileType: type,
         fileSize: size,
-        fileUrl: record.fileUrl,
+        fileUrl: signedUrl,
         description,
         createdAt: record.createdAt,
         updatedAt: record.updatedAt,
-      };
+      }, 201);
 
-      return c.json(response, 201);
     } catch (err: any) {
       console.error("File upload error:", err);
       return c.json({ error: err.message || "File upload failed" }, 500);
     }
   });
 };
+
+
 export default uploadFileHandler;
 
 export {
