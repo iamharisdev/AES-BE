@@ -328,8 +328,13 @@ const uploadFileHandler = () => {
       console.log("Description:", description);
       console.log("Raw file received:", !!rawFile);
 
-      if (!rawFile) return c.json({ error: "No file uploaded", step: "file check" }, 400);
-      if (!patientId) return c.json({ error: "Patient ID required", step: "patientId check" }, 400);
+      if (!rawFile)
+        return c.json({ error: "No file uploaded", step: "file check" }, 400);
+      if (!patientId)
+        return c.json(
+          { error: "Patient ID required", step: "patientId check" },
+          400
+        );
     } catch (err: any) {
       console.error("Form data parsing failed:", err);
       return c.json({ error: err.message, step: "form data parsing" }, 500);
@@ -356,23 +361,11 @@ const uploadFileHandler = () => {
     }
 
     try {
-      // 4️⃣ Upload to GCS
-      console.log("Uploading file to GCS...");
-      const stream = new Readable();
-      stream.push(buffer);
-      stream.push(null);
-
-      await new Promise<void>((resolve, reject) => {
-        stream
-          .pipe(
-            blob.createWriteStream({
-              contentType: type,
-              resumable: false,
-              metadata: { cacheControl: "public, max-age=31536000" },
-            })
-          )
-          .on("error", reject)
-          .on("finish", resolve);
+      console.log("Uploading file to GCS (buffer.save)...");
+      await blob.save(buffer, {
+        contentType: type,
+        resumable: false,
+        metadata: { cacheControl: "public, max-age=31536000" },
       });
       console.log("GCS upload finished.");
     } catch (err: any) {
@@ -430,7 +423,6 @@ const uploadFileHandler = () => {
     );
   });
 };
-
 
 export {
   createFilesHandler,
