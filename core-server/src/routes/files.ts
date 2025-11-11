@@ -273,41 +273,43 @@ const uploadFileRoute = createRoute({
   },
 });
 
-async function getFileBuffer(rawFile: unknown) {
-  if (rawFile instanceof File) {
-    // Browser or Bun native File object
+async function getFileBuffer(rawFile: any) {
+  // ✅ Browser or platform returning File/Blob
+  if (rawFile instanceof File || rawFile instanceof Blob) {
+    const arr = await rawFile.arrayBuffer();
     return {
-      buffer: Buffer.from(await rawFile.arrayBuffer()),
-      name: rawFile.name,
-      type: rawFile.type,
+      buffer: Buffer.from(arr),
+      name: rawFile.name ?? "upload.bin",
+      type: rawFile.type ?? "application/octet-stream",
       size: rawFile.size,
     };
   }
 
-  if (typeof rawFile === "object" && rawFile && "filepath" in rawFile) {
-    // Bun/OpenAPI backend object
-    const f = rawFile as {
-      filepath?: string;
-      originalFilename?: string;
-      mimetype?: string;
-      size?: number;
-    };
+  // ✅ Bun backend object that contains filepath
+  if (rawFile && typeof rawFile === "object" && "filepath" in rawFile) {
+    const { filepath, originalFilename, mimetype, size } = rawFile;
 
-    if (!f.filepath) throw new Error("Invalid file object: missing filepath");
+    if (!filepath) throw new Error("Invalid Bun file: missing filepath");
 
-    const bunFile = Bun.file(f.filepath);
+    const bunFile = Bun.file(filepath);
+
+    if (!(await bunFile.exists())) {
+      throw new Error("Uploaded file path is not a file on the server");
+    }
+
     const arrBuf = await bunFile.arrayBuffer();
 
     return {
       buffer: Buffer.from(arrBuf),
-      name: f.originalFilename ?? "upload.bin",
-      type: f.mimetype ?? "application/octet-stream",
-      size: f.size ?? arrBuf.byteLength,
+      name: originalFilename ?? "upload.bin",
+      type: mimetype ?? "application/octet-stream",
+      size: size ?? arrBuf.byteLength,
     };
   }
 
-  throw new Error("Unsupported file input");
+  throw new Error("Unsupported file input type");
 }
+
 // --- Upload handler ---
 
 const uploadFileHandler = () => {
