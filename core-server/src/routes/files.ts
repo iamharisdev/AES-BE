@@ -349,6 +349,8 @@ const uploadFileHandler = () => {
       const description = (formData.get("description") as string) || "";
       const rawFile = formData.get("file");
 
+      if(!formData)return c.json({ error: "body empty",body:formData}, 400);
+
       if (!rawFile) return c.json({ error: "No file uploaded" }, 400);
       if (!patientId) return c.json({ error: "Patient ID required" }, 400);
 
