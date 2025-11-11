@@ -18,7 +18,6 @@ const credentialsPath = path.resolve(
 
 let storage;
 
-
 // ✅ Use credentials file if it exists, otherwise fallback to default
 if (fs.existsSync(credentialsPath)) {
   storage = new Storage({ keyFilename: credentialsPath });
@@ -296,88 +295,107 @@ async function getFileBuffer(file: unknown) {
     };
   }
 
-  throw new Error("Unsupported file input. Make sure to use multipart/form-data");
+  throw new Error(
+    "Unsupported file input. Make sure to send multipart/form-data from the client."
+  );
 }
-// --- Upload handler ---
-const uploadFileHandler = () => {
+ const uploadFileHandler = () => {
   app.openapi(uploadFileRoute, async (c) => {
     try {
+      console.log("=== Upload Request Start ===");
+
       const formData = await c.req.formData();
+      console.log("Form data received.");
+
       const patientId = formData.get("patientId") as string;
       const description = (formData.get("description") as string) || "";
       const rawFile = formData.get("file");
+
+      console.log("Patient ID:", patientId);
+      console.log("Description:", description);
+      console.log("Raw file received:", !!rawFile);
 
       if (!rawFile) return c.json({ error: "No file uploaded" }, 400);
       if (!patientId) return c.json({ error: "Patient ID required" }, 400);
 
       // Convert file to buffer
+      console.log("Converting file to buffer...");
       const { buffer, name, type, size } = await getFileBuffer(rawFile);
+      console.log("File buffer created:", { name, type, size });
 
       // Generate unique filename
-      // const uniqueName = `${randomUUID()}-${name}`;
-      // const blob = bucket.file(uniqueName);
+      const uniqueName = `${randomUUID()}-${name}`;
+      console.log("Unique filename:", uniqueName);
+      const blob = bucket.file(uniqueName);
 
-      // // Upload to GCS
-      // const stream = new Readable();
-      // stream.push(buffer);
-      // stream.push(null);
+      // Upload to GCS
+      console.log("Uploading file to GCS...");
+      const stream = new Readable();
+      stream.push(buffer);
+      stream.push(null);
 
-       console.log(buffer,name,type,size)
-      return  c.json({ error: "No file uploaded" }, 400)
-
-      // await new Promise<void>((resolve, reject) => {
-      //   stream
-      //     .pipe(
-      //       blob.createWriteStream({
-      //         contentType: type,
-      //         resumable: false,
-      //         metadata: { cacheControl: "public, max-age=31536000" },
-      //       })
-      //     )
-      //     .on("error", reject)
-      //     .on("finish", resolve);
-      // });
+      await new Promise<void>((resolve, reject) => {
+        stream
+          .pipe(
+            blob.createWriteStream({
+              contentType: type,
+              resumable: false,
+              metadata: { cacheControl: "public, max-age=31536000" },
+            })
+          )
+          .on("error", (err) => {
+            console.error("GCS upload error:", err);
+            reject(err);
+          })
+          .on("finish", () => {
+            console.log("GCS upload finished.");
+            resolve();
+          });
+      });
 
       // Generate signed URL
-      // const [signedUrl] = await blob.getSignedUrl({
-      //   action: "read",
-      //   expires: Date.now() + 1000 * 60 * 60 * 24 * 30, // 30 days
-      // });
+      console.log("Generating signed URL...");
+      const [signedUrl] = await blob.getSignedUrl({
+        action: "read",
+        expires: Date.now() + 1000 * 60 * 60 * 24 * 30, // 30 days
+      });
+      console.log("Signed URL generated:", signedUrl);
 
       // Save record in DB
-      // const [record] = await db
-      //   .insert(tables.files)
-      //   .values({
-      //     patientId,
-      //     fileName: name,
-      //     fileType: type,
-      //     fileUrl: signedUrl,
-      //     summary: description,
-      //   })
-      //   .returning();
+      console.log("Saving record to database...");
+      const [record] = await db
+        .insert(tables.files)
+        .values({
+          patientId,
+          fileName: name,
+          fileType: type,
+          fileUrl: signedUrl,
+          summary: description,
+        })
+        .returning();
+      console.log("Database record saved:", record.id);
 
-      // // Return response
-      // return c.json(
-      //   {
-      //     id: record.id,
-      //     patientId: record.patientId,
-      //     fileName: record.fileName,
-      //     fileType: record.fileType,
-      //     fileSize: size,
-      //     fileUrl: record.fileUrl,
-      //     description,
-      //     createdAt: record.createdAt,
-      //     updatedAt: record.updatedAt,
-      //   },
-      //   201
-      // );
+      console.log("Upload completed successfully.");
+      return c.json(
+        {
+          id: record.id,
+          patientId: record.patientId,
+          fileName: record.fileName,
+          fileType: record.fileType,
+          fileSize: size,
+          fileUrl: record.fileUrl,
+          description,
+          createdAt: record.createdAt,
+          updatedAt: record.updatedAt,
+        },
+        201
+      );
     } catch (err: any) {
-      console.error("File upload error:", err);
+      console.error("File upload failed at runtime:", err);
       return c.json({ error: err.message || "File upload failed" }, 500);
     }
   });
 };
-
 
 export {
   createFilesHandler,
