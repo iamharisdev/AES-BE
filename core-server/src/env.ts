@@ -5,7 +5,7 @@ export const envVariables = z.object({
   ENVIRONMENT_TYPE: z.coerce.string(),
 
   HOST: z.coerce.string().default("127.0.0.1"),
-  PORT: z.coerce.number().default(8080),
+  PORT: z.coerce.number().default(8000),
 
   UPLOAD_BUCKET: z.coerce.string(),
   VOICE_NOTES_BUCKET: z.coerce.string(),
