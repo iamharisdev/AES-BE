@@ -284,23 +284,42 @@ const uploadFileRoute = createRoute({
   },
 });
 
+import { File } from "formdata-node";
+
 async function getFileBuffer(rawFile: unknown) {
   if (!rawFile) throw new Error("No file provided");
 
-  // Node or browser
-  if (typeof (rawFile as any).arrayBuffer === "function") {
-    const file = rawFile as File | Blob;
-    const buffer = Buffer.from(await file.arrayBuffer());
+  // Node FormData file
+  if (rawFile instanceof File) {
+    const buffer = Buffer.from(await rawFile.arrayBuffer());
     return {
       buffer,
-      name: (file as any).name ?? "upload.bin",
-      type: (file as any).type ?? "application/octet-stream",
+      name: rawFile.name,
+      type: rawFile.type || "application/octet-stream",
+      size: buffer.byteLength,
+    };
+  }
+
+  // Possibly a Readable stream (like multer)
+  if ((rawFile as any).path) {
+    const fs = await import("fs/promises");
+    const path = (rawFile as any).path;
+    const stats = await fs.stat(path);
+
+    if (stats.isDirectory()) throw new Error("File cannot be a directory");
+
+    const buffer = await fs.readFile(path);
+    return {
+      buffer,
+      name: (rawFile as any).originalname || "upload.bin",
+      type: (rawFile as any).mimetype || "application/octet-stream",
       size: buffer.byteLength,
     };
   }
 
   throw new Error("Unsupported file input format");
 }
+
 
 // --- Upload handler ---
 
