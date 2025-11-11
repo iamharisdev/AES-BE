@@ -299,36 +299,64 @@ async function getFileBuffer(file: unknown) {
     "Unsupported file input. Make sure to send multipart/form-data from the client."
   );
 }
- const uploadFileHandler = () => {
+const uploadFileHandler = () => {
   app.openapi(uploadFileRoute, async (c) => {
-    try {
-      console.log("=== Upload Request Start ===");
+    console.log("=== Upload Request Start ===");
 
+    let patientId: string;
+    let description: string;
+    let rawFile: unknown;
+    let buffer: Buffer;
+    let name: string;
+    let type: string;
+    let size: number;
+    let uniqueName: string;
+    let blob: any;
+    let signedUrl: string;
+    let record: any;
+
+    try {
+      // 1️⃣ Get form data
       const formData = await c.req.formData();
       console.log("Form data received.");
 
-      const patientId = formData.get("patientId") as string;
-      const description = (formData.get("description") as string) || "";
-      const rawFile = formData.get("file");
+      patientId = formData.get("patientId") as string;
+      description = (formData.get("description") as string) || "";
+      rawFile = formData.get("file");
 
       console.log("Patient ID:", patientId);
       console.log("Description:", description);
       console.log("Raw file received:", !!rawFile);
 
-      if (!rawFile) return c.json({ error: "No file uploaded" }, 400);
-      if (!patientId) return c.json({ error: "Patient ID required" }, 400);
+      if (!rawFile) return c.json({ error: "No file uploaded", step: "file check" }, 400);
+      if (!patientId) return c.json({ error: "Patient ID required", step: "patientId check" }, 400);
+    } catch (err: any) {
+      console.error("Form data parsing failed:", err);
+      return c.json({ error: err.message, step: "form data parsing" }, 500);
+    }
 
-      // Convert file to buffer
+    try {
+      // 2️⃣ Convert file to buffer
       console.log("Converting file to buffer...");
-      const { buffer, name, type, size } = await getFileBuffer(rawFile);
+      ({ buffer, name, type, size } = await getFileBuffer(rawFile));
       console.log("File buffer created:", { name, type, size });
+    } catch (err: any) {
+      console.error("File conversion failed:", err);
+      return c.json({ error: err.message, step: "file conversion" }, 500);
+    }
 
-      // Generate unique filename
-      const uniqueName = `${randomUUID()}-${name}`;
+    try {
+      // 3️⃣ Generate unique filename
+      uniqueName = `${randomUUID()}-${name}`;
       console.log("Unique filename:", uniqueName);
-      const blob = bucket.file(uniqueName);
+      blob = bucket.file(uniqueName);
+    } catch (err: any) {
+      console.error("Generating unique filename failed:", err);
+      return c.json({ error: err.message, step: "filename generation" }, 500);
+    }
 
-      // Upload to GCS
+    try {
+      // 4️⃣ Upload to GCS
       console.log("Uploading file to GCS...");
       const stream = new Readable();
       stream.push(buffer);
@@ -343,27 +371,32 @@ async function getFileBuffer(file: unknown) {
               metadata: { cacheControl: "public, max-age=31536000" },
             })
           )
-          .on("error", (err) => {
-            console.error("GCS upload error:", err);
-            reject(err);
-          })
-          .on("finish", () => {
-            console.log("GCS upload finished.");
-            resolve();
-          });
+          .on("error", reject)
+          .on("finish", resolve);
       });
+      console.log("GCS upload finished.");
+    } catch (err: any) {
+      console.error("GCS upload failed:", err);
+      return c.json({ error: err.message, step: "GCS upload" }, 500);
+    }
 
-      // Generate signed URL
+    try {
+      // 5️⃣ Generate signed URL
       console.log("Generating signed URL...");
-      const [signedUrl] = await blob.getSignedUrl({
+      [signedUrl] = await blob.getSignedUrl({
         action: "read",
         expires: Date.now() + 1000 * 60 * 60 * 24 * 30, // 30 days
       });
       console.log("Signed URL generated:", signedUrl);
+    } catch (err: any) {
+      console.error("Signed URL generation failed:", err);
+      return c.json({ error: err.message, step: "signed URL generation" }, 500);
+    }
 
-      // Save record in DB
+    try {
+      // 6️⃣ Save record in DB
       console.log("Saving record to database...");
-      const [record] = await db
+      [record] = await db
         .insert(tables.files)
         .values({
           patientId,
@@ -374,28 +407,30 @@ async function getFileBuffer(file: unknown) {
         })
         .returning();
       console.log("Database record saved:", record.id);
-
-      console.log("Upload completed successfully.");
-      return c.json(
-        {
-          id: record.id,
-          patientId: record.patientId,
-          fileName: record.fileName,
-          fileType: record.fileType,
-          fileSize: size,
-          fileUrl: record.fileUrl,
-          description,
-          createdAt: record.createdAt,
-          updatedAt: record.updatedAt,
-        },
-        201
-      );
     } catch (err: any) {
-      console.error("File upload failed at runtime:", err);
-      return c.json({ error: err.message || "File upload failed" }, 500);
+      console.error("Database insertion failed:", err);
+      return c.json({ error: err.message, step: "database insertion" }, 500);
     }
+
+    // 7️⃣ Return final response
+    console.log("Upload completed successfully.");
+    return c.json(
+      {
+        id: record.id,
+        patientId: record.patientId,
+        fileName: record.fileName,
+        fileType: record.fileType,
+        fileSize: size,
+        fileUrl: record.fileUrl,
+        description,
+        createdAt: record.createdAt,
+        updatedAt: record.updatedAt,
+      },
+      201
+    );
   });
 };
+
 
 export {
   createFilesHandler,
