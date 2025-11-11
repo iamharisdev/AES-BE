@@ -344,6 +344,7 @@ const uploadFileHandler = () => {
       // 2️⃣ Convert file to buffer
       console.log("Converting file to buffer...");
       ({ buffer, name, type, size } = await getFileBuffer(rawFile));
+      buffer=buffer;
       console.log("File buffer created:", { name, type, size });
     } catch (err: any) {
       console.error("File conversion failed:", err);
@@ -352,10 +353,10 @@ const uploadFileHandler = () => {
 
     try {
       // 3️⃣ Generate unique filename
-      const safeName = name.replace(/[\/\\]+/g, "_");
+      const safeName = (name || "file").replace(/[\/\\]+/g, "_");
       uniqueName = `${randomUUID()}-${safeName}`;
-      console.log("Unique filename:", uniqueName);
       blob = bucket.file(uniqueName);
+      console.log("Unique filename:", uniqueName);
     } catch (err: any) {
       console.error("Generating unique filename failed:", err);
       return c.json({ error: err.message, step: "filename generation" }, 500);
@@ -383,7 +384,10 @@ const uploadFileHandler = () => {
       console.log("GCS upload finished.");
     } catch (err: any) {
       console.error("GCS upload failed:", err);
-      return c.json({ error: err.message, step: "GCS uploaded" ,body:rawFile}, 500);
+      return c.json(
+        { error: err.message, step: "GCS uploaded", body: rawFile },
+        500
+      );
     }
 
     try {

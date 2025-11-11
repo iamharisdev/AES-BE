@@ -226,7 +226,6 @@ CREATE TABLE IF NOT EXISTS "patient" (
 	"age" text,
 	"cnic" text,
 	"phone_number" text NOT NULL,
-	"gestational_age" text,
 	"education" text,
 	"location" text,
 	"occupation" text,
@@ -307,17 +306,12 @@ CREATE TABLE IF NOT EXISTS "previous_pregnancy" (
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "proposed_plan" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"visit_id" uuid NOT NULL,
-	"general_plan" text,
-	"medication" jsonb,
-	"next_follow_up_timing" date,
-	"advised_lab_tests" text[],
-	"editable" boolean DEFAULT false NOT NULL,
-	"doctorNotes" text,
-	"created_by" text DEFAULT 'AI' NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL
+	"id" serial PRIMARY KEY NOT NULL,
+	"emr_id" uuid NOT NULL,
+	"followup_date" timestamp NOT NULL,
+	"doctor_notes" text NOT NULL,
+	"additional_notes" text,
+	"advised_lab_tests" jsonb DEFAULT '[]'::jsonb NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "qr_code" (
@@ -339,6 +333,44 @@ CREATE TABLE IF NOT EXISTS "red_flags" (
 	"action_taken" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "reminder_delivery" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"patient_id" uuid NOT NULL,
+	"template_id" uuid NOT NULL,
+	"rule_id" uuid,
+	"scheduled_for" timestamp,
+	"sent_at" timestamp with time zone,
+	"status" text DEFAULT 'pending' NOT NULL,
+	"provider_message_id" text,
+	"error" text,
+	"attempt_count" integer DEFAULT 0 NOT NULL,
+	"last_attempt_at" timestamp with time zone,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "reminder_rule" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"template_id" uuid NOT NULL,
+	"target_week" integer,
+	"trigger_code" text,
+	"is_active" boolean DEFAULT true NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "reminder_template" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"code" text NOT NULL,
+	"provider" text DEFAULT 'twilio' NOT NULL,
+	"provider_template_id" text NOT NULL,
+	"channel" text DEFAULT 'whatsapp' NOT NULL,
+	"is_active" boolean DEFAULT true NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "reminder_template_code_unique" UNIQUE("code")
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "emr_section_progress" (
@@ -404,6 +436,28 @@ CREATE TABLE IF NOT EXISTS "trimester" (
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "turn_emr" (
+	"phone" text NOT NULL,
+	"visit" integer NOT NULL,
+	"generation_time" timestamp NOT NULL,
+	"last_modified_time" timestamp NOT NULL,
+	"patient_profile" jsonb NOT NULL,
+	"presenting_complaint" jsonb NOT NULL,
+	"current_pregnancy" jsonb NOT NULL,
+	"second_third_trimesters" jsonb NOT NULL,
+	"obs_history" jsonb NOT NULL,
+	"gynecological_history" jsonb NOT NULL,
+	"past_medical_history" jsonb NOT NULL,
+	"surgical_history" jsonb NOT NULL,
+	"family_history" jsonb NOT NULL,
+	"personal_history" jsonb NOT NULL,
+	"socio_economic_history" jsonb NOT NULL,
+	"files" jsonb DEFAULT '[]' NOT NULL,
+	"emr_id" uuid PRIMARY KEY NOT NULL,
+	"red_flags" jsonb DEFAULT '[]' NOT NULL,
+	"followup_questions" jsonb DEFAULT '[]' NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "user" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"phone_number" text NOT NULL,
@@ -423,7 +477,8 @@ CREATE TABLE IF NOT EXISTS "visits" (
 	"patient_id" uuid NOT NULL,
 	"visit_number" serial NOT NULL,
 	"visit_date" timestamp with time zone DEFAULT now(),
-	"created_at" timestamp with time zone DEFAULT now()
+	"created_at" timestamp with time zone DEFAULT now(),
+	"updated_at" timestamp with time zone DEFAULT now()
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "vitals" (
@@ -535,6 +590,24 @@ EXCEPTION
 END $$;
 --> statement-breakpoint
 DO $$ BEGIN
+ ALTER TABLE "reminder_delivery" ADD CONSTRAINT "reminder_delivery_template_id_reminder_template_id_fk" FOREIGN KEY ("template_id") REFERENCES "public"."reminder_template"("id") ON DELETE restrict ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "reminder_delivery" ADD CONSTRAINT "reminder_delivery_rule_id_reminder_rule_id_fk" FOREIGN KEY ("rule_id") REFERENCES "public"."reminder_rule"("id") ON DELETE set null ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "reminder_rule" ADD CONSTRAINT "reminder_rule_template_id_reminder_template_id_fk" FOREIGN KEY ("template_id") REFERENCES "public"."reminder_template"("id") ON DELETE cascade ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
  ALTER TABLE "emr_section_progress" ADD CONSTRAINT "emr_section_progress_emr_id_emr_id_fk" FOREIGN KEY ("emr_id") REFERENCES "public"."emr"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
@@ -569,3 +642,11 @@ DO $$ BEGIN
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
+--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS "reminder_delivery_unique_patient_template" ON "reminder_delivery" USING btree ("patient_id","template_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "reminder_delivery_status_idx" ON "reminder_delivery" USING btree ("status");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "reminder_delivery_scheduled_idx" ON "reminder_delivery" USING btree ("scheduled_for");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "reminder_delivery_patient_idx" ON "reminder_delivery" USING btree ("patient_id");--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS "reminder_rule_unique_week" ON "reminder_rule" USING btree ("target_week") WHERE target_week IS NOT NULL;--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "reminder_rule_trigger_idx" ON "reminder_rule" USING btree ("trigger_code");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "reminder_rule_active_idx" ON "reminder_rule" USING btree ("is_active");
