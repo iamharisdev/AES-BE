@@ -8,28 +8,17 @@ import { eq } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { Readable } from "stream";
 import path from "path";
-import fs from "fs";
 
-// Build absolute path to credentials file
-const credentialsPath = path.resolve(
+const keyPath = path.resolve(
   process.cwd(),
-  process.env.GOOGLE_APPLICATION_CREDENTIALS || ""
+  process.env.GOOGLE_APPLICATION_CREDENTIALS!
 );
 
-let storage;
+const storage = new Storage({
+  keyFilename: keyPath,
+});
 
-// ✅ Use credentials file if it exists, otherwise fallback to default
-if (fs.existsSync(credentialsPath)) {
-  storage = new Storage({ keyFilename: credentialsPath });
-  console.info(`🧩 Using GCS credentials from: ${credentialsPath}`);
-} else {
-  storage = new Storage();
-  console.info("☁️ Using default GCS credentials (Cloud Run)");
-}
-
-const bucketName = process.env.GCS_BUCKET_NAME!;
-const bucket = storage.bucket(bucketName);
-
+const bucket = storage.bucket(process.env.GCS_BUCKET_NAME!);
 // Schema for files
 const FilesSchema = z.object({
   id: z.string().uuid(),
@@ -252,7 +241,7 @@ const deleteFilesHandler = () => {
   });
 };
 
-// //upload file route
+//upload file route
 const uploadFileRoute = createRoute({
   method: "post",
   path: "/files/upload",
@@ -284,121 +273,89 @@ const uploadFileRoute = createRoute({
   },
 });
 
-async function getFileBuffer(file: unknown) {
-  if (file instanceof File) {
-    const arrayBuffer = await file.arrayBuffer();
+async function getFileBuffer(rawFile: unknown) {
+  if (rawFile instanceof File) {
+    // Browser or Bun native File object
     return {
-      buffer: Buffer.from(arrayBuffer),
-      name: file.name,
-      type: file.type || "application/octet-stream",
-      size: file.size,
+      buffer: Buffer.from(await rawFile.arrayBuffer()),
+      name: rawFile.name,
+      type: rawFile.type,
+      size: rawFile.size,
     };
   }
 
-  throw new Error(
-    "Unsupported file input. Make sure to send multipart/form-data from the client."
-  );
+  if (typeof rawFile === "object" && rawFile && "filepath" in rawFile) {
+    // Bun/OpenAPI backend object
+    const f = rawFile as {
+      filepath?: string;
+      originalFilename?: string;
+      mimetype?: string;
+      size?: number;
+    };
+
+    if (!f.filepath) throw new Error("Invalid file object: missing filepath");
+
+    const bunFile = Bun.file(f.filepath);
+    const arrBuf = await bunFile.arrayBuffer();
+
+    return {
+      buffer: Buffer.from(arrBuf),
+      name: f.originalFilename ?? "upload.bin",
+      type: f.mimetype ?? "application/octet-stream",
+      size: f.size ?? arrBuf.byteLength,
+    };
+  }
+
+  throw new Error("Unsupported file input");
 }
+// --- Upload handler ---
+
 const uploadFileHandler = () => {
   app.openapi(uploadFileRoute, async (c) => {
-    console.log("=== Upload Request Start ===");
-
-    let patientId: string;
-    let description: string;
-    let rawFile: unknown;
-    let buffer: Buffer;
-    let name: string;
-    let type: string;
-    let size: number;
-    let uniqueName: string;
-    let blob: any;
-    let signedUrl: string;
-    let record: any;
-
     try {
-      // 1️⃣ Get form data
       const formData = await c.req.formData();
-      console.log("Form data received.");
+      const patientId = formData.get("patientId") as string;
+      const description = (formData.get("description") as string) || "";
+      const rawFile = formData.get("file");
 
-      patientId = formData.get("patientId") as string;
-      description = (formData.get("description") as string) || "";
-      rawFile = formData.get("file");
+      if (!rawFile) return c.json({ error: "No file uploaded" }, 400);
+      if (!patientId) return c.json({ error: "Patient ID required" }, 400);
 
-      console.log("Patient ID:", patientId);
-      console.log("Description:", description);
-      console.log("Raw file received:", !!rawFile);
+      // Convert to buffer safely
+      const { buffer, name, type, size } = await getFileBuffer(rawFile);
 
-      if (!rawFile)
-        return c.json({ error: "No file uploaded", step: "file check" }, 400);
-      if (!patientId)
-        return c.json(
-          { error: "Patient ID required", step: "patientId check" },
-          400
-        );
-    } catch (err: any) {
-      console.error("Form data parsing failed:", err);
-      return c.json({ error: err.message, step: "form data parsing" }, 500);
-    }
+      // Unique filename
+      const uniqueName = `${randomUUID()}-${name}`;
+      const blob = bucket.file(uniqueName);
 
-    try {
-      // 2️⃣ Convert file to buffer
-      console.log("Converting file to buffer...");
-      ({ buffer, name, type, size } = await getFileBuffer(rawFile));
+      // Upload file to GCS
+      const stream = new Readable();
+      stream.push(buffer);
+      stream.push(null);
 
-      console.log("File buffer created:", { name, type, size });
-    } catch (err: any) {
-      console.error("File conversion failed:", err);
-      return c.json({ error: err.message, step: "file conversion" }, 500);
-    }
-
-    try {
-      // 4️⃣ Upload to GCS using buffer
-      console.log("Uploading file to GCS using blob.save()...");
-
-      // sanitize filename
-      const safeName = (name || "file").replace(/[\/\\]+/g, "_");
-      uniqueName = `${randomUUID()}-${safeName}`;
-      blob = bucket.file(uniqueName);
-
-      // upload buffer directly
-      await blob.save(buffer, {
-        contentType: type,
-        resumable: false,
-        metadata: { cacheControl: "public, max-age=31536000" },
+      await new Promise<void>((resolve, reject) => {
+        stream
+          .pipe(
+            blob.createWriteStream({
+              contentType: type,
+              resumable: false,
+              metadata: {
+                cacheControl: "public, max-age=31536000",
+              },
+            })
+          )
+          .on("error", reject)
+          .on("finish", resolve);
       });
 
-      console.log("GCS upload finished:", uniqueName);
-    } catch (err: any) {
-      console.error("GCS upload failed:", err);
-      return c.json(
-        {
-          error: err.message,
-          step: "GCS uploaded",
-          buffer:buffer,
-          size: size,
-          type: type,
-        },
-        500
-      );
-    }
-
-    try {
-      // 5️⃣ Generate signed URL
-      console.log("Generating signed URL...");
-      [signedUrl] = await blob.getSignedUrl({
+      // ✅ Generate signed URL (instead of makePublic)
+      const [signedUrl] = await blob.getSignedUrl({
         action: "read",
-        expires: Date.now() + 1000 * 60 * 60 * 24 * 30, // 30 days
+        expires: Date.now() + 1000 * 60 * 60 * 24 * 30, // valid for 30 days
       });
-      console.log("Signed URL generated:", signedUrl);
-    } catch (err: any) {
-      console.error("Signed URL generation failed:", err);
-      return c.json({ error: err.message, step: "signed URL generation" }, 500);
-    }
 
-    try {
-      // 6️⃣ Save record in DB
-      console.log("Saving record to database...");
-      [record] = await db
+      // Save record in DB
+      const [record] = await db
         .insert(tables.files)
         .values({
           patientId,
@@ -408,16 +365,9 @@ const uploadFileHandler = () => {
           summary: description,
         })
         .returning();
-      console.log("Database record saved:", record.id);
-    } catch (err: any) {
-      console.error("Database insertion failed:", err);
-      return c.json({ error: err.message, step: "database insertion" }, 500);
-    }
 
-    // 7️⃣ Return final response
-    console.log("Upload completed successfully.");
-    return c.json(
-      {
+      // Return response
+      const response = {
         id: record.id,
         patientId: record.patientId,
         fileName: record.fileName,
@@ -427,11 +377,17 @@ const uploadFileHandler = () => {
         description,
         createdAt: record.createdAt,
         updatedAt: record.updatedAt,
-      },
-      201
-    );
+      };
+
+      return c.json(response, 201);
+    } catch (err: any) {
+      console.error("File upload error:", err);
+      return c.json({ error: err.message || "File upload failed" }, 500);
+    }
   });
 };
+
+export default uploadFileHandler;
 
 export {
   createFilesHandler,
