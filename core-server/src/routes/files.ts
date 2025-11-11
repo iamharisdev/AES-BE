@@ -284,42 +284,51 @@ const uploadFileRoute = createRoute({
   },
 });
 
-import { File } from "formdata-node";
+import { Buffer } from "buffer";
 
-async function getFileBuffer(rawFile: unknown) {
-  if (!rawFile) throw new Error("No file provided");
+interface NodeFile {
+  filepath: string;
+  originalFilename?: string;
+  mimetype?: string;
+  size?: number;
+}
 
-  // Node FormData file
-  if (rawFile instanceof File) {
+export async function getFileBuffer(rawFile: unknown) {
+  // Case 1: Browser-native File API (client-side)
+  if (typeof File !== "undefined" && rawFile instanceof File) {
     const buffer = Buffer.from(await rawFile.arrayBuffer());
     return {
       buffer,
       name: rawFile.name,
-      type: rawFile.type || "application/octet-stream",
-      size: buffer.byteLength,
+      type: rawFile.type,
+      size: rawFile.size,
     };
   }
 
-  // Possibly a Readable stream (like multer)
-  if ((rawFile as any).path) {
-    const fs = await import("fs/promises");
-    const path = (rawFile as any).path;
-    const stats = await fs.stat(path);
+  // Case 2: Node form-data parsed file object
+  if (typeof rawFile === "object" && rawFile && "filepath" in rawFile) {
+    const f = rawFile as NodeFile;
 
-    if (stats.isDirectory()) throw new Error("File cannot be a directory");
+    if (!f.filepath) throw new Error("Invalid file object: missing filepath");
 
-    const buffer = await fs.readFile(path);
+    // Wrap fs.readFile (callback-based) in a Promise for async/await
+    const buffer = await new Promise<Buffer>((resolve, reject) => {
+      fs.readFile(f.filepath, (err, data) => {
+        if (err) return reject(err);
+        resolve(data);
+      });
+    });
+
     return {
       buffer,
-      name: (rawFile as any).originalname || "upload.bin",
-      type: (rawFile as any).mimetype || "application/octet-stream",
-      size: buffer.byteLength,
+      name: f.originalFilename ?? "upload.bin",
+      type: f.mimetype ?? "application/octet-stream",
+      size: f.size ?? buffer.byteLength,
     };
   }
 
   throw new Error("Unsupported file input format");
 }
-
 
 // --- Upload handler ---
 
@@ -334,11 +343,14 @@ const uploadFileHandler = () => {
       if (!rawFile) return c.json({ error: "No file uploaded" }, 400);
       if (!patientId) return c.json({ error: "Patient ID required" }, 400);
 
+      // Convert file to buffer safely
       const { buffer, name, type, size } = await getFileBuffer(rawFile);
 
+      // Generate unique name
       const uniqueName = `${randomUUID()}-${name}`;
       const blob = bucket.file(uniqueName);
 
+      // Upload to GCS
       const stream = new Readable();
       stream.push(buffer);
       stream.push(null);
@@ -349,18 +361,22 @@ const uploadFileHandler = () => {
             blob.createWriteStream({
               contentType: type,
               resumable: false,
-              metadata: { cacheControl: "public, max-age=31536000" },
+              metadata: {
+                cacheControl: "public, max-age=31536000",
+              },
             })
           )
           .on("error", reject)
           .on("finish", resolve);
       });
 
+      // Generate signed URL
       const [signedUrl] = await blob.getSignedUrl({
         action: "read",
-        expires: Date.now() + 1000 * 60 * 60 * 24 * 30,
+        expires: Date.now() + 1000 * 60 * 60 * 24 * 30, // 30 days
       });
 
+      // Save file record
       const [record] = await db
         .insert(tables.files)
         .values({
@@ -372,7 +388,7 @@ const uploadFileHandler = () => {
         })
         .returning();
 
-      return c.json({
+      const response = {
         id: record.id,
         patientId: record.patientId,
         fileName: record.fileName,
@@ -382,16 +398,16 @@ const uploadFileHandler = () => {
         description,
         createdAt: record.createdAt,
         updatedAt: record.updatedAt,
-      }, 201);
+      };
 
+      return c.json(response, 201);
     } catch (err: any) {
       console.error("File upload error:", err);
       return c.json({ error: err.message || "File upload failed" }, 500);
     }
   });
 };
-
- export default uploadFileHandler;
+export default uploadFileHandler;
 
 export {
   createFilesHandler,
