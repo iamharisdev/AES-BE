@@ -9,6 +9,8 @@ import { randomUUID } from "crypto";
 import { Readable } from "stream";
 import path from "path";
 import fs from "fs";
+import { Buffer } from "buffer";
+
 
 // Build absolute path to credentials file
 const credentialsPath = path.resolve(
@@ -284,7 +286,6 @@ const uploadFileRoute = createRoute({
   },
 });
 
-import { Buffer } from "buffer";
 
 interface NodeFile {
   filepath: string;
@@ -292,6 +293,7 @@ interface NodeFile {
   mimetype?: string;
   size?: number;
 }
+
 
 export async function getFileBuffer(rawFile: unknown) {
   // Case 1: Browser-native File API (client-side)
@@ -311,6 +313,14 @@ export async function getFileBuffer(rawFile: unknown) {
 
     if (!f.filepath) throw new Error("Invalid file object: missing filepath");
 
+    console.log("Uploading file:", f.filepath, f.originalFilename);
+
+    // ✅ Check if filepath is a file (not a directory)
+    const stats = fs.statSync(f.filepath);
+    if (!stats.isFile()) {
+      throw new Error(`EISDIR: expected a file, got a directory at ${f.filepath}`);
+    }
+
     // Wrap fs.readFile (callback-based) in a Promise for async/await
     const buffer = await new Promise<Buffer>((resolve, reject) => {
       fs.readFile(f.filepath, (err, data) => {
@@ -329,6 +339,7 @@ export async function getFileBuffer(rawFile: unknown) {
 
   throw new Error("Unsupported file input format");
 }
+
 
 // --- Upload handler ---
 
