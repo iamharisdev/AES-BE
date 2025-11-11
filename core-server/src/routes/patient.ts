@@ -2,12 +2,11 @@ import app from "@/app";
 import { db } from "@/db";
 import { jwtMiddleware } from "@/middleware/jwt";
 import { tables } from "@/models";
-import { createRoute, z } from "@hono/zod-openapi";
-import { eq, ilike, or, desc, sql } from "drizzle-orm";
-import { Storage } from "@google-cloud/storage";
-import { ulid } from "ulidx";
-import { UserRole } from "@/models/user";
 import { getTranscription } from "@/services/transcription";
+import { Storage } from "@google-cloud/storage";
+import { createRoute, z } from "@hono/zod-openapi";
+import { desc, eq, ilike, or, sql } from "drizzle-orm";
+import { ulid } from "ulidx";
 
 // Initialize Google Cloud Storage
 const storage = new Storage();
@@ -43,8 +42,7 @@ const CreatePatientRequestSchema = z.object({
   phoneNumber: z
     .string()
     .min(10, "Phone number must be at least 10 digits")
-    .max(15)
-    .regex(/^[0-9]+$/, "Phone number must contain only digits"),
+    .max(15),
   cnic: z.string().min(13, "CNIC must be 13 digits").max(15),
   age: z.string().optional(),
   gestationalAge: z.string().optional(),
@@ -646,9 +644,6 @@ const createPatientHandler = () => {
 
 
 export {
-  searchPatientsHandler,
-  getPatientInfoHandler,
-  editPatientHandler,
-  uploadVoiceNoteHandler,
-  createPatientHandler,
+  createPatientHandler, editPatientHandler, getPatientInfoHandler, searchPatientsHandler, uploadVoiceNoteHandler
 };
+
