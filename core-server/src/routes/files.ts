@@ -383,7 +383,7 @@ const uploadFileHandler = () => {
       console.log("GCS upload finished.");
     } catch (err: any) {
       console.error("GCS upload failed:", err);
-      return c.json({ error: err.message, step: "GCS uploaded" }, 500);
+      return c.json({ error: err.message, step: "GCS uploaded" ,body:rawFile}, 500);
     }
 
     try {
