@@ -299,46 +299,16 @@ async function getFileBuffer(rawFile: any) {
   if (rawFile && typeof rawFile === "object" && "filepath" in rawFile) {
     const { filepath, originalFilename, mimetype, size } = rawFile;
 
-    if (!filepath) throw new Error("Invalid Bun file: missing filepath");
+    if (!filepath) throw new Error("Invalid file object: missing filepath");
 
-    // Log the filepath for debugging
-    console.log("Processing file upload, filepath:", filepath);
-
-    // Check if filepath exists and is actually a file (not a directory)
-    try {
-      const stats = await fs.promises.stat(filepath);
-      if (!stats.isFile()) {
-        console.error(
-          `Filepath is a directory, not a file: ${filepath}, stats:`,
-          stats
-        );
-        throw new Error("Uploaded path is a directory, not a file");
-      }
-    } catch (err: any) {
-      if (err.code === "ENOENT") {
-        console.error(`Filepath does not exist: ${filepath}`);
-        throw new Error("Uploaded file path does not exist on the server");
-      }
-      if (err.code === "EISDIR") {
-        console.error(`Filepath is a directory: ${filepath}`);
-        throw new Error("Uploaded path is a directory, not a file");
-      }
-      throw err;
-    }
-
-    const bunFile = Bun.file(filepath);
-
-    if (!(await bunFile.exists())) {
-      throw new Error("Uploaded file path is not a file on the server");
-    }
-
-    const arrBuf = await bunFile.arrayBuffer();
+    // ✅ Use Node fs.readFile instead of Bun.file
+    const buffer = await fs.promises.readFile(filepath);
 
     return {
-      buffer: Buffer.from(arrBuf),
+      buffer,
       name: originalFilename ?? "upload.bin",
       type: mimetype ?? "application/octet-stream",
-      size: size ?? arrBuf.byteLength,
+      size: size ?? buffer.byteLength,
     };
   }
 
