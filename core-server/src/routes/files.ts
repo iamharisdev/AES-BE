@@ -446,47 +446,131 @@ const uploadFileHandler = () => {
       console.log("🚀 [uploadFileHandler] Step 5: Generating unique filename...");
       const uniqueName = `${randomUUID()}-${name}`;
       console.log("📋 [uploadFileHandler] Unique name:", uniqueName);
+      
+      // GCS Configuration Details
+      console.log("☁️ [GCS] ===== GCS CONFIGURATION =====");
+      console.log("☁️ [GCS] Bucket name:", bucketName);
+      console.log("☁️ [GCS] Storage instance type:", storage?.constructor?.name);
+      console.log("☁️ [GCS] Credentials path:", credentialsPath);
+      console.log("☁️ [GCS] Using credentials file:", fs.existsSync(credentialsPath));
+      console.log("☁️ [GCS] Bucket instance:", bucket?.name);
+      console.log("☁️ [GCS] Bucket exists check:", await bucket.exists().catch(() => false));
+      
       const blob = bucket.file(uniqueName);
+      console.log("☁️ [GCS] Blob name:", blob.name);
+      console.log("☁️ [GCS] Blob bucket:", blob.bucket?.name);
+      console.log("☁️ [GCS] Full GCS path: gs://" + bucketName + "/" + uniqueName);
       console.log("✅ [uploadFileHandler] GCS blob created");
 
       // Upload file to GCS
       console.log("🚀 [uploadFileHandler] Step 6: Uploading to GCS...");
-      const stream = new Readable();
-      stream.push(buffer);
-      stream.push(null);
-      console.log("📋 [uploadFileHandler] Stream created, starting upload...");
-
-      await new Promise<void>((resolve, reject) => {
-        const writeStream = blob.createWriteStream({
+      console.log("☁️ [GCS] ===== UPLOAD DETAILS =====");
+      console.log("☁️ [GCS] Upload method: blob.save()");
+      console.log("☁️ [GCS] Buffer size:", buffer.length, "bytes");
+      console.log("☁️ [GCS] Content type:", type);
+      console.log("☁️ [GCS] Cache control: public, max-age=31536000");
+      console.log("☁️ [GCS] Upload options:", JSON.stringify({
+        contentType: type,
+        metadata: {
+          cacheControl: "public, max-age=31536000",
+        }
+      }, null, 2));
+      
+      try {
+        console.log("☁️ [GCS] Starting upload with blob.save()...");
+        await blob.save(buffer, {
           contentType: type,
-          resumable: false,
           metadata: {
             cacheControl: "public, max-age=31536000",
           },
         });
+        console.log("✅ [uploadFileHandler] File uploaded to GCS successfully using blob.save()");
         
-        writeStream.on("error", (err) => {
-          console.error("❌ [uploadFileHandler] GCS upload error:", err);
-          reject(err);
+        // Get blob metadata after upload
+        console.log("☁️ [GCS] ===== POST-UPLOAD METADATA =====");
+        try {
+          const [metadata] = await blob.getMetadata();
+          console.log("☁️ [GCS] Blob metadata:", JSON.stringify({
+            name: metadata.name,
+            bucket: metadata.bucket,
+            contentType: metadata.contentType,
+            size: metadata.size,
+            timeCreated: metadata.timeCreated,
+            updated: metadata.updated,
+            etag: metadata.etag,
+            md5Hash: metadata.md5Hash,
+            cacheControl: metadata.cacheControl,
+            selfLink: metadata.selfLink,
+            mediaLink: metadata.mediaLink,
+          }, null, 2));
+        } catch (metaErr: any) {
+          console.error("☁️ [GCS] Error getting metadata:", metaErr);
+        }
+      } catch (saveErr: any) {
+        console.error("❌ [uploadFileHandler] Error with blob.save():", saveErr);
+        console.error("☁️ [GCS] Error details:", JSON.stringify({
+          code: saveErr.code,
+          message: saveErr.message,
+          name: saveErr.name,
+          stack: saveErr.stack,
+        }, null, 2));
+        console.error("❌ [uploadFileHandler] Trying fallback with Readable.from()...");
+        
+        // Fallback: Use Readable.from() which is more reliable
+        console.log("☁️ [GCS] Fallback: Using Readable.from() with createWriteStream...");
+        const stream = Readable.from(buffer);
+        console.log("☁️ [GCS] Stream created from buffer");
+        
+        await new Promise<void>((resolve, reject) => {
+          const writeStreamOptions = {
+            contentType: type,
+            resumable: false,
+            metadata: {
+              cacheControl: "public, max-age=31536000",
+            },
+          };
+          console.log("☁️ [GCS] WriteStream options:", JSON.stringify(writeStreamOptions, null, 2));
+          
+          const writeStream = blob.createWriteStream(writeStreamOptions);
+          console.log("☁️ [GCS] WriteStream created");
+          
+          writeStream.on("error", (err) => {
+            console.error("❌ [uploadFileHandler] GCS upload error (fallback):", err);
+            console.error("☁️ [GCS] WriteStream error details:", JSON.stringify({
+              code: err.code,
+              message: err.message,
+              name: err.name,
+            }, null, 2));
+            reject(err);
+          });
+          
+          writeStream.on("finish", () => {
+            console.log("✅ [uploadFileHandler] GCS upload finished (fallback)");
+            resolve();
+          });
+          
+          console.log("☁️ [GCS] Piping stream to writeStream...");
+          stream.pipe(writeStream);
         });
-        
-        writeStream.on("finish", () => {
-          console.log("✅ [uploadFileHandler] GCS upload finished");
-          resolve();
-        });
-        
-        stream.pipe(writeStream);
-      });
-      console.log("✅ [uploadFileHandler] File uploaded to GCS successfully");
+        console.log("✅ [uploadFileHandler] File uploaded to GCS successfully (fallback)");
+      }
 
       // ✅ Generate signed URL (instead of makePublic)
       console.log("🚀 [uploadFileHandler] Step 7: Generating signed URL...");
+      console.log("☁️ [GCS] ===== SIGNED URL GENERATION =====");
+      const expiresAt = Date.now() + 1000 * 60 * 60 * 24 * 30; // 30 days
+      const expiresDate = new Date(expiresAt);
+      console.log("☁️ [GCS] Expires at:", expiresDate.toISOString());
+      console.log("☁️ [GCS] Expires in:", Math.floor((expiresAt - Date.now()) / (1000 * 60 * 60 * 24)), "days");
+      
       const [signedUrl] = await blob.getSignedUrl({
         action: "read",
-        expires: Date.now() + 1000 * 60 * 60 * 24 * 30, // valid for 30 days
+        expires: expiresAt,
       });
       console.log("✅ [uploadFileHandler] Signed URL generated");
-      console.log("📋 [uploadFileHandler] Signed URL length:", signedUrl.length);
+      console.log("☁️ [GCS] Signed URL length:", signedUrl.length);
+      console.log("☁️ [GCS] Signed URL (first 100 chars):", signedUrl.substring(0, 100) + "...");
+      console.log("☁️ [GCS] Signed URL (last 50 chars):", "..." + signedUrl.substring(signedUrl.length - 50));
 
       // Save record in DB
       console.log("🚀 [uploadFileHandler] Step 8: Saving to database...");
