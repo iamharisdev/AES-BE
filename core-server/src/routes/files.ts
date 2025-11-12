@@ -8,17 +8,27 @@ import { eq } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { Readable } from "stream";
 import path from "path";
+import fs from "fs";
 
-const keyPath = path.resolve(
+// Build absolute path to credentials file
+const credentialsPath = path.resolve(
   process.cwd(),
-  process.env.GOOGLE_APPLICATION_CREDENTIALS!
+  process.env.GOOGLE_APPLICATION_CREDENTIALS || ""
 );
 
-const storage = new Storage({
-  keyFilename: keyPath,
-});
+let storage;
 
-const bucket = storage.bucket(process.env.GCS_BUCKET_NAME!);
+// ✅ Use credentials file if it exists, otherwise fallback to default
+if (fs.existsSync(credentialsPath)) {
+  storage = new Storage({ keyFilename: credentialsPath });
+  console.info(`🧩 Using GCS credentials from: ${credentialsPath}`);
+} else {
+  storage = new Storage();
+  console.info("☁️ Using default GCS credentials (Cloud Run)");
+}
+
+const bucketName = process.env.GCS_BUCKET_NAME!;
+const bucket = storage.bucket(bucketName);
 // Schema for files
 const FilesSchema = z.object({
   id: z.string().uuid(),
