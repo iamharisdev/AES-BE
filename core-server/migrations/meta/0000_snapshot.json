@@ -1,5 +1,5 @@
 {
-  "id": "dcd19336-ff04-42c9-a960-1c1f5acdf0e8",
+  "id": "941c1679-520f-4f06-8009-024c25e49be3",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -1884,40 +1884,74 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "serial",
+          "type": "uuid",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
-        "emr_id": {
-          "name": "emr_id",
+        "visit_id": {
+          "name": "visit_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
-        "followup_date": {
-          "name": "followup_date",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "doctor_notes": {
-          "name": "doctor_notes",
+        "general_plan": {
+          "name": "general_plan",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
-        "additional_notes": {
-          "name": "additional_notes",
-          "type": "text",
+        "medication": {
+          "name": "medication",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "next_follow_up_timing": {
+          "name": "next_follow_up_timing",
+          "type": "date",
           "primaryKey": false,
           "notNull": false
         },
         "advised_lab_tests": {
           "name": "advised_lab_tests",
-          "type": "jsonb",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "editable": {
+          "name": "editable",
+          "type": "boolean",
           "primaryKey": false,
           "notNull": true,
-          "default": "'[]'::jsonb"
+          "default": false
+        },
+        "doctorNotes": {
+          "name": "doctorNotes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'AI'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
         }
       },
       "indexes": {},

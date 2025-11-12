@@ -306,12 +306,17 @@ CREATE TABLE IF NOT EXISTS "previous_pregnancy" (
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "proposed_plan" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"emr_id" uuid NOT NULL,
-	"followup_date" timestamp NOT NULL,
-	"doctor_notes" text NOT NULL,
-	"additional_notes" text,
-	"advised_lab_tests" jsonb DEFAULT '[]'::jsonb NOT NULL
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"visit_id" uuid NOT NULL,
+	"general_plan" text,
+	"medication" jsonb,
+	"next_follow_up_timing" date,
+	"advised_lab_tests" text[],
+	"editable" boolean DEFAULT false NOT NULL,
+	"doctorNotes" text,
+	"created_by" text DEFAULT 'AI' NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "qr_code" (

@@ -11,11 +11,8 @@ import { createdByEnum } from "../schemas/enums";
 
 export const proposedPlan = pgTable("proposed_plan", {
   id: uuid("id").primaryKey().defaultRandom(),
-  // emrId: uuid("emr_id")
-  //   .notNull()
-  //   .references(() => visits.id, { onDelete: "cascade" }),
-  visitId: uuid("visit_id")
-    .notNull(),
+
+  visitId: uuid("visit_id").notNull(),
   generalPlan: text("general_plan"),
   medication: jsonb("medication").$type<string[]>(),
   nextFollowUpTiming: date("next_follow_up_timing"),
