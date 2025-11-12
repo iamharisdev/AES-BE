@@ -11,17 +11,29 @@ import path from "path";
 import fs from "fs";
 
 // Build absolute path to credentials file
-const credentialsPath = path.resolve(
-  process.cwd(),
-  process.env.GOOGLE_APPLICATION_CREDENTIALS || ""
-);
+const credentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS 
+  ? path.resolve(process.cwd(), process.env.GOOGLE_APPLICATION_CREDENTIALS)
+  : "";
 
 let storage;
 
-// ✅ Use credentials file if it exists, otherwise fallback to default
-if (fs.existsSync(credentialsPath)) {
-  storage = new Storage({ keyFilename: credentialsPath });
-  console.info(`🧩 Using GCS credentials from: ${credentialsPath}`);
+// ✅ Use credentials file if it exists AND is a file (not a directory), otherwise fallback to default
+if (credentialsPath) {
+  try {
+    const stats = fs.statSync(credentialsPath);
+    if (stats.isFile()) {
+      storage = new Storage({ keyFilename: credentialsPath });
+      console.info(`🧩 Using GCS credentials from: ${credentialsPath}`);
+    } else {
+      console.warn(`⚠️ GOOGLE_APPLICATION_CREDENTIALS points to a directory, not a file: ${credentialsPath}`);
+      console.info("☁️ Falling back to default GCS credentials (Cloud Run)");
+      storage = new Storage();
+    }
+  } catch (err: any) {
+    console.warn(`⚠️ Could not access credentials file at ${credentialsPath}:`, err.message);
+    console.info("☁️ Falling back to default GCS credentials (Cloud Run)");
+    storage = new Storage();
+  }
 } else {
   storage = new Storage();
   console.info("☁️ Using default GCS credentials (Cloud Run)");
