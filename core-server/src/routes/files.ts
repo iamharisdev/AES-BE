@@ -476,9 +476,20 @@ const uploadFileHandler = () => {
         }
       }, null, 2));
       
+      // Ensure buffer is a proper Node.js Buffer
+      console.log("☁️ [GCS] Buffer type:", buffer.constructor.name);
+      console.log("☁️ [GCS] Buffer instanceof Buffer:", buffer instanceof Buffer);
+      console.log("☁️ [GCS] Buffer instanceof Uint8Array:", buffer instanceof Uint8Array);
+      
+      // Create a fresh Buffer to avoid any Bun-specific issues
+      const nodeBuffer = Buffer.from(buffer);
+      console.log("☁️ [GCS] Created fresh Node Buffer, length:", nodeBuffer.length);
+      console.log("☁️ [GCS] Node Buffer type:", nodeBuffer.constructor.name);
+      
       try {
-        console.log("☁️ [GCS] Starting upload with blob.save()...");
-        await blob.save(buffer, {
+        console.log("☁️ [GCS] Starting upload with blob.save() using Node Buffer...");
+        // Try with explicit Buffer
+        await blob.save(nodeBuffer, {
           contentType: type,
           metadata: {
             cacheControl: "public, max-age=31536000",
@@ -512,47 +523,75 @@ const uploadFileHandler = () => {
           code: saveErr.code,
           message: saveErr.message,
           name: saveErr.name,
-          stack: saveErr.stack,
+          syscall: saveErr.syscall,
+          errno: saveErr.errno,
+          fd: saveErr.fd,
         }, null, 2));
-        console.error("❌ [uploadFileHandler] Trying fallback with Readable.from()...");
+        console.error("❌ [uploadFileHandler] Trying alternative method...");
         
-        // Fallback: Use Readable.from() which is more reliable
-        console.log("☁️ [GCS] Fallback: Using Readable.from() with createWriteStream...");
-        const stream = Readable.from(buffer);
-        console.log("☁️ [GCS] Stream created from buffer");
-        
-        await new Promise<void>((resolve, reject) => {
-          const writeStreamOptions = {
+        // Alternative: Use file.save() with explicit options
+        try {
+          console.log("☁️ [GCS] Alternative: Using file.save() with Uint8Array...");
+          const uint8Array = new Uint8Array(nodeBuffer);
+          console.log("☁️ [GCS] Created Uint8Array, length:", uint8Array.length);
+          
+          await blob.save(uint8Array, {
             contentType: type,
-            resumable: false,
             metadata: {
               cacheControl: "public, max-age=31536000",
             },
-          };
-          console.log("☁️ [GCS] WriteStream options:", JSON.stringify(writeStreamOptions, null, 2));
-          
-          const writeStream = blob.createWriteStream(writeStreamOptions);
-          console.log("☁️ [GCS] WriteStream created");
-          
-          writeStream.on("error", (err) => {
-            console.error("❌ [uploadFileHandler] GCS upload error (fallback):", err);
-            console.error("☁️ [GCS] WriteStream error details:", JSON.stringify({
-              code: err.code,
-              message: err.message,
-              name: err.name,
-            }, null, 2));
-            reject(err);
           });
+          console.log("✅ [uploadFileHandler] File uploaded using Uint8Array method");
+        } catch (uint8Err: any) {
+          console.error("❌ [uploadFileHandler] Error with Uint8Array method:", uint8Err);
+          console.error("☁️ [GCS] Uint8Array error:", JSON.stringify({
+            code: uint8Err.code,
+            message: uint8Err.message,
+            syscall: uint8Err.syscall,
+            errno: uint8Err.errno,
+          }, null, 2));
           
-          writeStream.on("finish", () => {
-            console.log("✅ [uploadFileHandler] GCS upload finished (fallback)");
-            resolve();
+          // Final fallback: Use Readable.from() with explicit Node stream
+          console.log("☁️ [GCS] Final fallback: Using Readable.from() with createWriteStream...");
+          const stream = Readable.from(nodeBuffer);
+          console.log("☁️ [GCS] Stream created from Node Buffer");
+          
+          await new Promise<void>((resolve, reject) => {
+            const writeStreamOptions = {
+              contentType: type,
+              resumable: false,
+              metadata: {
+                cacheControl: "public, max-age=31536000",
+              },
+            };
+            console.log("☁️ [GCS] WriteStream options:", JSON.stringify(writeStreamOptions, null, 2));
+            
+            const writeStream = blob.createWriteStream(writeStreamOptions);
+            console.log("☁️ [GCS] WriteStream created");
+            
+            writeStream.on("error", (err) => {
+              console.error("❌ [uploadFileHandler] GCS upload error (fallback):", err);
+              console.error("☁️ [GCS] WriteStream error details:", JSON.stringify({
+                code: err.code,
+                message: err.message,
+                name: err.name,
+                syscall: err.syscall,
+                errno: err.errno,
+                fd: err.fd,
+              }, null, 2));
+              reject(err);
+            });
+            
+            writeStream.on("finish", () => {
+              console.log("✅ [uploadFileHandler] GCS upload finished (fallback)");
+              resolve();
+            });
+            
+            console.log("☁️ [GCS] Piping stream to writeStream...");
+            stream.pipe(writeStream);
           });
-          
-          console.log("☁️ [GCS] Piping stream to writeStream...");
-          stream.pipe(writeStream);
-        });
-        console.log("✅ [uploadFileHandler] File uploaded to GCS successfully (fallback)");
+          console.log("✅ [uploadFileHandler] File uploaded to GCS successfully (fallback)");
+        }
       }
 
       // ✅ Generate signed URL (instead of makePublic)
