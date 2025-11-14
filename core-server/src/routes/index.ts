@@ -162,6 +162,7 @@ import {
   deletePatientChatHandler,
   addMessageToChatHandler,
 } from "@/routes/patient-chats";
+import { getUserMetricsHandler } from "@/routes/user-metrics";
 
 import { audioToTextHandler } from "./audio-to-text";
 
@@ -281,4 +282,5 @@ export const registerRoutes = () => {
   deletePatientChatHandler();
   addMessageToChatHandler();
   getAllDiagnosticsByPatientHandler();
+  getUserMetricsHandler();
 };
