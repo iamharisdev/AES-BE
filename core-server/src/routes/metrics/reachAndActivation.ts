@@ -64,11 +64,12 @@ export const getReachActivationMetricsHandler = () => {
 
       const start = new Date(startDate);
       start.setHours(0, 0, 0, 0);
-
-      const end = new Date(); // current date
+      const end = new Date();
       end.setHours(23, 59, 59, 999);
 
+      // ------------------------------
       // Previous range of same length
+      // ------------------------------
       const prevStart = new Date(start);
       prevStart.setDate(
         start.getDate() - (end.getDate() - start.getDate() + 1)
@@ -80,257 +81,238 @@ export const getReachActivationMetricsHandler = () => {
       // ------------------------------
       // Unique Users
       // ------------------------------
-      const [uniqueUsersRes] = await db
-        .select({
-          count: sql<number>`count(DISTINCT "patient_id")`.as("count"),
-        })
-        .from(patientChats)
-        .where(
-          sql`"session_started" >= ${start.toISOString()} AND "session_started" <= ${end.toISOString()}`
-        );
+      const getUniqueUsers = async (from: Date, to: Date) => {
+        try {
+          const [res] = await db
+            .select({
+              count: sql<number>`count(DISTINCT "patient_id")`.as("count"),
+            })
+            .from(patientChats)
+            .where(
+              sql`"session_started" >= ${from.toISOString()} AND "session_started" <= ${to.toISOString()}`
+            );
+          return Number(res?.count || 0);
+        } catch {
+          return 0;
+        }
+      };
 
-      const [prevUniqueUsersRes] = await db
-        .select({
-          count: sql<number>`count(DISTINCT "patient_id")`.as("count"),
-        })
-        .from(patientChats)
-        .where(
-          sql`"session_started" >= ${prevStart.toISOString()} AND "session_started" <= ${prevEnd.toISOString()}`
-        );
-
-      const uniqueUsersValue = Number(uniqueUsersRes?.count || 0);
+      const uniqueUsersValue = await getUniqueUsers(start, end);
+      const prevUniqueUsersValue = await getUniqueUsers(prevStart, prevEnd);
       const uniqueUsersTrend = calculateTrend(
         uniqueUsersValue,
-        Number(prevUniqueUsersRes?.count || 0)
+        prevUniqueUsersValue
       );
 
       // ------------------------------
-      // Active Users (last 14 days within range)
+      // Active Users (last 14 days)
       // ------------------------------
+      const getActiveUsers = async (from: Date, to: Date) => {
+        try {
+          const [res] = await db
+            .select({
+              count: sql<number>`count(DISTINCT "patient_id")`.as("count"),
+            })
+            .from(patientChats)
+            .where(
+              sql`"last_message_at" >= ${from.toISOString()} AND "last_message_at" <= ${to.toISOString()}`
+            );
+          return Number(res?.count || 0);
+        } catch {
+          return 0;
+        }
+      };
+
       const activeStart = new Date(end);
       activeStart.setDate(end.getDate() - 13);
       activeStart.setHours(0, 0, 0, 0);
-
       const prevActiveStart = new Date(activeStart);
       prevActiveStart.setDate(prevActiveStart.getDate() - 14);
       const prevActiveEnd = new Date(activeStart);
       prevActiveEnd.setHours(23, 59, 59, 999);
 
-      const [activeUsersRes] = await db
-        .select({
-          count: sql<number>`count(DISTINCT "patient_id")`.as("count"),
-        })
-        .from(patientChats)
-        .where(
-          sql`"last_message_at" >= ${activeStart.toISOString()} AND "last_message_at" <= ${end.toISOString()}`
-        );
-
-      const [prevActiveUsersRes] = await db
-        .select({
-          count: sql<number>`count(DISTINCT "patient_id")`.as("count"),
-        })
-        .from(patientChats)
-        .where(
-          sql`"last_message_at" >= ${prevActiveStart.toISOString()} AND "last_message_at" <= ${prevActiveEnd.toISOString()}`
-        );
-
-      const activeUsersValue = Number(activeUsersRes?.count || 0);
+      const activeUsersValue = await getActiveUsers(activeStart, end);
+      const prevActiveUsersValue = await getActiveUsers(
+        prevActiveStart,
+        prevActiveEnd
+      );
       const activeUsersTrend = calculateTrend(
         activeUsersValue,
-        Number(prevActiveUsersRes?.count || 0)
+        prevActiveUsersValue
       );
 
       // ------------------------------
       // Total Messages
       // ------------------------------
-      const [totalMessagesRes] = await db
-        .select({
-          count: sql<number>`sum(jsonb_array_length("messages"))`.as("count"),
-        })
-        .from(patientChats)
-        .where(
-          sql`"session_started" >= ${start.toISOString()} AND "session_started" <= ${end.toISOString()}`
-        );
+      const getTotalMessages = async (from: Date, to: Date) => {
+        try {
+          const [res] = await db
+            .select({
+              count: sql<number>`sum(jsonb_array_length("messages"))`.as(
+                "count"
+              ),
+            })
+            .from(patientChats)
+            .where(
+              sql`"session_started" >= ${from.toISOString()} AND "session_started" <= ${to.toISOString()}`
+            );
+          return Number(res?.count || 0);
+        } catch {
+          return 0;
+        }
+      };
 
-      const [prevTotalMessagesRes] = await db
-        .select({
-          count: sql<number>`sum(jsonb_array_length("messages"))`.as("count"),
-        })
-        .from(patientChats)
-        .where(
-          sql`"session_started" >= ${prevStart.toISOString()} AND "session_started" <= ${prevEnd.toISOString()}`
-        );
-
-      const totalMessagesValue = Number(totalMessagesRes?.count || 0);
+      const totalMessagesValue = await getTotalMessages(start, end);
+      const prevTotalMessagesValue = await getTotalMessages(prevStart, prevEnd);
       const totalMessagesTrend = calculateTrend(
         totalMessagesValue,
-        Number(prevTotalMessagesRes?.count || 0)
+        prevTotalMessagesValue
       );
 
       // ------------------------------
       // Onboarding Completion Rate
       // ------------------------------
-      const [completedChatsRes] = await db
-        .select({ count: sql<number>`count(*)`.as("count") })
-        .from(patientChats)
-        .where(
-          sql`"session_started" >= ${start.toISOString()} AND "session_started" <= ${end.toISOString()} AND jsonb_array_length("messages") >= 3`
-        );
+      const getOnboardingRate = async (from: Date, to: Date) => {
+        try {
+          const [completedRes] = await db
+            .select({ count: sql<number>`count(*)`.as("count") })
+            .from(patientChats)
+            .where(
+              sql`"session_started" >= ${from.toISOString()} AND "session_started" <= ${to.toISOString()} AND jsonb_array_length("messages") >= 3`
+            );
 
-      const [totalChatsRes] = await db
-        .select({ count: sql<number>`count(*)`.as("count") })
-        .from(patientChats)
-        .where(
-          sql`"session_started" >= ${start.toISOString()} AND "session_started" <= ${end.toISOString()}`
-        );
+          const [totalRes] = await db
+            .select({ count: sql<number>`count(*)`.as("count") })
+            .from(patientChats)
+            .where(
+              sql`"session_started" >= ${from.toISOString()} AND "session_started" <= ${to.toISOString()}`
+            );
 
-      const onboardingRate = totalChatsRes.count
-        ? (completedChatsRes.count / totalChatsRes.count) * 100
-        : 0;
+          return totalRes.count
+            ? (completedRes.count / totalRes.count) * 100
+            : 0;
+        } catch {
+          return 0;
+        }
+      };
 
-      const [prevCompletedChatsRes] = await db
-        .select({ count: sql<number>`count(*)`.as("count") })
-        .from(patientChats)
-        .where(
-          sql`"session_started" >= ${prevStart.toISOString()} AND "session_started" <= ${prevEnd.toISOString()} AND jsonb_array_length("messages") >= 3`
-        );
-
-      const [prevTotalChatsRes] = await db
-        .select({ count: sql<number>`count(*)`.as("count") })
-        .from(patientChats)
-        .where(
-          sql`"session_started" >= ${prevStart.toISOString()} AND "session_started" <= ${prevEnd.toISOString()}`
-        );
-
-      const prevOnboardingRate = prevTotalChatsRes.count
-        ? (prevCompletedChatsRes.count / prevTotalChatsRes.count) * 100
-        : 0;
+      const onboardingRate = await getOnboardingRate(start, end);
+      const prevOnboardingRate = await getOnboardingRate(prevStart, prevEnd);
       const onboardingTrend = calculateTrend(
         onboardingRate,
         prevOnboardingRate
       );
 
       // ------------------------------
-      // Retention Rate (return within 14 days)
+      // Retention Rate (Static, last 14 days return)
       // ------------------------------
-      const retentionRaw = await db
-        .select({
-          patient_id: sql<string>`"patient_id"`.as("patient_id"),
-          firstSession: sql`MIN("session_started")`.as("firstSession"),
-          lastSession: sql`MAX("session_started")`.as("lastSession"),
-        })
-        .from(patientChats)
-        .groupBy(sql`"patient_id"`);
+      const retentionRate = await (async () => {
+        try {
+          const retentionRaw = await db
+            .select({
+              patient_id: sql<string>`"patient_id"`.as("patient_id"),
+              firstSession: sql`MIN("session_started")`.as("firstSession"),
+              lastSession: sql`MAX("session_started")`.as("lastSession"),
+            })
+            .from(patientChats)
+            .groupBy(sql`"patient_id"`);
 
-      const selectedRetention = retentionRaw.filter((row: any) => {
-        const first = new Date(row.firstSession);
-        const last = new Date(row.lastSession);
-        return (
-          last >= start &&
-          last <= end &&
-          (last.getTime() - first.getTime()) / (1000 * 60 * 60 * 24) <= 14
-        );
-      });
+          const returningUsers = retentionRaw.filter((row: any) => {
+            const first = new Date(row.firstSession);
+            const last = new Date(row.lastSession);
+            return (
+              last.getTime() !== first.getTime() &&
+              (last.getTime() - first.getTime()) / (1000 * 60 * 60 * 24) <= 14
+            );
+          });
 
-      const prevRetention = retentionRaw.filter((row: any) => {
-        const first = new Date(row.firstSession);
-        const last = new Date(row.lastSession);
-        return (
-          last >= prevStart &&
-          last <= prevEnd &&
-          (last.getTime() - first.getTime()) / (1000 * 60 * 60 * 24) <= 14
-        );
-      });
+          return retentionRaw.length
+            ? (returningUsers.length / retentionRaw.length) * 100
+            : 0;
+        } catch {
+          return 0;
+        }
+      })();
 
-      const calcRetention = (arr: any[]) => {
-        let returningUsers = 0;
-        arr.forEach((row: any) => {
-          const first = new Date(row.firstSession);
-          const last = new Date(row.lastSession);
-          if (
-            (last.getTime() - first.getTime()) / (1000 * 60 * 60 * 24) <= 14 &&
-            last.getTime() !== first.getTime()
-          )
-            returningUsers++;
-        });
-        return arr.length ? (returningUsers / arr.length) * 100 : 0;
-      };
-
-      const retentionValue = calcRetention(selectedRetention);
-      const retentionTrend = calculateTrend(
-        retentionValue,
-        calcRetention(prevRetention)
-      );
+      const retentionTrend = 0; // static, no previous comparison
 
       // ------------------------------
-      // Churn Rate
+      // Churn Rate (Static)
       // ------------------------------
-      const prevMonthStart = new Date(start);
-      prevMonthStart.setMonth(start.getMonth() - 1, 1);
-      prevMonthStart.setHours(0, 0, 0, 0);
-      const prevMonthEnd = new Date(start);
-      prevMonthEnd.setDate(0);
-      prevMonthEnd.setHours(23, 59, 59, 999);
+      const churnRate = await (async () => {
+        try {
+          const now = new Date();
+          const prevMonthStart = new Date(now);
+          prevMonthStart.setMonth(now.getMonth() - 1, 1);
+          prevMonthStart.setHours(0, 0, 0, 0);
+          const prevMonthEnd = new Date(now);
+          prevMonthEnd.setDate(0);
+          prevMonthEnd.setHours(23, 59, 59, 999);
 
-      const currentMonthStart = new Date(start);
-      currentMonthStart.setDate(1);
-      currentMonthStart.setHours(0, 0, 0, 0);
+          const currentMonthStart = new Date(now);
+          currentMonthStart.setDate(1);
+          currentMonthStart.setHours(0, 0, 0, 0);
 
-      const prevMonthUsersRaw = await db
-        .select({
-          patient_id: sql<string>`DISTINCT "patient_id"`.as("patient_id"),
-        })
-        .from(patientChats)
-        .where(
-          sql`"last_message_at" >= ${prevMonthStart.toISOString()} AND "last_message_at" <= ${prevMonthEnd.toISOString()}`
-        );
+          const prevUsersRaw = await db
+            .select({
+              patient_id: sql<string>`DISTINCT "patient_id"`.as("patient_id"),
+            })
+            .from(patientChats)
+            .where(
+              sql`"last_message_at" >= ${prevMonthStart.toISOString()} AND "last_message_at" <= ${prevMonthEnd.toISOString()}`
+            );
 
-      const currentMonthUsersRaw = await db
-        .select({
-          patient_id: sql<string>`DISTINCT "patient_id"`.as("patient_id"),
-        })
-        .from(patientChats)
-        .where(
-          sql`"last_message_at" >= ${currentMonthStart.toISOString()} AND "last_message_at" <= ${end.toISOString()}`
-        );
+          const currentUsersRaw = await db
+            .select({
+              patient_id: sql<string>`DISTINCT "patient_id"`.as("patient_id"),
+            })
+            .from(patientChats)
+            .where(
+              sql`"last_message_at" >= ${currentMonthStart.toISOString()} AND "last_message_at" <= ${now.toISOString()}`
+            );
 
-      const prevMonthUsers = prevMonthUsersRaw.map((u: any) => u.patient_id);
-      const currentMonthUsers = currentMonthUsersRaw.map(
-        (u: any) => u.patient_id
-      );
-      const churned = prevMonthUsers.filter(
-        (id) => !currentMonthUsers.includes(id)
-      );
-      const churnValue = prevMonthUsers.length
-        ? (churned.length / prevMonthUsers.length) * 100
-        : 0;
-      const churnTrend = calculateTrend(churnValue, 0);
+          const prevUsers = prevUsersRaw.map((u: any) => u.patient_id);
+          const currentUsers = currentUsersRaw.map((u: any) => u.patient_id);
+
+          const churned = prevUsers.filter((id) => !currentUsers.includes(id));
+          return prevUsers.length
+            ? (churned.length / prevUsers.length) * 100
+            : 0;
+        } catch {
+          return 0;
+        }
+      })();
+
+      const churnTrend = 0; // static, no previous comparison
 
       // ------------------------------
-      // Chart Data (last 7 days up to current date)
+      // Chart Data (Last 7 days)
       // ------------------------------
       const chartData: { day: string; users: number }[] = [];
       for (let i = 6; i >= 0; i--) {
-        const dayStart = new Date(end);
-        dayStart.setDate(end.getDate() - i);
-        dayStart.setHours(0, 0, 0, 0);
+        try {
+          const dayStart = new Date(end);
+          dayStart.setDate(end.getDate() - i);
+          dayStart.setHours(0, 0, 0, 0);
+          const dayEnd = new Date(dayStart);
+          dayEnd.setHours(23, 59, 59, 999);
 
-        const dayEnd = new Date(dayStart);
-        dayEnd.setHours(23, 59, 59, 999);
+          const [res] = await db
+            .select({
+              count: sql<number>`count(DISTINCT "patient_id")`.as("count"),
+            })
+            .from(patientChats)
+            .where(
+              sql`"session_started" >= ${dayStart.toISOString()} AND "session_started" <= ${dayEnd.toISOString()}`
+            );
 
-        const [dayRes] = await db
-          .select({
-            count: sql<number>`count(DISTINCT "patient_id")`.as("count"),
-          })
-          .from(patientChats)
-          .where(
-            sql`"session_started" >= ${dayStart.toISOString()} AND "session_started" <= ${dayEnd.toISOString()}`
-          );
-
-        chartData.push({
-          day: dayStart.toLocaleDateString("en-US", { weekday: "short" }),
-          users: Number(dayRes?.count || 0),
-        });
+          chartData.push({
+            day: dayStart.toLocaleDateString("en-US", { weekday: "short" }),
+            users: Number(res?.count || 0),
+          });
+        } catch {
+          chartData.push({ day: "N/A", users: 0 });
+        }
       }
 
       const response = {
@@ -338,39 +320,39 @@ export const getReachActivationMetricsHandler = () => {
           {
             title: "Unique Users",
             value: uniqueUsersValue.toLocaleString(),
-            trend: uniqueUsersTrend,
+            trend: uniqueUsersTrend.toString(),
             trendUp: uniqueUsersTrend >= 0,
           },
           {
             title: "Active Users",
             value: activeUsersValue.toLocaleString(),
             subtitle: "currently active",
-            trend: activeUsersTrend,
+            trend: activeUsersTrend.toString(),
             trendUp: activeUsersTrend >= 0,
           },
           {
             title: "Total Messages",
             value: totalMessagesValue.toLocaleString(),
-            trend: totalMessagesTrend,
+            trend: totalMessagesTrend.toString(),
             trendUp: totalMessagesTrend >= 0,
           },
           {
             title: "Onboarding Completion Rate",
             value: onboardingRate.toFixed(1),
             subtitle: "completed",
-            trend: onboardingTrend,
+            trend: onboardingTrend.toString(),
             trendUp: onboardingTrend >= 0,
           },
           {
             title: "Retention Rate",
-            value: retentionValue.toFixed(1),
-            trend: retentionTrend,
+            value: retentionRate.toFixed(1),
+            trend: retentionTrend.toString(),
             trendUp: retentionTrend >= 0,
           },
           {
             title: "Churn Rate",
-            value: churnValue.toFixed(1),
-            trend: churnTrend,
+            value: churnRate.toFixed(1),
+            trend: churnTrend.toString(),
             trendUp: churnTrend < 0,
           },
         ],
