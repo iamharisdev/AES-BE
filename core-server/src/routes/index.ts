@@ -162,12 +162,11 @@ import {
 } from "./user";
 
 import { audioToTextHandler } from "./audio-to-text";
-import {
-  getReachActivationMetricsHandler
-} from "./metrics/reachAndActivation";
+import { getReachActivationMetricsHandler } from "./metrics/reachAndActivation";
 import { getUserMetricsHandler } from "./user-metrics";
 import { getEngagementMetricsHandler } from "./metrics/engagement";
 import { getLanguageModalityMetricsHandler } from "./metrics/language";
+import { getResponseQualityMetricsHandler } from "./metrics/responseQuality";
 
 export const registerRoutes = () => {
   createPresentingComplaintHandler();
@@ -288,6 +287,7 @@ export const registerRoutes = () => {
   getUserMetricsHandler();
   //Metrics
   getReachActivationMetricsHandler();
-  getEngagementMetricsHandler()
-  getLanguageModalityMetricsHandler()
+  getEngagementMetricsHandler();
+  getLanguageModalityMetricsHandler();
+  getResponseQualityMetricsHandler();
 };

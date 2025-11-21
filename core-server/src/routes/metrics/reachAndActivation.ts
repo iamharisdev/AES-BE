@@ -5,6 +5,7 @@ import { patientChats } from "@/models/patient-chats";
 import { createRoute, z } from "@hono/zod-openapi";
 import { sql } from "drizzle-orm";
 
+// --- Response schema ---
 const SuccessResponseSchema = z.object({
   cards: z.array(
     z.object({
@@ -36,324 +37,364 @@ const route = createRoute({
       startDate: z
         .string()
         .datetime()
-        .describe("Start of selected range (ISO 8601)"),
+        .optional()
+        .describe("Start of range (ISO)"),
+      endDate: z.string().datetime().optional().describe("End of range (ISO)"),
     }),
   },
   responses: {
     200: {
-      content: {
-        "application/json": {
-          schema: SuccessResponseSchema,
-        },
-      },
+      content: { "application/json": { schema: SuccessResponseSchema } },
       description: "Reach & Activation Metrics",
     },
   },
 });
 
+// --- Helper: Trend ---
 const calculateTrend = (current: number, previous: number) => {
   if (previous === 0) return current > 0 ? 100 : 0;
   const percent = ((current - previous) / previous) * 100;
-  return Math.round(Math.min(Math.max(percent, -100), 100));
+  return Math.round(percent);
 };
 
+// --- Helper: 24h sessions per user ---
+const calculateSessionsPerUser = (messages: any[]) => {
+  if (!messages || messages.length === 0) return 0;
+
+  const sorted = messages
+    .map((m) => new Date(m.timestamp))
+    .sort((a, b) => a.getTime() - b.getTime());
+
+  let sessionCount = 1;
+  let sessionStart = sorted[0];
+
+  for (let i = 1; i < sorted.length; i++) {
+    const diff = sorted[i].getTime() - sessionStart.getTime();
+    if (diff > 24 * 60 * 60 * 1000) {
+      sessionCount++;
+      sessionStart = sorted[i];
+    }
+  }
+
+  return sessionCount;
+};
+
+// --- Helper: Onboarding ---
+const checkOnboardingCompleted = (messages: any[]) => {
+  const onboardingFields = ["cnic", "name", "menu"];
+  const first20 = messages.slice(0, 20);
+
+  return onboardingFields.every((field) =>
+    first20.some(
+      (msg) =>
+        msg.sender?.toLowerCase() === "user" &&
+        msg.message?.toLowerCase()?.includes(field)
+    )
+  );
+};
+
+// --- Main Handler ---
 export const getReachActivationMetricsHandler = () => {
   app.openapi(route, async (c) => {
     try {
-      const { startDate } = c.req.valid("query");
+      const startDateStr = c.req.query("startDate");
+      const endDateStr = c.req.query("endDate");
 
-      const start = new Date(startDate);
-      start.setHours(0, 0, 0, 0);
-      const end = new Date();
-      end.setHours(23, 59, 59, 999);
+      const now = new Date();
+      let start: Date;
+      let end: Date;
 
-      // ------------------------------
-      // Previous range of same length
-      // ------------------------------
-      const prevStart = new Date(start);
-      prevStart.setDate(
-        start.getDate() - (end.getDate() - start.getDate() + 1)
-      );
-      prevStart.setHours(0, 0, 0, 0);
-      const prevEnd = new Date(start);
-      prevEnd.setHours(23, 59, 59, 999);
+      // --- Determine date range ---
+      if (startDateStr && endDateStr) {
+        start = new Date(startDateStr);
+        start.setHours(0, 0, 0, 0);
+        end = new Date(endDateStr);
+        end.setHours(23, 59, 59, 999);
+      } else {
+        // No dates → fetch min/max from DB
+        const minRow = await db
+          .select({ min: sql`MIN(session_started)` })
+          .from(patientChats);
+        const maxRow = await db
+          .select({ max: sql`MAX(session_started)` })
+          .from(patientChats);
 
-      // ------------------------------
-      // Unique Users
-      // ------------------------------
-      const getUniqueUsers = async (from: Date, to: Date) => {
-        try {
-          const [res] = await db
-            .select({
-              count: sql<number>`count(DISTINCT "patient_id")`.as("count"),
-            })
-            .from(patientChats)
-            .where(
-              sql`"session_started" >= ${from.toISOString()} AND "session_started" <= ${to.toISOString()}`
-            );
-          return Number(res?.count || 0);
-        } catch {
-          return 0;
+        const minDate = minRow?.[0]?.min;
+        const maxDate = maxRow?.[0]?.max;
+
+        if (!minDate || !maxDate) {
+          return c.json({ cards: [], chartData: [] });
         }
-      };
 
-      const uniqueUsersValue = await getUniqueUsers(start, end);
-      const prevUniqueUsersValue = await getUniqueUsers(prevStart, prevEnd);
-      const uniqueUsersTrend = calculateTrend(
-        uniqueUsersValue,
-        prevUniqueUsersValue
-      );
+        start = new Date(minDate);
+        start.setHours(0, 0, 0, 0);
 
-      // ------------------------------
-      // Active Users (last 14 days)
-      // ------------------------------
-      const getActiveUsers = async (from: Date, to: Date) => {
-        try {
-          const [res] = await db
-            .select({
-              count: sql<number>`count(DISTINCT "patient_id")`.as("count"),
-            })
-            .from(patientChats)
-            .where(
-              sql`"last_message_at" >= ${from.toISOString()} AND "last_message_at" <= ${to.toISOString()}`
-            );
-          return Number(res?.count || 0);
-        } catch {
-          return 0;
-        }
-      };
-
-      const activeStart = new Date(end);
-      activeStart.setDate(end.getDate() - 13);
-      activeStart.setHours(0, 0, 0, 0);
-      const prevActiveStart = new Date(activeStart);
-      prevActiveStart.setDate(prevActiveStart.getDate() - 14);
-      const prevActiveEnd = new Date(activeStart);
-      prevActiveEnd.setHours(23, 59, 59, 999);
-
-      const activeUsersValue = await getActiveUsers(activeStart, end);
-      const prevActiveUsersValue = await getActiveUsers(
-        prevActiveStart,
-        prevActiveEnd
-      );
-      const activeUsersTrend = calculateTrend(
-        activeUsersValue,
-        prevActiveUsersValue
-      );
-
-      // ------------------------------
-      // Total Messages
-      // ------------------------------
-      const getTotalMessages = async (from: Date, to: Date) => {
-        try {
-          const [res] = await db
-            .select({
-              count: sql<number>`sum(jsonb_array_length("messages"))`.as(
-                "count"
-              ),
-            })
-            .from(patientChats)
-            .where(
-              sql`"session_started" >= ${from.toISOString()} AND "session_started" <= ${to.toISOString()}`
-            );
-          return Number(res?.count || 0);
-        } catch {
-          return 0;
-        }
-      };
-
-      const totalMessagesValue = await getTotalMessages(start, end);
-      const prevTotalMessagesValue = await getTotalMessages(prevStart, prevEnd);
-      const totalMessagesTrend = calculateTrend(
-        totalMessagesValue,
-        prevTotalMessagesValue
-      );
-
-      // ------------------------------
-      // Onboarding Completion Rate
-      // ------------------------------
-      const getOnboardingRate = async (from: Date, to: Date) => {
-        try {
-          const [completedRes] = await db
-            .select({ count: sql<number>`count(*)`.as("count") })
-            .from(patientChats)
-            .where(
-              sql`"session_started" >= ${from.toISOString()} AND "session_started" <= ${to.toISOString()} AND jsonb_array_length("messages") >= 3`
-            );
-
-          const [totalRes] = await db
-            .select({ count: sql<number>`count(*)`.as("count") })
-            .from(patientChats)
-            .where(
-              sql`"session_started" >= ${from.toISOString()} AND "session_started" <= ${to.toISOString()}`
-            );
-
-          return totalRes.count
-            ? (completedRes.count / totalRes.count) * 100
-            : 0;
-        } catch {
-          return 0;
-        }
-      };
-
-      const onboardingRate = await getOnboardingRate(start, end);
-      const prevOnboardingRate = await getOnboardingRate(prevStart, prevEnd);
-      const onboardingTrend = calculateTrend(
-        onboardingRate,
-        prevOnboardingRate
-      );
-
-      // ------------------------------
-      // Retention Rate (Static, last 14 days return)
-      // ------------------------------
-      const retentionRate = await (async () => {
-        try {
-          const retentionRaw = await db
-            .select({
-              patient_id: sql<string>`"patient_id"`.as("patient_id"),
-              firstSession: sql`MIN("session_started")`.as("firstSession"),
-              lastSession: sql`MAX("session_started")`.as("lastSession"),
-            })
-            .from(patientChats)
-            .groupBy(sql`"patient_id"`);
-
-          const returningUsers = retentionRaw.filter((row: any) => {
-            const first = new Date(row.firstSession);
-            const last = new Date(row.lastSession);
-            return (
-              last.getTime() !== first.getTime() &&
-              (last.getTime() - first.getTime()) / (1000 * 60 * 60 * 24) <= 14
-            );
-          });
-
-          return retentionRaw.length
-            ? (returningUsers.length / retentionRaw.length) * 100
-            : 0;
-        } catch {
-          return 0;
-        }
-      })();
-
-      const retentionTrend = 0; // static, no previous comparison
-
-      // ------------------------------
-      // Churn Rate (Static)
-      // ------------------------------
-      const churnRate = await (async () => {
-        try {
-          const now = new Date();
-          const prevMonthStart = new Date(now);
-          prevMonthStart.setMonth(now.getMonth() - 1, 1);
-          prevMonthStart.setHours(0, 0, 0, 0);
-          const prevMonthEnd = new Date(now);
-          prevMonthEnd.setDate(0);
-          prevMonthEnd.setHours(23, 59, 59, 999);
-
-          const currentMonthStart = new Date(now);
-          currentMonthStart.setDate(1);
-          currentMonthStart.setHours(0, 0, 0, 0);
-
-          const prevUsersRaw = await db
-            .select({
-              patient_id: sql<string>`DISTINCT "patient_id"`.as("patient_id"),
-            })
-            .from(patientChats)
-            .where(
-              sql`"last_message_at" >= ${prevMonthStart.toISOString()} AND "last_message_at" <= ${prevMonthEnd.toISOString()}`
-            );
-
-          const currentUsersRaw = await db
-            .select({
-              patient_id: sql<string>`DISTINCT "patient_id"`.as("patient_id"),
-            })
-            .from(patientChats)
-            .where(
-              sql`"last_message_at" >= ${currentMonthStart.toISOString()} AND "last_message_at" <= ${now.toISOString()}`
-            );
-
-          const prevUsers = prevUsersRaw.map((u: any) => u.patient_id);
-          const currentUsers = currentUsersRaw.map((u: any) => u.patient_id);
-
-          const churned = prevUsers.filter((id) => !currentUsers.includes(id));
-          return prevUsers.length
-            ? (churned.length / prevUsers.length) * 100
-            : 0;
-        } catch {
-          return 0;
-        }
-      })();
-
-      const churnTrend = 0; // static, no previous comparison
-
-      // ------------------------------
-      // Chart Data (Last 7 days)
-      // ------------------------------
-      const chartData: { day: string; users: number }[] = [];
-      for (let i = 6; i >= 0; i--) {
-        try {
-          const dayStart = new Date(end);
-          dayStart.setDate(end.getDate() - i);
-          dayStart.setHours(0, 0, 0, 0);
-          const dayEnd = new Date(dayStart);
-          dayEnd.setHours(23, 59, 59, 999);
-
-          const [res] = await db
-            .select({
-              count: sql<number>`count(DISTINCT "patient_id")`.as("count"),
-            })
-            .from(patientChats)
-            .where(
-              sql`"session_started" >= ${dayStart.toISOString()} AND "session_started" <= ${dayEnd.toISOString()}`
-            );
-
-          chartData.push({
-            day: dayStart.toLocaleDateString("en-US", { weekday: "short" }),
-            users: Number(res?.count || 0),
-          });
-        } catch {
-          chartData.push({ day: "N/A", users: 0 });
-        }
+        end = new Date(maxDate);
+        end.setHours(23, 59, 59, 999);
       }
 
+      // --- Fetch chats ---
+      const fetchChats = async (from?: Date, to?: Date) => {
+        if (from && to) {
+          return db
+            .select()
+            .from(patientChats)
+            .where(
+              sql`session_started >= ${from.toISOString()} AND session_started <= ${to.toISOString()}`
+            );
+        }
+        return db.select().from(patientChats);
+      };
+
+      const currentChats = await fetchChats(start, end);
+
+      // --- Previous period for trend ---
+      let previousChats: any[] = [];
+      if (startDateStr && endDateStr) {
+        const diffDays = Math.ceil(
+          (end.getTime() - start.getTime()) / (1000 * 3600 * 24)
+        );
+        const prevStart = new Date(start);
+        prevStart.setDate(prevStart.getDate() - diffDays);
+        prevStart.setHours(0, 0, 0, 0);
+
+        const prevEnd = new Date(start);
+        prevEnd.setHours(23, 59, 59, 999);
+
+        previousChats = await fetchChats(prevStart, prevEnd);
+      }
+
+      // --- Process Metrics ---
+      const processMetrics = (chats: any[]) => {
+        const userMap = new Map<string, any[]>();
+        chats.forEach((chat) => {
+          if (!userMap.has(chat.patientId)) userMap.set(chat.patientId, []);
+          userMap.get(chat.patientId)!.push(chat);
+        });
+
+        let totalSessions = 0;
+        let totalMessages = 0;
+        let onboardingCompleted = 0;
+        const activeDaysSet = new Set<string>();
+        const sessionsPerUserList: number[] = [];
+        let totalSessionDurationSec = 0;
+
+        for (const [userId, userChats] of userMap?.entries()) {
+          let userMessages: any[] = [];
+          userChats.forEach((uc) => {
+            userMessages = userMessages.concat(uc.messages || []);
+          });
+
+          const userSessions = calculateSessionsPerUser(userMessages);
+          sessionsPerUserList.push(userSessions);
+          totalSessions += userSessions;
+          totalMessages += userMessages.length;
+
+          if (checkOnboardingCompleted(userMessages)) onboardingCompleted++;
+
+          // Active days per user
+          const days = new Set(
+            userMessages.map((m) => new Date(m.timestamp).toDateString())
+          );
+          days.forEach((d) => activeDaysSet.add(`${userId}_${d}`));
+
+          // Session duration
+          if (userMessages.length > 0) {
+            const first = new Date(userMessages[0].timestamp).getTime();
+            const last = new Date(
+              userMessages[userMessages.length - 1].timestamp
+            ).getTime();
+            totalSessionDurationSec += (last - first) / 1000;
+          }
+        }
+
+        const totalUsers = userMap.size;
+        const avgSessionsPerUser = totalUsers ? totalSessions / totalUsers : 0;
+        const avgMessagesPerSession = totalSessions
+          ? totalMessages / totalSessions
+          : 0;
+        const avgSessionDurationSec = totalSessions
+          ? totalSessionDurationSec / totalSessions
+          : 0;
+
+        // Power users (90th percentile)
+        const sorted = [...sessionsPerUserList].sort((a, b) => a - b);
+        const p90 = sorted[Math.floor(sorted.length * 0.9)] || 0;
+        const powerUsers = sorted.filter((x) => x >= p90).length;
+
+        return {
+          totalUsers,
+          totalSessions,
+          avgSessionsPerUser,
+          totalMessages,
+          avgMessagesPerSession,
+          avgSessionDurationSec,
+          totalActiveDays: activeDaysSet.size,
+          powerUsers,
+          onboardingCompletedRate: totalUsers
+            ? (onboardingCompleted / totalUsers) * 100
+            : 0,
+        };
+      };
+
+      const currentMetrics = processMetrics(currentChats);
+      const previousMetrics = processMetrics(previousChats);
+
+      // --- Chart Data: Unique Users Trend (Last 7 Days) ---
+      // const chartData: { day: string; users: number }[] = [];
+      // const today = new Date();
+
+      // for (let i = 6; i >= 0; i--) {
+      //   const dayStart = new Date(today);
+      //   dayStart.setDate(today.getDate() - i);
+      //   dayStart.setHours(0, 0, 0, 0);
+
+      //   const dayEnd = new Date(dayStart);
+      //   dayEnd.setHours(23, 59, 59, 999);
+
+      //   // Filter chats for the day and get unique patientIds
+      //   const uniqueUsers = new Set(
+      //     currentChats
+      //       .filter(
+      //         (chat) =>
+      //           new Date(chat.sessionStarted) >= dayStart &&
+      //           new Date(chat.sessionStarted) <= dayEnd
+      //       )
+      //       .map((chat) => chat.patientId)
+      //   );
+
+      //   chartData.push({
+      //     day: dayStart.toLocaleDateString("en-US", { weekday: "short" }),
+      //     users: uniqueUsers.size,
+      //   });
+      // }
+
+      // --- Current date & 7 days ago ---
+      const nows = new Date();
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(nows.getDate() - 6);
+      sevenDaysAgo.setHours(0, 0, 0, 0); // start of 7 days ago
+
+      // --- Fetch chats for last 7 days ---
+      const last7DaysChats = await db
+        .select()
+        .from(patientChats)
+        .where(
+          sql`session_started >= ${sevenDaysAgo.toISOString()} AND session_started <= ${now.toISOString()}`
+        );
+
+      // --- Generate chart data: Unique Users Trend (Last 7 Days) ---
+      const chartData: { day: string; users: number }[] = [];
+
+      for (let i = 6; i >= 0; i--) {
+        const dayStart = new Date();
+        dayStart.setDate(dayStart.getDate() - i);
+        dayStart.setHours(0, 0, 0, 0);
+
+        const dayEnd = new Date(dayStart);
+        dayEnd.setHours(23, 59, 59, 999);
+
+        // Filter chats for this day & count unique patientIds
+        const uniqueUsers = new Set(
+          last7DaysChats
+            .filter(
+              (chat) =>
+                new Date(chat.sessionStarted) >= dayStart &&
+                new Date(chat.sessionStarted) <= dayEnd
+            )
+            .map((chat) => chat.patientId)
+        );
+
+        chartData.push({
+          day: dayStart.toLocaleDateString("en-US", { weekday: "short" }),
+          users: uniqueUsers.size,
+        });
+      }
+
+      // chartData now has 7 entries, last 7 days from today
+
+      // --- Build Response ---
       const response = {
         cards: [
           {
             title: "Unique Users",
-            value: uniqueUsersValue.toLocaleString(),
-            trend: uniqueUsersTrend.toString(),
-            trendUp: uniqueUsersTrend >= 0,
+            value: currentMetrics.totalUsers.toLocaleString(),
+            trend: calculateTrend(
+              currentMetrics.totalUsers,
+              previousMetrics.totalUsers
+            ).toString(),
+            trendUp:
+              calculateTrend(
+                currentMetrics.totalUsers,
+                previousMetrics.totalUsers
+              ) >= 0,
           },
           {
             title: "Active Users",
-            value: activeUsersValue.toLocaleString(),
+            value: currentMetrics.totalUsers.toLocaleString(),
             subtitle: "currently active",
-            trend: activeUsersTrend.toString(),
-            trendUp: activeUsersTrend >= 0,
+            trend: calculateTrend(
+              currentMetrics.totalUsers,
+              previousMetrics.totalUsers
+            ).toString(),
+            trendUp:
+              calculateTrend(
+                currentMetrics.totalUsers,
+                previousMetrics.totalUsers
+              ) >= 0,
           },
           {
             title: "Total Messages",
-            value: totalMessagesValue.toLocaleString(),
-            trend: totalMessagesTrend.toString(),
-            trendUp: totalMessagesTrend >= 0,
+            value: currentMetrics.totalMessages.toLocaleString(),
+            trend: calculateTrend(
+              currentMetrics.totalMessages,
+              previousMetrics.totalMessages
+            ).toString(),
+            trendUp:
+              calculateTrend(
+                currentMetrics.totalMessages,
+                previousMetrics.totalMessages
+              ) >= 0,
           },
           {
             title: "Onboarding Completion Rate",
-            value: onboardingRate.toFixed(1),
+            value: currentMetrics.onboardingCompletedRate.toFixed(1),
             subtitle: "completed",
-            trend: onboardingTrend.toString(),
-            trendUp: onboardingTrend >= 0,
+            trend: calculateTrend(
+              currentMetrics.onboardingCompletedRate,
+              previousMetrics.onboardingCompletedRate
+            ).toString(),
+            trendUp:
+              calculateTrend(
+                currentMetrics.onboardingCompletedRate,
+                previousMetrics.onboardingCompletedRate
+              ) >= 0,
           },
           {
-            title: "Retention Rate",
-            value: retentionRate.toFixed(1),
-            trend: retentionTrend.toString(),
-            trendUp: retentionTrend >= 0,
+            title: "Total Active Days per User",
+            value: currentMetrics.totalActiveDays.toString(),
+            trend: calculateTrend(
+              currentMetrics.totalActiveDays,
+              previousMetrics.totalActiveDays
+            ).toString(),
+            trendUp:
+              calculateTrend(
+                currentMetrics.totalActiveDays,
+                previousMetrics.totalActiveDays
+              ) >= 0,
           },
           {
-            title: "Churn Rate",
-            value: churnRate.toFixed(1),
-            trend: churnTrend.toString(),
-            trendUp: churnTrend < 0,
+            title: "Power Users",
+            value: currentMetrics.powerUsers.toString(),
+            trend: calculateTrend(
+              currentMetrics.powerUsers,
+              previousMetrics.powerUsers
+            ).toString(),
+            trendUp:
+              calculateTrend(
+                currentMetrics.powerUsers,
+                previousMetrics.powerUsers
+              ) >= 0,
           },
         ],
         chartData,
