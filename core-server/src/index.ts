@@ -24,7 +24,7 @@ app.use(
       return allowedOrigins.includes(origin) ? origin : "";
     },
     allowHeaders: ["Content-Type", "Authorization"],
-    allowMethods: ["GET", "POST", "PUT","PATCH", "DELETE", "OPTIONS"],
+    allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     credentials: true,
   })
 );
@@ -57,4 +57,5 @@ console.log(`app running on http://127.0.0.1:${env.PORT}`);
 export default {
   port: env.PORT,
   fetch: app.fetch,
+  idleTimeout: 120,
 };
