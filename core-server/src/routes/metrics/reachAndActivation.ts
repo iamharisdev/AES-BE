@@ -15,6 +15,16 @@ const SuccessResponseSchema = z.object({
       subtitle: z.string().optional(),
       trend: z.string(),
       trendUp: z.boolean(),
+      userList: z
+        .array(
+          z.object({
+            id: z.string(),
+            name: z.string(),
+            phone: z.string(),
+            lastActivity: z.string().nullable(),
+          })
+        )
+        .optional(),
     })
   ),
   chartData: z.array(
@@ -35,12 +45,8 @@ const route = createRoute({
   middleware: [jwtMiddleware],
   request: {
     query: z.object({
-      startDate: z
-        .string()
-        .datetime()
-        .optional()
-        .describe("Start of range (ISO)"),
-      endDate: z.string().datetime().optional().describe("End of range (ISO)"),
+      startDate: z.string().datetime().optional(),
+      endDate: z.string().datetime().optional(),
     }),
   },
   responses: {
@@ -76,6 +82,35 @@ const getPreviousPeriod = (start: Date, end: Date) => {
 const getUniqueUsers = (chats: { patientId: string }[]) =>
   new Set(chats.map((c) => c.patientId));
 
+const getTodayMessagesCount = async () => {
+  const today = new Date();
+  const from = new Date(today);
+  from.setHours(0, 0, 0, 0); // start of today
+  const to = new Date(today);
+  to.setHours(23, 59, 59, 999); // end of today
+
+  // Fetch all chats for today
+  const chats = await db
+    .select()
+    .from(patientChats)
+    .where(
+      sql`session_started >= ${from.toISOString()} AND session_started <= ${to.toISOString()}`
+    );
+
+  // Calculate total messages
+  const totalMessages = chats.reduce(
+    (acc, chat) => acc + (chat.messages?.length || 0),
+    0
+  );
+
+  console.log(totalMessages);
+
+  return {
+    day: from.toLocaleDateString("en-CA").slice(0, 10),
+    messageCount: totalMessages,
+  };
+};
+
 // --- Main Handler ---
 export const getReachActivationMetricsHandler = () => {
   app.openapi(route, async (c) => {
@@ -108,53 +143,30 @@ export const getReachActivationMetricsHandler = () => {
         end.setHours(23, 59, 59, 999);
       }
 
-      const fetchChats = async (
-        from?: Date,
-        to?: Date
-      ): Promise<
-        {
-          patientId: string;
-          sessionStarted: string;
-          lastMessageAt: string | null;
-          messages?: {
-            sender: string;
-            message: string;
-            timestamp: string;
-          }[];
-        }[]
-      > => {
-        let query = db.select().from(patientChats);
-
+      // --- Fetch chats helper ---
+      const fetchChats = async (from?: Date, to?: Date) => {
         if (from && to) {
-          query = query.where(
-            sql`session_started >= ${from.toISOString()} AND session_started <= ${to.toISOString()}`
-          );
+          return db
+            .select()
+            .from(patientChats)
+            .where(
+              sql`session_started >= ${from.toISOString()} AND session_started <= ${to.toISOString()}`
+            );
         }
-
-        const rows = await query;
-
-        // map DB columns to correct camelCase fields and convert Dates to strings
-        return rows.map((row) => ({
-          patientId: row.patientId,
-          sessionStarted: row.sessionStarted.toISOString(), // <-- convert to string
-          lastMessageAt: row.lastMessageAt
-            ? row.lastMessageAt.toISOString()
-            : null, // <-- convert
-          messages: row.messages ?? undefined,
-        }));
+        return db.select().from(patientChats);
       };
-
+      const allMessagesCount = await getTodayMessagesCount();
       const currentChats = await fetchChats(start, end);
+      const allChats = await fetchChats(); // all chats for lastActivity
+
       const { prevStart, prevEnd } = getPreviousPeriod(start, end);
       const previousChats = await fetchChats(prevStart, prevEnd);
 
+      // --- Unique and Active Users ---
       const currentUniqueUsers = getUniqueUsers(currentChats);
-      const previousUniqueUsers = getUniqueUsers(previousChats);
 
-      // --- Active Users (last 2 weeks from today) ---
       const day = new Date();
       day.setHours(23, 59, 59, 999);
-
       const twoWeeksAgo = new Date();
       twoWeeksAgo.setDate(day.getDate() - 13);
       twoWeeksAgo.setHours(0, 0, 0, 0);
@@ -162,11 +174,9 @@ export const getReachActivationMetricsHandler = () => {
       const last2WeeksChats = await fetchChats(twoWeeksAgo, day);
       const activeUsers = getUniqueUsers(last2WeeksChats);
 
-      // Previous 14-day period before last 2 weeks
       const prevTwoWeeksStart = new Date();
       prevTwoWeeksStart.setDate(twoWeeksAgo.getDate() - 14);
       prevTwoWeeksStart.setHours(0, 0, 0, 0);
-
       const prevTwoWeeksEnd = new Date();
       prevTwoWeeksEnd.setDate(twoWeeksAgo.getDate() - 1);
       prevTwoWeeksEnd.setHours(23, 59, 59, 999);
@@ -177,15 +187,41 @@ export const getReachActivationMetricsHandler = () => {
       );
       const previousActiveUsers = getUniqueUsers(prev2WeeksChats);
 
+      // --- Map patient info ---
+      const patientsData = await db.select().from(patient);
+      const patientsMap = new Map(patientsData.map((p) => [p.id, p]));
+
+      // --- Map user list with lastActivity from latest message ---
+      const mapUserList = (userIds: Set<string>) =>
+        Array.from(userIds).map((id) => {
+          const userChats = allChats.filter((c) => c.patientId === id);
+          let lastActivity: string | null = null;
+
+          userChats.forEach((chat) => {
+            if (chat.messages?.length) {
+              const latestMsgTime = chat.messages
+                .map((m: any) => new Date(m.timestamp))
+                .sort((a: Date, b: Date) => b.getTime() - a.getTime())[0];
+              if (!lastActivity || new Date(lastActivity) < latestMsgTime) {
+                lastActivity = latestMsgTime.toISOString();
+              }
+            }
+          });
+
+          const patientData = patientsMap.get(id);
+
+          return {
+            id,
+            name: patientData?.name || "Unknown",
+            phone: patientData?.phoneNumber || "",
+            lastActivity,
+          };
+        });
+
       // --- Retention Rate ---
-      // ------------------ FETCH ALL CHATS (CURRENT PERIOD) ------------------
-      const allChats = await fetchChats();
-
-      // 1. Find each user's FIRST session
       const firstSessionsMap = new Map<string, Date>();
-
       allChats.forEach((chat) => {
-        const firstMsg = new Date(chat.sessionStarted); // corrected
+        const firstMsg = new Date(chat.sessionStarted);
         if (
           !firstSessionsMap.has(chat.patientId) ||
           firstSessionsMap.get(chat.patientId)! > firstMsg
@@ -194,44 +230,28 @@ export const getReachActivationMetricsHandler = () => {
         }
       });
 
-      // 2. Count retained users (returned within 14 days using lastMessageAt)
       let retainedCount = 0;
-
       firstSessionsMap.forEach((firstDate, patientId) => {
         const retentionEnd = new Date(firstDate);
         retentionEnd.setDate(retentionEnd.getDate() + 14);
-
-        const hasReturn = allChats.some((chat) => {
-          const lastMsg = chat.lastMessageAt
-            ? new Date(chat.lastMessageAt)
-            : null;
-
-          return (
+        const hasReturn = allChats.some(
+          (chat) =>
             chat.patientId === patientId &&
-            lastMsg !== null &&
-            lastMsg > firstDate && // returned after first session
-            lastMsg <= retentionEnd // within 14 days
-          );
-        });
-
+            new Date(chat.session_started) > firstDate &&
+            new Date(chat.session_started) <= retentionEnd
+        );
         if (hasReturn) retainedCount++;
       });
-
-      // Retention Rate %
       const retentionRate = (retainedCount / firstSessionsMap.size) * 100 || 0;
 
-      // ------------------ FETCH PREVIOUS PERIOD (14 days earlier) ------------------
+      // --- Previous Retention Rate ---
       const prevAllChats = await fetchChats(
         new Date(now.getTime() - 28 * 24 * 60 * 60 * 1000),
         new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)
       );
-
-      // 3. First sessions for previous period
       const prevFirstSessionsMap = new Map<string, Date>();
-
       prevAllChats.forEach((chat) => {
-        const firstMsg = new Date(chat.sessionStarted);
-
+        const firstMsg = new Date(chat.session_started);
         if (
           !prevFirstSessionsMap.has(chat.patientId) ||
           prevFirstSessionsMap.get(chat.patientId)! > firstMsg
@@ -240,30 +260,18 @@ export const getReachActivationMetricsHandler = () => {
         }
       });
 
-      // 4. Count previous retained users
       let prevRetainedCount = 0;
-
       prevFirstSessionsMap.forEach((firstDate, patientId) => {
         const retentionEnd = new Date(firstDate);
         retentionEnd.setDate(retentionEnd.getDate() + 14);
-
-        const hasReturn = prevAllChats.some((chat) => {
-          const lastMsg = chat.lastMessageAt
-            ? new Date(chat.lastMessageAt)
-            : null;
-
-          return (
+        const hasReturn = prevAllChats.some(
+          (chat) =>
             chat.patientId === patientId &&
-            lastMsg !== null &&
-            lastMsg > firstDate &&
-            lastMsg <= retentionEnd
-          );
-        });
-
+            new Date(chat.session_started) > firstDate &&
+            new Date(chat.session_started) <= retentionEnd
+        );
         if (hasReturn) prevRetainedCount++;
       });
-
-      // Previous Retention Rate
       const previousRetentionRate =
         (prevRetainedCount / prevFirstSessionsMap.size) * 100 || 0;
 
@@ -290,6 +298,7 @@ export const getReachActivationMetricsHandler = () => {
       ).length;
       const churnRate = (churnCount / prevMonthUsers.size) * 100 || 0;
 
+      // --- Previous Churn Rate ---
       const prevPrevMonthStart = new Date(
         prevMonthStart.getFullYear(),
         prevMonthStart.getMonth() - 1,
@@ -309,10 +318,10 @@ export const getReachActivationMetricsHandler = () => {
         prevPrevMonthEnd
       );
       const prevPrevMonthUsers = getUniqueUsers(prevPrevMonthChats);
+
       const prevChurnCount = Array.from(prevPrevMonthUsers).filter(
         (u) => !prevMonthUsers.has(u)
       ).length;
-
       const previousChurnRate =
         (prevChurnCount / prevPrevMonthUsers.size) * 100 || 0;
 
@@ -326,8 +335,7 @@ export const getReachActivationMetricsHandler = () => {
         0
       );
 
-      // --- Onboarding (date filtered) ---
-      const patientsData = await db.select().from(patient);
+      // --- Onboarding Completion ---
       const onboardedPatients = patientsData.filter(
         (p) =>
           p.createdAt >= start &&
@@ -362,9 +370,8 @@ export const getReachActivationMetricsHandler = () => {
 
       for (let i = 6; i >= 0; i--) {
         const dayStart = new Date();
-        dayStart.setDate(dayStart.getDate() - i);
+        dayStart.setDate(today.getDate() - i);
         dayStart.setHours(0, 0, 0, 0);
-
         const dayEnd = new Date(dayStart);
         dayEnd.setHours(23, 59, 59, 999);
 
@@ -372,8 +379,8 @@ export const getReachActivationMetricsHandler = () => {
           last7DaysChats
             .filter(
               (chat) =>
-                new Date(chat.sessionStarted) >= dayStart &&
-                new Date(chat.sessionStarted) <= dayEnd
+                new Date(chat.session_started) >= dayStart &&
+                new Date(chat.session_started) <= dayEnd
             )
             .map((chat) => chat.patientId)
         );
@@ -383,6 +390,8 @@ export const getReachActivationMetricsHandler = () => {
           users: uniqueUsers.size,
         });
       }
+
+      // --- Final Response ---
       const response = {
         cards: [
           {
@@ -390,13 +399,14 @@ export const getReachActivationMetricsHandler = () => {
             value: currentUniqueUsers.size.toLocaleString(),
             trend: calculateTrend(
               currentUniqueUsers.size,
-              previousUniqueUsers.size
+              getUniqueUsers(previousChats).size
             ).toString(),
             trendUp:
               calculateTrend(
                 currentUniqueUsers.size,
-                previousUniqueUsers.size
+                getUniqueUsers(previousChats).size
               ) >= 0,
+            userList: mapUserList(currentUniqueUsers),
           },
           {
             title: "Active Users",
@@ -408,6 +418,7 @@ export const getReachActivationMetricsHandler = () => {
             ).toString(),
             trendUp:
               calculateTrend(activeUsers.size, previousActiveUsers.size) >= 0,
+            userList: mapUserList(activeUsers),
           },
           {
             title: "Retention Rate",
@@ -451,6 +462,7 @@ export const getReachActivationMetricsHandler = () => {
           },
         ],
         chartData,
+        allMessagesCount: allMessagesCount.messageCount,
       };
 
       return c.json(response, 200);

@@ -167,6 +167,7 @@ import { getUserMetricsHandler } from "./user-metrics";
 import { getEngagementMetricsHandler } from "./metrics/engagement";
 import { getLanguageModalityMetricsHandler } from "./metrics/language";
 import { getResponseQualityMetricsHandler } from "./metrics/responseQuality";
+import { getRetentionMetricsHandler } from "./metrics/retention";
 
 export const registerRoutes = () => {
   createPresentingComplaintHandler();
@@ -290,4 +291,5 @@ export const registerRoutes = () => {
   getEngagementMetricsHandler();
   getLanguageModalityMetricsHandler();
   getResponseQualityMetricsHandler();
+  getRetentionMetricsHandler();
 };
