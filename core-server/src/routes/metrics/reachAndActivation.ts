@@ -112,17 +112,36 @@ export const getReachActivationMetricsHandler = () => {
         from?: Date,
         to?: Date
       ): Promise<
-        { patientId: string; session_started: string; messages?: any[] }[]
+        {
+          patientId: string;
+          sessionStarted: string;
+          lastMessageAt: string | null;
+          messages?: {
+            sender: string;
+            message: string;
+            timestamp: string;
+          }[];
+        }[]
       > => {
+        let query = db.select().from(patientChats);
+
         if (from && to) {
-          return db
-            .select()
-            .from(patientChats)
-            .where(
-              sql`session_started >= ${from.toISOString()} AND session_started <= ${to.toISOString()}`
-            );
+          query = query.where(
+            sql`session_started >= ${from.toISOString()} AND session_started <= ${to.toISOString()}`
+          );
         }
-        return db.select().from(patientChats);
+
+        const rows = await query;
+
+        // map DB columns to correct camelCase fields and convert Dates to strings
+        return rows.map((row) => ({
+          patientId: row.patientId,
+          sessionStarted: row.sessionStarted.toISOString(), // <-- convert to string
+          lastMessageAt: row.lastMessageAt
+            ? row.lastMessageAt.toISOString()
+            : null, // <-- convert
+          messages: row.messages ?? undefined,
+        }));
       };
 
       const currentChats = await fetchChats(start, end);
@@ -159,10 +178,14 @@ export const getReachActivationMetricsHandler = () => {
       const previousActiveUsers = getUniqueUsers(prev2WeeksChats);
 
       // --- Retention Rate ---
+      // ------------------ FETCH ALL CHATS (CURRENT PERIOD) ------------------
       const allChats = await fetchChats();
+
+      // 1. Find each user's FIRST session
       const firstSessionsMap = new Map<string, Date>();
+
       allChats.forEach((chat) => {
-        const firstMsg = new Date(chat.session_started);
+        const firstMsg = new Date(chat.sessionStarted); // corrected
         if (
           !firstSessionsMap.has(chat.patientId) ||
           firstSessionsMap.get(chat.patientId)! > firstMsg
@@ -171,27 +194,44 @@ export const getReachActivationMetricsHandler = () => {
         }
       });
 
+      // 2. Count retained users (returned within 14 days using lastMessageAt)
       let retainedCount = 0;
+
       firstSessionsMap.forEach((firstDate, patientId) => {
         const retentionEnd = new Date(firstDate);
         retentionEnd.setDate(retentionEnd.getDate() + 14);
-        const hasReturn = allChats.some(
-          (chat) =>
+
+        const hasReturn = allChats.some((chat) => {
+          const lastMsg = chat.lastMessageAt
+            ? new Date(chat.lastMessageAt)
+            : null;
+
+          return (
             chat.patientId === patientId &&
-            new Date(chat.session_started) > firstDate &&
-            new Date(chat.session_started) <= retentionEnd
-        );
+            lastMsg !== null &&
+            lastMsg > firstDate && // returned after first session
+            lastMsg <= retentionEnd // within 14 days
+          );
+        });
+
         if (hasReturn) retainedCount++;
       });
+
+      // Retention Rate %
       const retentionRate = (retainedCount / firstSessionsMap.size) * 100 || 0;
 
+      // ------------------ FETCH PREVIOUS PERIOD (14 days earlier) ------------------
       const prevAllChats = await fetchChats(
         new Date(now.getTime() - 28 * 24 * 60 * 60 * 1000),
         new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)
       );
+
+      // 3. First sessions for previous period
       const prevFirstSessionsMap = new Map<string, Date>();
+
       prevAllChats.forEach((chat) => {
-        const firstMsg = new Date(chat.session_started);
+        const firstMsg = new Date(chat.sessionStarted);
+
         if (
           !prevFirstSessionsMap.has(chat.patientId) ||
           prevFirstSessionsMap.get(chat.patientId)! > firstMsg
@@ -200,18 +240,30 @@ export const getReachActivationMetricsHandler = () => {
         }
       });
 
+      // 4. Count previous retained users
       let prevRetainedCount = 0;
+
       prevFirstSessionsMap.forEach((firstDate, patientId) => {
         const retentionEnd = new Date(firstDate);
         retentionEnd.setDate(retentionEnd.getDate() + 14);
-        const hasReturn = prevAllChats.some(
-          (chat) =>
+
+        const hasReturn = prevAllChats.some((chat) => {
+          const lastMsg = chat.lastMessageAt
+            ? new Date(chat.lastMessageAt)
+            : null;
+
+          return (
             chat.patientId === patientId &&
-            new Date(chat.session_started) > firstDate &&
-            new Date(chat.session_started) <= retentionEnd
-        );
+            lastMsg !== null &&
+            lastMsg > firstDate &&
+            lastMsg <= retentionEnd
+          );
+        });
+
         if (hasReturn) prevRetainedCount++;
       });
+
+      // Previous Retention Rate
       const previousRetentionRate =
         (prevRetainedCount / prevFirstSessionsMap.size) * 100 || 0;
 
