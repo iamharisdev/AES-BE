@@ -5,7 +5,9 @@ import { patientChats } from "@/models/patient-chats";
 import { createRoute, z } from "@hono/zod-openapi";
 import { sql } from "drizzle-orm";
 
-// --- Response schema ---
+// =======================
+// RESPONSE SCHEMA
+// =======================
 const EngagementResponseSchema = z.object({
   cards: z.array(
     z.object({
@@ -45,88 +47,108 @@ const route = createRoute({
   },
 });
 
-// --- Helpers ---
+// =======================
+// HELPERS
+// =======================
 const safeNumber = (v: number) => (isNaN(v) || !isFinite(v) ? 0 : v);
 
 const calcTrend = (current: number, previous: number) => {
-  const c = safeNumber(current);
-  const p = safeNumber(previous);
-  if (p === 0 && c === 0) return { trend: "0", trendUp: true };
-  if (p === 0) return { trend: "100", trendUp: true };
-  const growth = ((c - p) / p) * 100;
+  if (previous === 0 && current === 0) return { trend: "0", trendUp: true };
+  if (previous === 0) return { trend: "100", trendUp: true };
+
+  const growth = ((current - previous) / previous) * 100;
   return { trend: growth.toFixed(1), trendUp: growth >= 0 };
 };
 
-// --- Split user messages into 24h sessions ---
+// =======================
+// 24-HOUR SESSION SPLIT
+// =======================
 const split24hSessions = (messages: any[]) => {
   if (!messages?.length) return [];
+
   const sorted = [...messages].sort(
     (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
   );
+
   const sessions: any[][] = [];
+  let sessionStart = new Date(sorted[0].timestamp).getTime();
   let currentSession: any[] = [];
-  let sessionStartTime = new Date(sorted[0].timestamp).getTime();
 
   for (const msg of sorted) {
-    const ts = new Date(msg.timestamp).getTime();
-    if (ts - sessionStartTime >= 24 * 60 * 60 * 1000) {
+    const time = new Date(msg.timestamp).getTime();
+
+    if (time - sessionStart >= 24 * 60 * 60 * 1000) {
       sessions.push(currentSession);
       currentSession = [];
-      sessionStartTime = ts;
+      sessionStart = time;
     }
+
     currentSession.push(msg);
   }
+
   if (currentSession.length) sessions.push(currentSession);
   return sessions;
 };
 
-// --- Compute user metrics ---
-const computeUserMetrics = (
-  sessionsByUser: Map<string, any[][]>,
-  rangeMs: number
-) => {
+// =======================
+// METRIC CALCULATION
+// =======================
+const computeUserMetrics = (sessionsByUser: Map<string, any[][]>, rangeMs: number) => {
   let totalSessions = 0;
   let totalMessages = 0;
   let totalDurationMs = 0;
-  const totalActiveDaysArr: number[] = [];
+  let totalActiveDaysArr: number[] = [];
   const messagesPerUserArr: number[] = [];
 
   for (const sessions of sessionsByUser.values()) {
     const activeDays = new Set<string>();
     let userMessages = 0;
+
     for (const sess of sessions) {
+      if (!sess.length) continue;
+
       totalSessions++;
-      userMessages += sess.length;
       totalMessages += sess.length;
+      userMessages += sess.length;
 
       const start = new Date(sess[0].timestamp).getTime();
       const end = new Date(sess[sess.length - 1].timestamp).getTime();
-      totalDurationMs += end - start;
+      totalDurationMs += Math.max(0, end - start);
 
-      for (const m of sess)
+      for (const m of sess) {
         activeDays.add(new Date(m.timestamp).toDateString());
+      }
     }
     totalActiveDaysArr.push(activeDays.size);
     messagesPerUserArr.push(userMessages);
   }
 
   const totalUsers = sessionsByUser.size || 1;
+
   const avgSessionsPerUser = totalSessions / totalUsers;
+
   const avgMessagesPerSession = totalSessions
     ? totalMessages / totalSessions
     : 0;
+
   const avgSessionDurationSec = totalSessions
     ? totalDurationMs / totalSessions / 1000
     : 0;
-  const weekDiff = rangeMs / (1000 * 60 * 60 * 24 * 7);
-  const weeklySessionsPerUser = avgSessionsPerUser / weekDiff;
+
+  // FIXED: weekly sessions must depend on actual calendar range
+  const weeks = rangeMs / (7 * 24 * 60 * 60 * 1000);
+  const weeklySessionsPerUser = weeks > 0 ? avgSessionsPerUser / weeks : 0;
+
   const avgActiveDaysPerUser = totalActiveDaysArr.length
-    ? totalActiveDaysArr.reduce((a, b) => a + b, 0) / totalActiveDaysArr.length
+    ? totalActiveDaysArr.reduce((a, b) => a + b, 0) /
+      totalActiveDaysArr.length
     : 0;
 
-  // Power Users = users with messages > 90th percentile
+  // FIXED: P90 calculation
   const sortedMsgs = [...messagesPerUserArr].sort((a, b) => a - b);
-  const p90 = sortedMsgs[Math.floor(sortedMsgs.length * 0.9)] || 0;
+  const index = Math.floor(0.9 * sortedMsgs.length);
+  const p90 = sortedMsgs[index] || 0;
+
   const powerUsers = messagesPerUserArr.filter((m) => m > p90).length;
 
   return {
@@ -141,6 +163,9 @@ const computeUserMetrics = (
   };
 };
 
+// =======================
+// DURATION FORMATTER
+// =======================
 function formatDuration(totalSeconds: number): string {
   if (!totalSeconds || totalSeconds <= 0) return "0s";
 
@@ -148,67 +173,65 @@ function formatDuration(totalSeconds: number): string {
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = Math.floor(totalSeconds % 60);
 
-  let result = "";
-  if (hours > 0) result += `${hours}h `;
-  if (minutes > 0 || hours > 0) result += `${minutes}m `;
-  result += `${seconds}s`;
+  let out = "";
+  if (hours) out += `${hours}h `;
+  if (minutes) out += `${minutes}m `;
+  out += `${seconds}s`;
 
-  return result.trim();
+  return out.trim();
 }
 
-// --- Fetch chats for chart (last 7 days from today) ---
+// =======================
+// CHART QUERIES
+// =======================
 const fetchChatsForChart = async () => {
   const now = new Date();
-  const startChart = new Date(now);
-  startChart.setDate(now.getDate() - 6); // last 7 days including today
-  startChart.setHours(0, 0, 0, 0);
+  const start = new Date(now);
+  start.setDate(start.getDate() - 6);
+  start.setHours(0, 0, 0, 0);
 
-  const endChart = new Date(now);
-  endChart.setHours(23, 59, 59, 999);
+  const end = new Date(now);
+  end.setHours(23, 59, 59, 999);
 
-  return db
-    .select()
-    .from(patientChats)
-    .where(
-      sql`session_started >= ${startChart.toISOString()} AND session_started <= ${endChart.toISOString()}`
-    );
+  return db.select().from(patientChats).where(
+    sql`session_started >= ${start.toISOString()} AND session_started <= ${end.toISOString()}`
+  );
 };
-// Accept array of objects with the minimal fields needed
-const generateChartData = (
-  chats: { patientId: string; sessionStarted: Date }[]
-) => {
-  const chartData: { day: string; users: number }[] = [];
+
+const generateChartData = (chats: any[]) => {
+  const result: any[] = [];
   const now = new Date();
 
   for (let i = 6; i >= 0; i--) {
-    const dayStart = new Date(now);
-    dayStart.setDate(now.getDate() - i);
-    dayStart.setHours(0, 0, 0, 0);
+    const d1 = new Date(now);
+    d1.setDate(now.getDate() - i);
+    d1.setHours(0, 0, 0, 0);
 
-    const dayEnd = new Date(dayStart);
-    dayEnd.setHours(23, 59, 59, 999);
+    const d2 = new Date(d1);
+    d2.setHours(23, 59, 59, 999);
 
-    // Unique patient count for that day
-    const uniqueUsers = new Set(
+    const users = new Set(
       chats
         .filter(
-          (s) =>
-            new Date(s.sessionStarted) >= dayStart &&
-            new Date(s.sessionStarted) <= dayEnd
+          (x) =>
+            new Date(x.sessionStarted) >= d1 &&
+            new Date(x.sessionStarted) <= d2
         )
-        .map((s) => s.patientId)
+        .map((x) => x.patientId)
     );
 
-    chartData.push({
-      day: dayStart.toLocaleDateString("en-US", { weekday: "short" }),
-      users: uniqueUsers.size,
+    result.push({
+      day: d1.toLocaleDateString("en-US", { weekday: "short" }),
+      users: users.size,
     });
   }
 
-  return chartData;
+  return result;
 };
 
-// --- Main Handler ---
+// =======================
+// MAIN HANDLER
+// =======================
 export const getEngagementMetricsHandler = () => {
   app.openapi(route, async (c) => {
     try {
@@ -222,28 +245,26 @@ export const getEngagementMetricsHandler = () => {
         start = new Date(startDateStr);
         end = new Date(endDateStr);
       } else {
-        // Fetch min/max from DB if no dates provided
-        const minRow = await db
-          .select({ min: sql`MIN(session_started)` })
-          .from(patientChats);
-        const maxRow = await db
-          .select({ max: sql`MAX(session_started)` })
-          .from(patientChats);
+        const minRow = await db.select({
+          min: sql`MIN(session_started)`,
+        }).from(patientChats);
 
-        const minDate = minRow?.[0]?.min;
-        const maxDate = maxRow?.[0]?.max;
+        const maxRow = await db.select({
+          max: sql`MAX(session_started)`,
+        }).from(patientChats);
 
-        if (!minDate || !maxDate) return c.json({ cards: [], chartData: [] });
+        if (!minRow?.[0]?.min || !maxRow?.[0]?.max)
+          return c.json({ cards: [], chartData: [] });
 
-        start = new Date(minDate);
-        end = new Date(maxDate);
+        start = new Date(minRow[0].min);
+        end = new Date(maxRow[0].max);
       }
 
       start.setHours(0, 0, 0, 0);
       end.setHours(23, 59, 59, 999);
+
       const rangeMs = end.getTime() - start.getTime();
 
-      // --- Fetch chats ---
       const fetchChats = async (from: Date, to: Date) => {
         return db
           .select()
@@ -255,126 +276,102 @@ export const getEngagementMetricsHandler = () => {
 
       const currentChats = await fetchChats(start, end);
 
-      // --- Previous period for trend ---
+      // PREVIOUS PERIOD FOR TREND
       let previousChats: any[] = [];
       if (startDateStr && endDateStr) {
         const diffDays = Math.ceil(rangeMs / (1000 * 3600 * 24));
         const prevStart = new Date(start);
         prevStart.setDate(prevStart.getDate() - diffDays);
-        prevStart.setHours(0, 0, 0, 0);
+
         const prevEnd = new Date(start);
         prevEnd.setHours(23, 59, 59, 999);
+
         previousChats = await fetchChats(prevStart, prevEnd);
       }
 
-      // --- Group sessions by user ---
-      const groupSessions = (chats: any[]) => {
+      // GROUP BY USER
+      const makeSessionMap = (rows: any[]) => {
         const map = new Map<string, any[][]>();
-        for (const chat of chats) {
+        for (const chat of rows) {
           const sessions = split24hSessions(chat.messages || []);
           if (!map.has(chat.patientId)) map.set(chat.patientId, []);
-          map.set(chat.patientId, [...map.get(chat.patientId)!, ...sessions]);
+          map.get(chat.patientId)!.push(...sessions);
         }
         return map;
       };
 
-      const currentSessionsByUser = groupSessions(currentChats);
-      const prevSessionsByUser = groupSessions(previousChats);
+      const currentMap = makeSessionMap(currentChats);
+      const prevMap = makeSessionMap(previousChats);
 
-      const currentMetrics = computeUserMetrics(currentSessionsByUser, rangeMs);
-      const prevMetrics = computeUserMetrics(prevSessionsByUser, rangeMs);
+      const currentMetrics = computeUserMetrics(currentMap, rangeMs);
+      const prevMetrics = computeUserMetrics(prevMap, rangeMs);
 
-      // --- Calculate trends ---
       const trends = {
-        totalSessions: calcTrend(
-          currentMetrics.totalSessions,
-          prevMetrics.totalSessions
-        ),
-        avgSessionsPerUser: calcTrend(
-          currentMetrics.avgSessionsPerUser,
-          prevMetrics.avgSessionsPerUser
-        ),
-        avgMessagesPerSession: calcTrend(
-          currentMetrics.avgMessagesPerSession,
-          prevMetrics.avgMessagesPerSession
-        ),
-        avgSessionDurationSec: calcTrend(
-          currentMetrics.avgSessionDurationSec,
-          prevMetrics.avgSessionDurationSec
-        ),
-        weeklySessionsPerUser: calcTrend(
-          currentMetrics.weeklySessionsPerUser,
-          prevMetrics.weeklySessionsPerUser
-        ),
-        avgActiveDaysPerUser: calcTrend(
-          currentMetrics.avgActiveDaysPerUser,
-          prevMetrics.avgActiveDaysPerUser
-        ),
-        powerUsers: calcTrend(
-          currentMetrics.powerUsers,
-          prevMetrics.powerUsers
-        ),
+        totalSessions: calcTrend(currentMetrics.totalSessions, prevMetrics.totalSessions),
+        avgSessionsPerUser: calcTrend(currentMetrics.avgSessionsPerUser, prevMetrics.avgSessionsPerUser),
+        avgMessagesPerSession: calcTrend(currentMetrics.avgMessagesPerSession, prevMetrics.avgMessagesPerSession),
+        avgSessionDurationSec: calcTrend(currentMetrics.avgSessionDurationSec, prevMetrics.avgSessionDurationSec),
+        weeklySessionsPerUser: calcTrend(currentMetrics.weeklySessionsPerUser, prevMetrics.weeklySessionsPerUser),
+        avgActiveDaysPerUser: calcTrend(currentMetrics.avgActiveDaysPerUser, prevMetrics.avgActiveDaysPerUser),
+        powerUsers: calcTrend(currentMetrics.powerUsers, prevMetrics.powerUsers),
       };
 
-      // --- Chart data (last 7 days) ---
-      const chartChats = (await fetchChatsForChart()) as Array<{
-        patientId: string;
-        sessionStarted: Date;
-      }>;
+      // CHART DATA
+      const chartChats = await fetchChatsForChart();
       const chartData = generateChartData(chartChats);
 
-      // --- Response ---
-      const response = {
-        cards: [
-          {
-            title: "Total Sessions",
-            value: currentMetrics.totalSessions.toString(),
-            trend: trends.totalSessions.trend,
-            trendUp: trends.totalSessions.trendUp,
-          },
-          {
-            title: "Avg Sessions per User",
-            value: currentMetrics.avgSessionsPerUser.toFixed(1),
-            trend: trends.avgSessionsPerUser.trend,
-            trendUp: trends.avgSessionsPerUser.trendUp,
-          },
-          {
-            title: "Avg Messages per Session",
-            value: currentMetrics.avgMessagesPerSession.toFixed(1),
-            trend: trends.avgMessagesPerSession.trend,
-            trendUp: trends.avgMessagesPerSession.trendUp,
-          },
-          {
-            title: "Avg Session Duration",
-            value: formatDuration(currentMetrics.avgSessionDurationSec),
-            trend: trends.avgSessionDurationSec.trend,
-            trendUp: trends.avgSessionDurationSec.trendUp,
-          },
-          {
-            title: "Weekly Sessions per User",
-            value: currentMetrics.weeklySessionsPerUser.toFixed(1),
-            trend: trends.weeklySessionsPerUser.trend,
-            trendUp: trends.weeklySessionsPerUser.trendUp,
-          },
-          {
-            title: "Total Active Days per User",
-            value: currentMetrics.avgActiveDaysPerUser.toFixed(1),
-            trend: trends.avgActiveDaysPerUser.trend,
-            trendUp: trends.avgActiveDaysPerUser.trendUp,
-          },
-          {
-            title: "Power Users",
-            value: currentMetrics.powerUsers.toString(),
-            trend: trends.powerUsers.trend,
-            trendUp: trends.powerUsers.trendUp,
-          },
-        ],
-        chartData,
-      };
-
-      return c.json(response, 200);
+      return c.json(
+        {
+          cards: [
+            {
+              title: "Total Sessions",
+              value: String(currentMetrics.totalSessions),
+              trend: trends.totalSessions.trend,
+              trendUp: trends.totalSessions.trendUp,
+            },
+            {
+              title: "Avg Sessions per User",
+              value: currentMetrics.avgSessionsPerUser.toFixed(1),
+              trend: trends.avgSessionsPerUser.trend,
+              trendUp: trends.avgSessionsPerUser.trendUp,
+            },
+            {
+              title: "Avg Messages per Session",
+              value: currentMetrics.avgMessagesPerSession.toFixed(1),
+              trend: trends.avgMessagesPerSession.trend,
+              trendUp: trends.avgMessagesPerSession.trendUp,
+            },
+            {
+              title: "Avg Session Duration",
+              value: formatDuration(currentMetrics.avgSessionDurationSec),
+              trend: trends.avgSessionDurationSec.trend,
+              trendUp: trends.avgSessionDurationSec.trendUp,
+            },
+            {
+              title: "Weekly Sessions per User",
+              value: currentMetrics.weeklySessionsPerUser.toFixed(1),
+              trend: trends.weeklySessionsPerUser.trend,
+              trendUp: trends.weeklySessionsPerUser.trendUp,
+            },
+            {
+              title: "Total Active Days per User",
+              value: currentMetrics.avgActiveDaysPerUser.toFixed(1),
+              trend: trends.avgActiveDaysPerUser.trend,
+              trendUp: trends.avgActiveDaysPerUser.trendUp,
+            },
+            {
+              title: "Power Users",
+              value: String(currentMetrics.powerUsers),
+              trend: trends.powerUsers.trend,
+              trendUp: trends.powerUsers.trendUp,
+            },
+          ],
+          chartData,
+        },
+        200
+      );
     } catch (err) {
-      console.error("Error in engagement metrics:", err);
+      console.error("ERROR in engagement metrics:", err);
       return c.json(
         { ok: false, error: "Failed to fetch engagement metrics" },
         500

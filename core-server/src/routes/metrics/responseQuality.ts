@@ -29,8 +29,8 @@ const route = createRoute({
   middleware: [jwtMiddleware],
   request: {
     query: z.object({
-      startDate: z.string().optional().describe("Start of range (ISO)"),
-      endDate: z.string().optional().describe("End of range (ISO)"),
+      startDate: z.string().optional(),
+      endDate: z.string().optional(),
     }),
   },
   responses: {
@@ -41,13 +41,13 @@ const route = createRoute({
   },
 });
 
-// ---------- Trend Helper ----------
+// ---------- Helpers ----------
 const calculateTrend = (current: number, previous: number) => {
   if (previous === 0) return current > 0 ? 100 : 0;
   return Math.round(((current - previous) / previous) * 100);
 };
 
-// ---------- Fetch chats helper ----------
+// Fetch chats in a date range (or all if range is undefined)
 const fetchChats = (from?: Date, to?: Date) => {
   if (from && to) {
     return db
@@ -63,30 +63,31 @@ const fetchChats = (from?: Date, to?: Date) => {
   return db.select().from(patientChats);
 };
 
-// ---------- Compute latency ----------
-const computeLatency = (chats: (typeof patientChats)[]) => {
+// Compute latency between user and bot messages strictly in date range
+const computeLatency = (chats: any[], start: Date, end: Date) => {
   let totalLatency = 0;
   let count = 0;
 
   for (const chat of chats) {
-    const msgs = (chat.messages || []).sort(
-      (a: any, b: any) =>
-        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-    );
+    const msgs = (chat.messages || [])
+      .filter((m: any) => {
+        const ts = new Date(m.timestamp);
+        return ts >= start && ts <= end;
+      })
+      .sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
     let lastUserTime: Date | null = null;
 
     for (const msg of msgs) {
       const sender = msg.sender?.toLowerCase();
       const ts = new Date(msg.timestamp);
-
       if (isNaN(ts.getTime())) continue;
 
       if (sender === "user") {
         lastUserTime = ts;
       } else if ((sender === "assistant" || sender === "bot") && lastUserTime) {
         const diff = ts.getTime() - lastUserTime.getTime();
-        if (diff >= 0 && diff < 5 * 60 * 1000) {
+        if (diff >= 0 && diff < 5 * 60 * 1000) { // ignore delays >5min
           totalLatency += diff;
           count++;
         }
@@ -98,22 +99,20 @@ const computeLatency = (chats: (typeof patientChats)[]) => {
   return { avg: count ? totalLatency / count : 0, count };
 };
 
+// Format seconds into human-readable string
 function formatDuration(totalSeconds: number): string {
   if (!totalSeconds || totalSeconds <= 0) return "0s";
-
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = Math.floor(totalSeconds % 60);
-
   let result = "";
   if (hours > 0) result += `${hours}h `;
   if (minutes > 0 || hours > 0) result += `${minutes}m `;
   result += `${seconds}s`;
-
   return result.trim();
 }
 
-// ---------- Handler ----------
+// ---------- Main Handler ----------
 export const getResponseQualityMetricsHandler = () => {
   app.openapi(route, async (c) => {
     try {
@@ -129,50 +128,39 @@ export const getResponseQualityMetricsHandler = () => {
         end = new Date(endDateStr);
         end.setHours(23, 59, 59, 999);
       } else {
-        // Fetch full DB range if dates are not provided
-        const minRow = await db
-          .select({ min: patientChats.sessionStarted })
-          .from(patientChats)
-          .limit(1);
-        const maxRow = await db
-          .select({ max: patientChats.sessionStarted })
-          .from(patientChats)
-          .limit(1);
-
+        // Full DB range if dates not provided
+        const minRow = await db.select({ min: patientChats.sessionStarted }).from(patientChats).limit(1);
+        const maxRow = await db.select({ max: patientChats.sessionStarted }).from(patientChats).limit(1);
         const minDate = minRow?.[0]?.min;
         const maxDate = maxRow?.[0]?.max;
-
-        if (!minDate || !maxDate) {
-          return c.json({ cards: [] });
-        }
-
+        if (!minDate || !maxDate) return c.json({ cards: [] }, 200);
         start = new Date(minDate);
         start.setHours(0, 0, 0, 0);
         end = new Date(maxDate);
         end.setHours(23, 59, 59, 999);
       }
 
-      // --- Previous period for trend ---
+      // Previous period for trend calculation
       const rangeMs = end.getTime() - start.getTime();
       const prevStart = new Date(start.getTime() - rangeMs);
       const prevEnd = new Date(end.getTime() - rangeMs);
 
-      // --- Fetch chats ---
+      // Fetch chats
       const currentChats = await fetchChats(start, end);
       const previousChats = await fetchChats(prevStart, prevEnd);
 
-      // --- Compute latency ---
-      const current = computeLatency(currentChats);
-      const previous = computeLatency(previousChats);
+      // Compute latency
+      const current = computeLatency(currentChats, start, end);
+      const previous = computeLatency(previousChats, prevStart, prevEnd);
+
       const trend = calculateTrend(current.avg, previous.avg);
 
-      // --- Build response ---
       return c.json(
         {
           cards: [
             {
-              title: "Bot Response Time (ms)",
-              value: formatDuration(current.avg),
+              title: "Bot Response Time",
+              value: formatDuration(current.avg / 1000), // convert ms → seconds
               subtitle: `${current.count} responses analyzed`,
               trend: trend.toString(),
               trendUp: trend >= 0,
