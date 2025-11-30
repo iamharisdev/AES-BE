@@ -237,8 +237,8 @@ export const getReachActivationMetricsHandler = () => {
         const hasReturn = allChats.some(
           (chat) =>
             chat.patientId === patientId &&
-            new Date(chat.session_started) > firstDate &&
-            new Date(chat.session_started) <= retentionEnd
+            new Date(chat.sessionStarted) > firstDate &&
+            new Date(chat.sessionStarted) <= retentionEnd
         );
         if (hasReturn) retainedCount++;
       });
@@ -251,7 +251,7 @@ export const getReachActivationMetricsHandler = () => {
       );
       const prevFirstSessionsMap = new Map<string, Date>();
       prevAllChats.forEach((chat) => {
-        const firstMsg = new Date(chat.session_started);
+        const firstMsg = new Date(chat.sessionStarted);
         if (
           !prevFirstSessionsMap.has(chat.patientId) ||
           prevFirstSessionsMap.get(chat.patientId)! > firstMsg
@@ -267,8 +267,8 @@ export const getReachActivationMetricsHandler = () => {
         const hasReturn = prevAllChats.some(
           (chat) =>
             chat.patientId === patientId &&
-            new Date(chat.session_started) > firstDate &&
-            new Date(chat.session_started) <= retentionEnd
+            new Date(chat.sessionStarted) > firstDate &&
+            new Date(chat.sessionStarted) <= retentionEnd
         );
         if (hasReturn) prevRetainedCount++;
       });
@@ -379,8 +379,8 @@ export const getReachActivationMetricsHandler = () => {
           last7DaysChats
             .filter(
               (chat) =>
-                new Date(chat.session_started) >= dayStart &&
-                new Date(chat.session_started) <= dayEnd
+                new Date(chat.sessionStarted) >= dayStart &&
+                new Date(chat.sessionStarted) <= dayEnd
             )
             .map((chat) => chat.patientId)
         );

@@ -15,9 +15,14 @@ export const patientChats = pgTable("patient_chats", {
   // store the entire message array as JSONB
   messages: jsonb("messages").$type<
     {
+      kind: string;
+      msg_id: string;
       sender: string;
       message: string;
+      direction: string;
       timestamp: string;
+      current_flow: string;
+      current_language: string;
 
       [key: string]: any;
     }[]

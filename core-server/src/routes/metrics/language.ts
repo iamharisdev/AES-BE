@@ -36,8 +36,8 @@ const route = createRoute({
   middleware: [jwtMiddleware],
   request: {
     query: z.object({
-      startDate: z.string().optional().describe("Start of range (ISO)"),
-      endDate: z.string().optional().describe("End of range (ISO)"),
+      startDate: z.string().optional(),
+      endDate: z.string().optional(),
     }),
   },
   responses: {
@@ -50,13 +50,12 @@ const route = createRoute({
   },
 });
 
-// --- Trend helper ---
 const calculateTrend = (current: number, previous: number) => {
   if (previous === 0) return current > 0 ? 100 : 0;
   return ((current - previous) / previous) * 100;
 };
 
-// --- Main Handler ---
+// --- Handler ---
 export const getLanguageModalityMetricsHandler = () => {
   app.openapi(route, async (c) => {
     try {
@@ -92,7 +91,6 @@ export const getLanguageModalityMetricsHandler = () => {
 
       const rangeMs = end.getTime() - start.getTime();
 
-      // Previous period
       const prevStart = new Date(start.getTime() - rangeMs - 1000);
       const prevEnd = new Date(start.getTime() - 1000);
 
@@ -102,8 +100,7 @@ export const getLanguageModalityMetricsHandler = () => {
             .select()
             .from(patientChats)
             .where(
-              sql`session_started >= ${from.toISOString()} 
-              AND session_started <= ${to.toISOString()}`
+              sql`session_started >= ${from.toISOString()} AND session_started <= ${to.toISOString()}`
             );
         }
         return db.select().from(patientChats);
@@ -112,14 +109,14 @@ export const getLanguageModalityMetricsHandler = () => {
       const currentSessions = await fetchChats(start, end);
       const previousSessions = await fetchChats(prevStart, prevEnd);
 
-      // --- METRICS CALCULATION ---
+      // --- METRICS ---
       const calculateMetrics = (sessions: typeof currentSessions) => {
-        const sessionsByUser = new Map<string, typeof sessions>();
+        const sessionsByUser = new Map();
 
         for (const s of sessions) {
           const userId = s.patientId;
           if (!sessionsByUser.has(userId)) sessionsByUser.set(userId, []);
-          sessionsByUser.get(userId)!.push(s);
+          sessionsByUser.get(userId).push(s);
         }
 
         let voiceMajority = 0;
@@ -132,35 +129,36 @@ export const getLanguageModalityMetricsHandler = () => {
         for (const userSessions of sessionsByUser.values()) {
           let voiceCount = 0;
           let textCount = 0;
-          let totalMsg = 0;
+          let total = 0;
 
           let allUrdu = true;
           let hasEnglish = false;
 
           for (const s of userSessions) {
             for (const msg of s.messages ?? []) {
-              // Count modality
+              // --- Modality based on msg.kind ---
               if (msg.kind === "voice") voiceCount++;
               if (msg.kind === "text") textCount++;
 
-              // Count language
-              const lang = (msg.language || "").toLowerCase();
+              // --- Language based on msg.current_language ---
+              const lang = (msg.current_language || "").toLowerCase().trim();
+
               if (lang !== "ur") allUrdu = false;
               if (lang === "en") hasEnglish = true;
 
-              totalMsg++;
+              total++;
             }
           }
 
-          if (totalMsg === 0) continue;
+          if (total === 0) continue;
 
-          const voicePerc = (voiceCount / totalMsg) * 100;
-          const textPerc = (textCount / totalMsg) * 100;
+          const voicePerc = (voiceCount / total) * 100;
+          const textPerc = (textCount / total) * 100;
 
-          // --- Modality Rules ---
-          if (voicePerc >= 80 && textPerc <= 20) voiceMajority++;
-          else if (textPerc >= 80 && voicePerc <= 20) textMajority++;
-          else if (voicePerc > 20 && voicePerc < 80) bothUsers++;
+          // --- Modality Rules (Fixed based on your requirement) ---
+          if (voicePerc >= 80) voiceMajority++; // voice ≥ 80%
+          else if (voicePerc <= 20) textMajority++; // voice ≤ 20% → text user
+          else if (voicePerc > 20 && voicePerc < 80) bothUsers++; // between 20% & 80%
 
           // --- Language Rules ---
           if (allUrdu) romanUrduUsers++;
@@ -187,36 +185,34 @@ export const getLanguageModalityMetricsHandler = () => {
       const currentMetrics = calculateMetrics(currentSessions);
       const prevMetrics = calculateMetrics(previousSessions);
 
-      // --- Chart Data ---
       const chartData = [
         {
           name: "Voice Majority Users",
           value: currentMetrics.voiceMajority,
-          percentage: currentMetrics.voiceMajorityPerc,
+          percentage: currentMetrics.voiceMajorityPerc.toFixed(2),
         },
         {
           name: "Text Majority Users",
           value: currentMetrics.textMajority,
-          percentage: currentMetrics.textMajorityPerc,
+          percentage: currentMetrics.textMajorityPerc.toFixed(2),
         },
         {
           name: "Both Users",
           value: currentMetrics.bothUsers,
-          percentage: currentMetrics.bothUsersPerc,
+          percentage: currentMetrics.bothUsersPerc.toFixed(2),
         },
         {
           name: "Roman Urdu Users",
           value: currentMetrics.romanUrduUsers,
-          percentage: currentMetrics.romanUrduUsersPerc,
+          percentage: currentMetrics.romanUrduUsersPerc.toFixed(2),
         },
         {
           name: "English Users",
           value: currentMetrics.englishUsers,
-          percentage: currentMetrics.englishUsersPerc,
+          percentage: currentMetrics.englishUsersPerc.toFixed(2),
         },
       ];
 
-      // --- Cards Response ---
       const response = {
         cards: [
           {
