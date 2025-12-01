@@ -14,6 +14,7 @@ const LanguageModalityResponseSchema = z.object({
       subtitle: z.string().optional(),
       trend: z.string(),
       trendUp: z.boolean(),
+      avgSessionDuration: z.number(), // added for new requirement
     })
   ),
   chartData: z.array(
@@ -24,6 +25,24 @@ const LanguageModalityResponseSchema = z.object({
     })
   ),
 });
+
+// =======================
+// DURATION FORMATTER
+// =======================
+function formatDuration(totalSeconds: number): string {
+  if (!totalSeconds || totalSeconds <= 0) return "0s";
+
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = Math.floor(totalSeconds % 60);
+
+  let out = "";
+  if (hours) out += `${hours}h `;
+  if (minutes) out += `${minutes}m `;
+  out += `${seconds}s`;
+
+  return out.trim();
+}
 
 // --- Route ---
 const route = createRoute({
@@ -90,7 +109,6 @@ export const getLanguageModalityMetricsHandler = () => {
       }
 
       const rangeMs = end.getTime() - start.getTime();
-
       const prevStart = new Date(start.getTime() - rangeMs - 1000);
       const prevEnd = new Date(start.getTime() - 1000);
 
@@ -122,11 +140,17 @@ export const getLanguageModalityMetricsHandler = () => {
         let voiceMajority = 0;
         let textMajority = 0;
         let bothUsers = 0;
-
         let romanUrduUsers = 0;
         let englishUsers = 0;
 
-        for (const userSessions of sessionsByUser.values()) {
+        // --- session durations for average calculation ---
+        const voiceSessionsArr: number[] = [];
+        const textSessionsArr: number[] = [];
+        const bothSessionsArr: number[] = [];
+        const romanUrduSessionsArr: number[] = [];
+        const englishSessionsArr: number[] = [];
+
+        for (const [userId, userSessions] of sessionsByUser.entries()) {
           let voiceCount = 0;
           let textCount = 0;
           let total = 0;
@@ -134,15 +158,24 @@ export const getLanguageModalityMetricsHandler = () => {
           let allUrdu = true;
           let hasEnglish = false;
 
+          // --- collect session messages by day for avg duration ---
+          const sessionsByDay: Record<string, any[]> = {};
+
           for (const s of userSessions) {
             for (const msg of s.messages ?? []) {
-              // --- Modality based on msg.kind ---
+              const ts = msg.timestamp ? new Date(msg.timestamp) : new Date();
+              const dayKey = `${ts.getFullYear()}-${
+                ts.getMonth() + 1
+              }-${ts.getDate()}`;
+              if (!sessionsByDay[dayKey]) sessionsByDay[dayKey] = [];
+              sessionsByDay[dayKey].push(msg);
+
+              // --- count for modality ---
               if (msg.kind === "voice") voiceCount++;
               if (msg.kind === "text") textCount++;
 
-              // --- Language based on msg.current_language ---
+              // --- count for language ---
               const lang = (msg.current_language || "").toLowerCase().trim();
-
               if (lang !== "ur") allUrdu = false;
               if (lang === "en") hasEnglish = true;
 
@@ -153,19 +186,55 @@ export const getLanguageModalityMetricsHandler = () => {
           if (total === 0) continue;
 
           const voicePerc = (voiceCount / total) * 100;
-          const textPerc = (textCount / total) * 100;
 
-          // --- Modality Rules (Fixed based on your requirement) ---
-          if (voicePerc >= 80) voiceMajority++; // voice ≥ 80%
-          else if (voicePerc <= 20) textMajority++; // voice ≤ 20% → text user
-          else if (voicePerc > 20 && voicePerc < 80) bothUsers++; // between 20% & 80%
+          // --- calculate avg session duration for this user ---
+          const sessionDurations: number[] = Object.values(sessionsByDay).map(
+            (msgs) => {
+              msgs.sort(
+                (a, b) =>
+                  new Date(a.timestamp).getTime() -
+                  new Date(b.timestamp).getTime()
+              );
+              const startTime = new Date(msgs[0].timestamp).getTime();
+              const endTime = new Date(
+                msgs[msgs.length - 1].timestamp
+              ).getTime();
+              return (endTime - startTime) / 1000; // in seconds
+            }
+          );
 
-          // --- Language Rules ---
-          if (allUrdu) romanUrduUsers++;
-          if (hasEnglish) englishUsers++;
+          const userTotalSessionDuration = sessionDurations.reduce(
+            (a, b) => a + b,
+            0
+          );
+
+          // --- User classification ---
+          if (voicePerc >= 80) {
+            voiceMajority++;
+            voiceSessionsArr.push(...sessionDurations);
+          } else if (voicePerc <= 20) {
+            textMajority++;
+            textSessionsArr.push(...sessionDurations);
+          } else {
+            bothUsers++;
+            bothSessionsArr.push(...sessionDurations);
+          }
+
+          if (allUrdu) {
+            romanUrduUsers++;
+            romanUrduSessionsArr.push(...sessionDurations);
+          }
+
+          if (hasEnglish) {
+            englishUsers++;
+            englishSessionsArr.push(...sessionDurations);
+          }
         }
 
         const totalUsers = sessionsByUser.size || 1;
+
+        const avg = (arr: number[]) =>
+          arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
 
         return {
           voiceMajority,
@@ -179,6 +248,13 @@ export const getLanguageModalityMetricsHandler = () => {
           bothUsersPerc: (bothUsers / totalUsers) * 100,
           romanUrduUsersPerc: (romanUrduUsers / totalUsers) * 100,
           englishUsersPerc: (englishUsers / totalUsers) * 100,
+
+          // --- new avg session duration per category ---
+          avgVoiceDuration: avg(voiceSessionsArr),
+          avgTextDuration: avg(textSessionsArr),
+          avgBothDuration: avg(bothSessionsArr),
+          avgRomanUrduDuration: avg(romanUrduSessionsArr),
+          avgEnglishDuration: avg(englishSessionsArr),
         };
       };
 
@@ -224,6 +300,7 @@ export const getLanguageModalityMetricsHandler = () => {
               prevMetrics.voiceMajority
             ).toFixed(1),
             trendUp: currentMetrics.voiceMajority >= prevMetrics.voiceMajority,
+            avgSessionDuration: formatDuration(currentMetrics.avgVoiceDuration),
           },
           {
             title: "Text Majority Users",
@@ -234,6 +311,7 @@ export const getLanguageModalityMetricsHandler = () => {
               prevMetrics.textMajority
             ).toFixed(1),
             trendUp: currentMetrics.textMajority >= prevMetrics.textMajority,
+            avgSessionDuration: formatDuration(currentMetrics.avgTextDuration),
           },
           {
             title: "Both (Text + Voice) Users",
@@ -244,6 +322,7 @@ export const getLanguageModalityMetricsHandler = () => {
               prevMetrics.bothUsers
             ).toFixed(1),
             trendUp: currentMetrics.bothUsers >= prevMetrics.bothUsers,
+            avgSessionDuration: formatDuration(currentMetrics.avgBothDuration),
           },
           {
             title: "Roman Urdu–Only Users",
@@ -255,6 +334,9 @@ export const getLanguageModalityMetricsHandler = () => {
             ).toFixed(1),
             trendUp:
               currentMetrics.romanUrduUsers >= prevMetrics.romanUrduUsers,
+            avgSessionDuration: formatDuration(
+              currentMetrics.avgRomanUrduDuration
+            ),
           },
           {
             title: "English Users",
@@ -265,6 +347,9 @@ export const getLanguageModalityMetricsHandler = () => {
               prevMetrics.englishUsers
             ).toFixed(1),
             trendUp: currentMetrics.englishUsers >= prevMetrics.englishUsers,
+            avgSessionDuration: formatDuration(
+              currentMetrics.avgEnglishDuration
+            ),
           },
         ],
         chartData,
