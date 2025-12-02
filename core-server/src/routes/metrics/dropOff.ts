@@ -1,51 +1,45 @@
 import app from "@/app";
 import { db } from "@/db";
 import { jwtMiddleware } from "@/middleware/jwt";
+import { createRoute, z } from "@hono/zod-openapi";
+import { eq, gte, lte } from "drizzle-orm";
+
 import { patient } from "@/models/patient";
+import { emr } from "@/models/emr";
 import { trimester } from "@/models/trimester";
-import { previousPregnancy } from "@/models/previous-pregnancy";
-import { obsHistory } from "@/models/obstetric-history";
 import { currentPregnancy } from "@/models/current-pregnancy";
 import { gynecologicalHistory } from "@/models/gynecological-history";
-import { createRoute, z } from "@hono/zod-openapi";
-import { sql } from "drizzle-orm";
+import { obsHistory } from "@/models/obstetric-history";
+import { previousPregnancy } from "@/models/previous-pregnancy";
 
-// --- Response schema ---
-const EMRDropOffResponseSchema = z.object({
-  onboarding: z.object({
-    totalUsers: z.number(),
-    cnicEntered: z.number(),
-    nameEntered: z.number(),
-    menuEntered: z.number(),
-    dropOff: z.object({
-      cnic: z.string(),
-      name: z.string(),
-      menu: z.string(),
-    }),
+const DashboardResponseSchema = z.object({
+  kpis: z.object({
+    emrCompletionRate: z.string(),
+    overallDropoffRate: z.string(),
   }),
-  emr: z.object({
-    started: z.number(),
-    layer1: z.object({
-      completed: z.number(),
-      dropOffBeforeLayer1: z.string(),
-    }),
-    layer2: z.object({
-      started: z.number(),
-      completed: z.number(),
-      dropOffAfterLayer1: z.string(),
-      dropOffBeforeLayer2: z.string(),
-    }),
-    overallCompletionRate: z.string(),
-  }),
+  onboarding: z.array(
+    z.object({
+      label: z.string(),
+      value: z.number(),
+      total: z.number(),
+      metricKey: z.string(),
+    })
+  ),
+  emr: z.array(
+    z.object({
+      label: z.string(),
+      value: z.number(),
+      total: z.number(),
+      metricKey: z.string(),
+    })
+  ),
 });
 
-// --- Route ---
 const route = createRoute({
   method: "get",
-  operationId: "getEMRDropOffMetrics",
+  operationId: "getDashboardMetrics",
   tags: ["Dashboard"],
   path: "/dashboard/dropoff",
-  summary: "Get EMR Drop-off Metrics",
   security: [{ jwt: [] }],
   middleware: [jwtMiddleware],
   request: {
@@ -56,203 +50,188 @@ const route = createRoute({
   },
   responses: {
     200: {
-      content: { "application/json": { schema: EMRDropOffResponseSchema } },
-      description: "EMR Drop-off Metrics",
+      content: { "application/json": { schema: DashboardResponseSchema } },
+      description: "EMR & Onboarding KPIs",
     },
   },
 });
 
-// --- Handler ---
 export const getEMRDropOffHandler = () => {
   app.openapi(route, async (c) => {
     try {
       const startDateStr = c.req.query("startDate");
       const endDateStr = c.req.query("endDate");
 
-      let start: Date;
-      let end: Date;
+      let startDate: Date | undefined;
+      let endDate: Date | undefined;
 
-      if (startDateStr && endDateStr) {
-        start = new Date(startDateStr);
-        start.setHours(0, 0, 0, 0);
-        end = new Date(endDateStr);
-        end.setHours(23, 59, 59, 999);
-      } else {
-        const minRow = await db
-          .select({ min: sql`MIN(created_at)` })
-          .from(patient);
-        const maxRow = await db
-          .select({ max: sql`MAX(created_at)` })
-          .from(patient);
+      if (startDateStr) startDate = new Date(startDateStr);
+      if (endDateStr) endDate = new Date(endDateStr);
 
-        const minDate = minRow?.[0]?.min;
-        const maxDate = maxRow?.[0]?.max;
+      // FETCH PATIENTS
+      let allPatients = await db.select().from(patient);
+      if (startDate && endDate) {
+        allPatients = allPatients.filter(
+          (p) =>
+            new Date(p.createdAt) >= startDate! &&
+            new Date(p.createdAt) <= endDate!
+        );
+      }
+      const totalOnboarding = allPatients.length;
 
-        if (!minDate || !maxDate) return c.json({ onboarding: {}, emr: {} });
+      const onboardStarted = allPatients.filter(
+        (p) =>  p.cnic || p.name || p.menu
+      ).length;
+      const cnicEntered = allPatients.filter((p) => p.cnic).length;
+      const nameEntered = allPatients.filter((p) => p.name).length;
+      const menuSelected = allPatients.filter((p) => p.menu).length;
 
-        start = new Date(minDate);
-        start.setHours(0, 0, 0, 0);
-        end = new Date(maxDate);
-        end.setHours(23, 59, 59, 999);
+
+      // FETCH EMRS
+      let allEmrs = await db.select().from(emr);
+      if (startDate && endDate) {
+        allEmrs = allEmrs.filter(
+          (e) =>
+            new Date(e.createdAt) >= startDate! &&
+            new Date(e.createdAt) <= endDate!
+        );
       }
 
-      const patientsInRange = await db
-        .select()
-        .from(patient)
-        .where(
-          sql`created_at >= ${start.toISOString()} AND created_at <= ${end.toISOString()}`
-        );
+      let emrStarted = 0;
+      let layer1Complete = 0;
+      let layer2Complete = 0;
+      let emrSubmitted = 0;
 
-      const totalUsers = patientsInRange.length;
+      for (const e of allEmrs) {
+        const p = (
+          await db.select().from(patient).where(eq(patient.id, e.patientId))
+        )[0];
+        if (!p) continue;
 
-      let cnicEntered = 0,
-        nameEntered = 0,
-        menuEntered = 0;
+        if (p.age) {
+          emrStarted++;
 
-      let emrStarted = 0,
-        layer1Completed = 0,
-        layer2Started = 0,
-        layer2Completed = 0;
+          const tri = (
+            await db.select().from(trimester).where(eq(trimester.emrId, e.id))
+          )[0];
+          const obs = (
+            await db.select().from(obsHistory).where(eq(obsHistory.emrId, e.id))
+          )[0];
+          const pp = (
+            await db
+              .select()
+              .from(previousPregnancy)
+              .where(eq(previousPregnancy.emrId, e.id))
+          )[0];
 
-      for (const p of patientsInRange) {
-        if (p.cnic) cnicEntered++;
-        if (p.name) nameEntered++;
-        // if (p.menuOption) menuEntered++;
+          const layer1Done =
+            tri?.additionalInfo ||
+            obs?.childrenBirthMethods ||
+            pp?.birthMethod ||
+            pp?.operationReason;
+          if (layer1Done) {
+            layer1Complete++;
 
-        const emrUser = p.cnic && p.name;
-        if (!emrUser) continue;
-        emrStarted++;
-
-        // --- LAYER 1 ---
-        let layer1Complete = false;
-        const firstPreg = p.firstPregnancy?.toLowerCase();
-
-        if (firstPreg) {
-          if (firstPreg === "true"|| firstPreg) {
-            const tri = (
-              await db
-                .select()
-                .from(trimester)
-                .where(sql`emr_id = ${p.id}`)
-                .limit(1)
-            )[0];
-            if (tri?.additionalInfo) layer1Complete = true;
-          } else if (firstPreg === "false" || !firstPreg) {
-            const obs = (
-              await db
-                .select()
-                .from(obsHistory)
-                .where(sql`emr_id = ${p.id}`)
-                .limit(1)
-            )[0];
-            if (obs?.childrenBirthMethods) layer1Complete = true;
-          }
-        }
-
-        if (layer1Complete) layer1Completed++;
-
-        // --- LAYER 2 ---
-        let layer2Start = false;
-        let layer2Complete = false;
-
-        if (layer1Complete) {
-          if (firstPreg === "true" || firstPreg) {
-            const curr = (
+            const cp = (
               await db
                 .select()
                 .from(currentPregnancy)
-                .where(sql`emr_id = ${p.id}`)
-                .limit(1)
-            )[0];
-            const gyn = (
-              await db
-                .select()
-                .from(gynecologicalHistory)
-                .where(sql`emr_id = ${p.id}`)
-                .limit(1)
+                .where(eq(currentPregnancy.emrId, e.id))
             )[0];
 
-            if (curr?.pregnancyMethod) layer2Start = true;
-            if (gyn?.papSmearTest) layer2Complete = true;
-          } else if (firstPreg === "false" || !firstPreg) {
-            const obs = (
-              await db
-                .select()
-                .from(obsHistory)
-                .where(sql`emr_id = ${p.id}`)
-                .limit(1)
-            )[0];
-            const prev = (
-              await db
-                .select()
-                .from(previousPregnancy)
-                .where(sql`emr_id = ${p.id}`)
-                .limit(1)
-            )[0];
-
-            if (obs?.oldestChildAge || prev?.childAge) layer2Start = true;
-            if (obs?.childrenHealthStatus || prev?.childCondition)
-              layer2Complete = true;
+            const layer2Started =
+              cp?.pregnancyMethod || pp?.childAge || obs?.oldestChildAge;
+            if (layer2Started) {
+              const gy = (
+                await db
+                  .select()
+                  .from(gynecologicalHistory)
+                  .where(eq(gynecologicalHistory.emrId, e.id))
+              )[0];
+              const layer2Done =
+                gy?.papSmearTest ||
+                pp?.childCondition ||
+                obs?.childrenHealthStatus;
+              if (layer2Done) {
+                layer2Complete++;
+                emrSubmitted++;
+              }
+            }
           }
         }
-
-        if (layer2Start) layer2Started++;
-        if (layer2Complete) layer2Completed++;
       }
 
-      const response = {
-        onboarding: {
-          totalUsers,
-          cnicEntered,
-          nameEntered,
-          // menuEntered,
-          dropOff: {
-            cnic:
-              (((totalUsers - cnicEntered) / totalUsers) * 100).toFixed(2) +
-              "%",
-            name:
-              (((cnicEntered - nameEntered) / totalUsers) * 100).toFixed(2) +
-              "%",
-            // menu:
-            //   (((nameEntered - menuEntered) / totalUsers) * 100).toFixed(2) +
-            //   "%",
-          },
-        },
-        emr: {
-          started: emrStarted,
-          layer1: {
-            completed: layer1Completed,
-            dropOffBeforeLayer1:
-              (((emrStarted - layer1Completed) / emrStarted) * 100).toFixed(2) +
-              "%",
-          },
-          layer2: {
-            started: layer2Started,
-            completed: layer2Completed,
-            dropOffAfterLayer1:
-              (
-                ((layer1Completed - layer2Started) / layer1Completed) *
-                100
-              ).toFixed(2) + "%",
-            dropOffBeforeLayer2:
-              layer2Started > 0
-                ? (
-                    ((layer2Started - layer2Completed) / layer2Started) *
-                    100
-                  ).toFixed(2) + "%"
-                : "0%",
-          },
-          overallCompletionRate:
-            emrStarted > 0
-              ? ((layer2Completed / emrStarted) * 100).toFixed(2) + "%"
-              : "0%",
-        },
-      };
+      const emrCompletionRate = emrStarted
+        ? ((emrSubmitted / emrStarted) * 100).toFixed(1) + "%"
+        : "0%";
+      const overallDropoffRate = emrStarted
+        ? (100 - parseFloat(emrCompletionRate)).toFixed(1) + "%"
+        : "0%";
 
-      return c.json(response);
+      return c.json({
+        kpis: {
+          emrCompletionRate,
+          overallDropoffRate,
+        },
+        onboarding: [
+          {
+            label: "Started Onboarding",
+            value: onboardStarted,
+            total: totalOnboarding,
+            metricKey: "onboard-started",
+          },
+          {
+            label: "CNIC Entered",
+            value: cnicEntered,
+            total: totalOnboarding,
+            metricKey: "cnic-entered",
+          },
+          {
+            label: "Name Entered",
+            value: nameEntered,
+            total: totalOnboarding,
+            metricKey: "name-entered",
+          },
+          {
+            label: "Menu Option Selected",
+            value: menuSelected,
+            total: totalOnboarding,
+            metricKey: "menu-selected",
+          },
+        ],
+        emr: [
+          {
+            label: "EMR Started",
+            value: emrStarted,
+            total: emrStarted,
+            metricKey: "emr-started",
+          },
+          {
+            label: "Layer 1 Completed",
+            value: layer1Complete,
+            total: emrStarted,
+            metricKey: "layer1-complete",
+          },
+          {
+            label: "Layer 2 Completed",
+            value: layer2Complete,
+            total: emrStarted,
+            metricKey: "layer2-complete",
+          },
+          {
+            label: "EMR Submitted",
+            value: emrSubmitted,
+            total: emrStarted,
+            metricKey: "emr-submitted",
+          },
+        ],
+      });
     } catch (err) {
-      console.error("Error in EMR drop-off metrics:", err);
-      return c.json({ ok: false, error: "Failed to fetch metrics" }, 500);
+      console.error("ERROR in dashboard metrics:", err);
+      return c.json(
+        { ok: false, error: "Failed to fetch dashboard metrics" },
+        500
+      );
     }
   });
 };
