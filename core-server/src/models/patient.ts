@@ -42,6 +42,7 @@ export const patient = pgTable('patient', {
   patientBloodGroup: text("patient_blood_group"),
   husbandBloodGroup: text("husband_blood_group"),
   miscarriage: text("miscarriage"), // legacy
+  menu:text('menu'),
 
   currentProblems: text("current_problems"),
   medicalConditions: text("medical_conditions"),

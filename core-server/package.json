@@ -11,6 +11,8 @@
         "db:migrate": "bun drizzle-kit migrate",
         "db:studio": "bun drizzle-kit studio --verbose",
         "create:user": "bun run ./src/scripts/create-user.ts",
+        "temp": "bun run ./src/scripts/tempScript.ts",
+        "temp-1": "bun run ./src/scripts/temp.ts",
         "seed:reminders": "bun run src/seeds/reminders.seed.ts"
     },
     "dependencies": {
