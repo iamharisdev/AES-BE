@@ -2,8 +2,7 @@ import app from "@/app";
 import { db } from "@/db";
 import { jwtMiddleware } from "@/middleware/jwt";
 import { createRoute, z } from "@hono/zod-openapi";
-import { eq, gte, lte } from "drizzle-orm";
-
+import { and, eq, gte, lte, sql } from "drizzle-orm";
 import { patient } from "@/models/patient";
 import { emr } from "@/models/emr";
 import { trimester } from "@/models/trimester";
@@ -11,6 +10,7 @@ import { currentPregnancy } from "@/models/current-pregnancy";
 import { gynecologicalHistory } from "@/models/gynecological-history";
 import { obsHistory } from "@/models/obstetric-history";
 import { previousPregnancy } from "@/models/previous-pregnancy";
+import { patientChats } from "@/models/patient-chats";
 
 const DashboardResponseSchema = z.object({
   kpis: z.object({
@@ -55,7 +55,6 @@ const route = createRoute({
     },
   },
 });
-
 export const getEMRDropOffHandler = () => {
   app.openapi(route, async (c) => {
     try {
@@ -65,8 +64,14 @@ export const getEMRDropOffHandler = () => {
       let startDate: Date | undefined;
       let endDate: Date | undefined;
 
-      if (startDateStr) startDate = new Date(startDateStr);
-      if (endDateStr) endDate = new Date(endDateStr);
+      if (startDateStr) {
+        startDate = new Date(startDateStr);
+        startDate.setHours(0, 0, 0, 0);
+      }
+      if (endDateStr) {
+        endDate = new Date(endDateStr);
+        endDate.setHours(23, 59, 59, 999);
+      }
 
       // FETCH PATIENTS
       let allPatients = await db.select().from(patient);
@@ -77,15 +82,75 @@ export const getEMRDropOffHandler = () => {
             new Date(p.createdAt) <= endDate!
         );
       }
+
+      // Fetch lastMessageAt for all patients
+      const lastActivityMap: any = {};
+
+      const allChats = await db
+        .select({
+          patientId: patientChats.patientId,
+          lastMessageAt: patientChats.lastMessageAt,
+        })
+        .from(patientChats)
+        .execute();
+
+
+      for (const chat of allChats) {
+        // Take the latest lastMessageAt if multiple chats exist per patient
+        if (!lastActivityMap[chat.patientId]) {
+          lastActivityMap[chat.patientId] = chat.lastMessageAt;
+        } else if (
+          chat.lastMessageAt &&
+          new Date(chat.lastMessageAt) >
+            new Date(lastActivityMap[chat.patientId]!)
+        ) {
+          lastActivityMap[chat.patientId] = chat.lastMessageAt;
+        }
+      }
+
       const totalOnboarding = allPatients.length;
 
-      const onboardStarted = allPatients.filter(
-        (p) =>  p.cnic || p.name || p.menu
-      ).length;
-      const cnicEntered = allPatients.filter((p) => p.cnic).length;
-      const nameEntered = allPatients.filter((p) => p.name).length;
-      const menuSelected = allPatients.filter((p) => p.menu).length;
+      // Onboarding users arrays
+      const onboardStartedUsers = allPatients
+        .filter((p) => p.menu)
+        .map((p) => ({
+          name: p.name,
+          phone: p.phoneNumber,
+          lastActivity: lastActivityMap[p.id] || null,
+          createdAt: p.createdAt,
+        }));
 
+      const cnicUsers = allPatients
+        .filter((p) => p.cnic)
+        .map((p) => ({
+          name: p.name,
+          phone: p.phoneNumber,
+          lastActivity: lastActivityMap[p.id] || null,
+          createdAt: p.createdAt,
+        }));
+
+      const nameUsers = allPatients
+        .filter((p) => p.name)
+        .map((p) => ({
+          name: p.name,
+          phone: p.phoneNumber,
+          lastActivity: lastActivityMap[p.id] || null,
+          createdAt: p.createdAt,
+        }));
+
+      const menuUsers = allPatients
+        .filter((p) => p.menu)
+        .map((p) => ({
+          name: p.name,
+          phone: p.phoneNumber,
+          lastActivity: lastActivityMap[p.id] || null,
+          createdAt: p.createdAt,
+        }));
+
+      const onboardStarted = onboardStartedUsers.length;
+      const cnicEntered = cnicUsers.length;
+      const nameEntered = nameUsers.length;
+      const menuSelected = menuUsers.length;
 
       // FETCH EMRS
       let allEmrs = await db.select().from(emr);
@@ -102,6 +167,11 @@ export const getEMRDropOffHandler = () => {
       let layer2Complete = 0;
       let emrSubmitted = 0;
 
+      const emrStartedUsers: any[] = [];
+      const layer1Users: any[] = [];
+      const layer2Users: any[] = [];
+      const emrSubmittedUsers: any[] = [];
+
       for (const e of allEmrs) {
         const p = (
           await db.select().from(patient).where(eq(patient.id, e.patientId))
@@ -110,6 +180,12 @@ export const getEMRDropOffHandler = () => {
 
         if (p.age) {
           emrStarted++;
+          emrStartedUsers.push({
+            name: p.name,
+            phone: p.phoneNumber,
+            lastActivity: lastActivityMap[p.id] || null,
+            createdAt: p.createdAt,
+          });
 
           const tri = (
             await db.select().from(trimester).where(eq(trimester.emrId, e.id))
@@ -131,6 +207,12 @@ export const getEMRDropOffHandler = () => {
             pp?.operationReason;
           if (layer1Done) {
             layer1Complete++;
+            layer1Users.push({
+              name: p.name,
+              phone: p.phoneNumber,
+              lastActivity: lastActivityMap[p.id] || null,
+              createdAt: p.createdAt,
+            });
 
             const cp = (
               await db
@@ -155,6 +237,18 @@ export const getEMRDropOffHandler = () => {
               if (layer2Done) {
                 layer2Complete++;
                 emrSubmitted++;
+                layer2Users.push({
+                  name: p.name,
+                  phone: p.phoneNumber,
+                  lastActivity: lastActivityMap[p.id] || null,
+                  createdAt: p.createdAt,
+                });
+                emrSubmittedUsers.push({
+                  name: p.name,
+                  phone: p.phoneNumber,
+                  lastActivity: lastActivityMap[p.id] || null,
+                  createdAt: p.createdAt,
+                });
               }
             }
           }
@@ -168,35 +262,126 @@ export const getEMRDropOffHandler = () => {
         ? (100 - parseFloat(emrCompletionRate)).toFixed(1) + "%"
         : "0%";
 
-      return c.json({
-        kpis: {
-          emrCompletionRate,
-          overallDropoffRate,
+      // 🔹 APPA Dropoff calculation
+      let chatQuery = db
+        .select({
+          id: patientChats.id,
+          patientId: patientChats.patientId,
+          messages: patientChats.messages,
+          createdAt: patientChats.createdAt,
+        })
+        .from(patientChats);
+
+      const chatConditions = [];
+      if (startDate)
+        chatConditions.push(gte(patientChats.createdAt, startDate));
+      if (endDate) chatConditions.push(lte(patientChats.createdAt, endDate));
+
+      if (chatConditions.length > 0)
+        chatQuery = chatQuery.where(and(...chatConditions));
+
+      const chats = await chatQuery.execute();
+
+      const userMap: Record<
+        string,
+        {
+          questionCount: number;
+          userInfo: {
+            name: string | null;
+            phone: string | null;
+            lastActivity: string | null;
+            createdAt: string | null;
+          };
+        }
+      > = {};
+
+      for (const chat of chats) {
+        const appaMessages = (chat.messages || []).filter(
+          (msg: any) => msg.current_flow === "appa"
+        );
+        if (appaMessages.length === 0) continue;
+
+        if (!userMap[chat.patientId]) {
+          const patientData = await db
+            .select({
+              name: patient.name,
+              phone: patient.phoneNumber,
+              lastActivity: lastActivityMap[chat.patientId] || null,
+              createdAt: patient.createdAt,
+            })
+            .from(patient)
+            .where(sql`${patient.id}::text = ${chat.patientId}`)
+            .limit(1)
+            .execute();
+
+          userMap[chat.patientId] = {
+            questionCount: appaMessages.length,
+            userInfo: patientData[0] || {
+              name: null,
+              phone: null,
+              lastActivity: null,
+              createdAt: null,
+            },
+          };
+        } else {
+          userMap[chat.patientId].questionCount += appaMessages.length;
+        }
+      }
+
+      const ask1Users = Object.values(userMap).filter(
+        (u) => u.questionCount === 1
+      );
+      const ask2Users = Object.values(userMap).filter(
+        (u) => u.questionCount === 2
+      );
+
+      const appaDropoff = [
+        {
+          label: "Ask 1st question",
+          value: ask1Users.length,
+          total: ask1Users.reduce((acc, u) => acc + u.questionCount, 0),
+          metricKey: "ask-1st-question",
+          users: ask1Users.map((u) => u.userInfo),
         },
+        {
+          label: "Ask 2nd question",
+          value: ask2Users.length,
+          total: ask2Users.reduce((acc, u) => acc + u.questionCount, 0),
+          metricKey: "ask-2nd-question",
+          users: ask2Users.map((u) => u.userInfo),
+        },
+      ];
+
+      return c.json({
+        kpis: { emrCompletionRate, overallDropoffRate },
         onboarding: [
           {
             label: "Started Onboarding",
             value: onboardStarted,
             total: totalOnboarding,
             metricKey: "onboard-started",
+            users: onboardStartedUsers,
           },
           {
             label: "CNIC Entered",
             value: cnicEntered,
             total: totalOnboarding,
             metricKey: "cnic-entered",
+            users: cnicUsers,
           },
           {
             label: "Name Entered",
             value: nameEntered,
             total: totalOnboarding,
             metricKey: "name-entered",
+            users: nameUsers,
           },
           {
             label: "Menu Option Selected",
             value: menuSelected,
             total: totalOnboarding,
             metricKey: "menu-selected",
+            users: menuUsers,
           },
         ],
         emr: [
@@ -205,26 +390,31 @@ export const getEMRDropOffHandler = () => {
             value: emrStarted,
             total: emrStarted,
             metricKey: "emr-started",
+            users: emrStartedUsers,
           },
           {
             label: "Layer 1 Completed",
             value: layer1Complete,
             total: emrStarted,
             metricKey: "layer1-complete",
+            users: layer1Users,
           },
           {
             label: "Layer 2 Completed",
             value: layer2Complete,
             total: emrStarted,
             metricKey: "layer2-complete",
+            users: layer2Users,
           },
           {
             label: "EMR Submitted",
             value: emrSubmitted,
             total: emrStarted,
             metricKey: "emr-submitted",
+            users: emrSubmittedUsers,
           },
         ],
+        appa: appaDropoff,
       });
     } catch (err) {
       console.error("ERROR in dashboard metrics:", err);

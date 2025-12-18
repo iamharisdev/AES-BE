@@ -24,18 +24,25 @@ const hospitalName = "Awaaz e Sehat Hospital";
 const hospitalAddress = "123 Main Street, Karachi";
 const hospitalDescription = "Primary health facility for testing.";
 
-const doctorName = "Super Admin";
-const doctorEmail = "superadmin@example.com";
-const doctorPhone = "03001234567";
-const doctorPassword = "Admin@123";
-const doctorRole = UserRole.Doctor;
+// const doctorName = "Super Admin";
+// const doctorEmail = "superadmin@example.com";
+// const doctorPhone = "03001234567";
+// const doctorPassword = "Admin@123";
+// const doctorRole = UserRole.Doctor;
+
+
+const doctorName = "Health Worker";
+const doctorEmail = "healthworker@awaazesehat.com";
+const doctorPhone = "03001234565";
+const doctorPassword = "health@worker@123";
+const doctorRole = UserRole.HealthWorker;
 
 // 👩‍🍼 Sample patient info
 const samplePatient = {
-  name: "Test Patient",
-  age: "28",
-  cnic: "12345-6789012-3",
-  phoneNumber: "03111222333",
+  name: "Test Patient 2",
+  age: "32",
+  cnic: "12345-6789012-4",
+  phoneNumber: "03111222335",
   gestationalAge: "12 weeks",
   education: "Intermediate",
   location: "Karachi",

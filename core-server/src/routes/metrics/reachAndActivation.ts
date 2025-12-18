@@ -33,6 +33,7 @@ const SuccessResponseSchema = z.object({
       users: z.number(),
     })
   ),
+  allMessagesCount: z.number(),
 });
 
 const route = createRoute({
@@ -63,7 +64,17 @@ const calculateTrend = (current: number, previous: number): number => {
   return Math.round(((current - previous) / previous) * 100);
 };
 
-const checkOnboardingCompleted = (p: any) => !!(p.cnic && p.name);
+const checkOnboardingCompleted = (p: any) => !!p.menu;
+
+const getUniqueUsers = (
+  chats: { patientId: string; messages?: any[] }[]
+): Set<string> => {
+  return new Set(
+    chats
+      .filter((c) => c.messages && c.messages.length > 0) // only users with messages
+      .map((c) => c.patientId)
+  );
+};
 
 const getPreviousPeriod = (start: Date, end: Date) => {
   const diffDays = Math.ceil(
@@ -79,8 +90,49 @@ const getPreviousPeriod = (start: Date, end: Date) => {
   return { prevStart, prevEnd };
 };
 
-const getUniqueUsers = (chats: { patientId: string }[]) =>
-  new Set(chats.map((c) => c.patientId));
+const resolvePeriods = (startDateStr?: string, endDateStr?: string) => {
+  const now = new Date();
+  let start: Date;
+  let end: Date;
+
+  if (startDateStr && endDateStr) {
+    start = new Date(startDateStr);
+    end = new Date(endDateStr);
+  } else {
+    end = now;
+    start = new Date(now);
+    start.setDate(start.getDate() - 29); // default 30 days
+  }
+
+  start.setHours(0, 0, 0, 0);
+  end.setHours(23, 59, 59, 999);
+
+  const diffDays =
+    Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+
+  const prevStart = new Date(start);
+  prevStart.setDate(prevStart.getDate() - diffDays);
+  prevStart.setHours(0, 0, 0, 0);
+
+  const prevEnd = new Date(start);
+  prevEnd.setDate(prevEnd.getDate() - 1);
+  prevEnd.setHours(23, 59, 59, 999);
+
+  return { start, end, prevStart, prevEnd };
+};
+
+const getActiveUsersInPeriod = async (from: Date, to: Date) => {
+  const chats = await db
+    .select({
+      patientId: patientChats.patientId,
+    })
+    .from(patientChats)
+    .where(
+      sql`session_started >= ${from.toISOString()} AND session_started <= ${to.toISOString()}`
+    );
+
+  return new Set(chats.map((c) => c.patientId));
+};
 
 const getTodayMessagesCount = async () => {
   const today = new Date();
@@ -102,8 +154,6 @@ const getTodayMessagesCount = async () => {
     (acc, chat) => acc + (chat.messages?.length || 0),
     0
   );
-
-  console.log(totalMessages);
 
   return {
     day: from.toLocaleDateString("en-CA").slice(0, 10),
@@ -138,10 +188,11 @@ export const getReachActivationMetricsHandler = () => {
         if (!minDate || !maxDate) return c.json({ cards: [], chartData: [] });
 
         start = new Date(minDate);
-        start.setHours(0, 0, 0, 0);
+
         end = new Date(maxDate);
-        end.setHours(23, 59, 59, 999);
       }
+      start.setHours(0, 0, 0, 0);
+      end.setHours(23, 59, 59, 999);
 
       // --- Fetch chats helper ---
       const fetchChats = async (from?: Date, to?: Date) => {
@@ -163,7 +214,11 @@ export const getReachActivationMetricsHandler = () => {
       const previousChats = await fetchChats(prevStart, prevEnd);
 
       // --- Unique and Active Users ---
-      const currentUniqueUsers = getUniqueUsers(currentChats);
+      const currentUniqueUsers = new Set(
+        currentChats
+          .filter((c) => c.messages && c.messages.length > 0) // ✅ only chats with messages
+          .map((c) => c.patientId)
+      );
 
       const day = new Date();
       day.setHours(23, 59, 59, 999);
@@ -172,7 +227,11 @@ export const getReachActivationMetricsHandler = () => {
       twoWeeksAgo.setHours(0, 0, 0, 0);
 
       const last2WeeksChats = await fetchChats(twoWeeksAgo, day);
-      const activeUsers = getUniqueUsers(last2WeeksChats);
+      const activeUsers = new Set(
+        last2WeeksChats
+          .filter((c) => c.messages && c.messages.length > 0)
+          .map((c) => c.patientId)
+      );
 
       const prevTwoWeeksStart = new Date();
       prevTwoWeeksStart.setDate(twoWeeksAgo.getDate() - 14);
@@ -185,7 +244,11 @@ export const getReachActivationMetricsHandler = () => {
         prevTwoWeeksStart,
         prevTwoWeeksEnd
       );
-      const previousActiveUsers = getUniqueUsers(prev2WeeksChats);
+      const previousActiveUsers = new Set(
+        prev2WeeksChats
+          .filter((c) => c.messages && c.messages.length > 0)
+          .map((c) => c.patientId)
+      );
 
       // --- Map patient info ---
       const patientsData = await db.select().from(patient);
@@ -219,111 +282,109 @@ export const getReachActivationMetricsHandler = () => {
         });
 
       // --- Retention Rate ---
-      const firstSessionsMap = new Map<string, Date>();
-      allChats.forEach((chat) => {
-        const firstMsg = new Date(chat.sessionStarted);
-        if (
-          !firstSessionsMap.has(chat.patientId) ||
-          firstSessionsMap.get(chat.patientId)! > firstMsg
-        ) {
-          firstSessionsMap.set(chat.patientId, firstMsg);
+      // =======================
+      // RETENTION RATE
+      // =======================
+
+      const {
+        start: resolvedStart,
+        end: resolvedEnd,
+        prevStart: resolvedPrevStart,
+        prevEnd: resolvedPrevEnd,
+      } = resolvePeriods(startDateStr, endDateStr);
+
+      // users active in current period
+      const currentActiveUsers = await getActiveUsersInPeriod(resolvedStart, resolvedEnd);
+
+      // find first session of every user
+      const firstSessionRows = await db
+        .select({
+          patientId: patientChats.patientId,
+          firstSession: sql`MIN(session_started)`,
+        })
+        .from(patientChats)
+        .groupBy(patientChats.patientId);
+
+      const eligibleUsers = firstSessionRows
+        .filter((u) => new Date(u.firstSession as string) < start)
+        .map((u) => u.patientId);
+
+      let retainedUsers = 0;
+      for (const userId of eligibleUsers) {
+        if (currentActiveUsers.has(userId)) {
+          retainedUsers++;
         }
-      });
+      }
 
-      let retainedCount = 0;
-      firstSessionsMap.forEach((firstDate, patientId) => {
-        const retentionEnd = new Date(firstDate);
-        retentionEnd.setDate(retentionEnd.getDate() + 14);
-        const hasReturn = allChats.some(
-          (chat) =>
-            chat.patientId === patientId &&
-            new Date(chat.sessionStarted) > firstDate &&
-            new Date(chat.sessionStarted) <= retentionEnd
-        );
-        if (hasReturn) retainedCount++;
-      });
-      const retentionRate = (retainedCount / firstSessionsMap.size) * 100 || 0;
+      const retentionRate =
+        eligibleUsers.length > 0
+          ? (retainedUsers / eligibleUsers.length) * 100
+          : 0;
 
-      // --- Previous Retention Rate ---
-      const prevAllChats = await fetchChats(
-        new Date(now.getTime() - 28 * 24 * 60 * 60 * 1000),
-        new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)
-      );
-      const prevFirstSessionsMap = new Map<string, Date>();
-      prevAllChats.forEach((chat) => {
-        const firstMsg = new Date(chat.sessionStarted);
-        if (
-          !prevFirstSessionsMap.has(chat.patientId) ||
-          prevFirstSessionsMap.get(chat.patientId)! > firstMsg
-        ) {
-          prevFirstSessionsMap.set(chat.patientId, firstMsg);
+      const prevActiveUsers = await getActiveUsersInPeriod(prevStart, prevEnd);
+
+      const prevEligibleUsers = firstSessionRows
+        .filter((u) => new Date(u.firstSession as string) < prevStart)
+        .map((u) => u.patientId);
+
+      let prevRetained = 0;
+      for (const userId of prevEligibleUsers) {
+        if (prevActiveUsers.has(userId)) {
+          prevRetained++;
         }
-      });
+      }
 
-      let prevRetainedCount = 0;
-      prevFirstSessionsMap.forEach((firstDate, patientId) => {
-        const retentionEnd = new Date(firstDate);
-        retentionEnd.setDate(retentionEnd.getDate() + 14);
-        const hasReturn = prevAllChats.some(
-          (chat) =>
-            chat.patientId === patientId &&
-            new Date(chat.sessionStarted) > firstDate &&
-            new Date(chat.sessionStarted) <= retentionEnd
-        );
-        if (hasReturn) prevRetainedCount++;
-      });
       const previousRetentionRate =
-        (prevRetainedCount / prevFirstSessionsMap.size) * 100 || 0;
+        prevEligibleUsers.length > 0
+          ? (prevRetained / prevEligibleUsers.length) * 100
+          : 0;
 
       // --- Churn Rate ---
-      const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-      const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      const prevMonthEnd = new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        0,
-        23,
-        59,
-        59,
-        999
+      // =======================
+      // CHURN RATE
+      // =======================
+
+      const prevPeriodUsers = await getActiveUsersInPeriod(resolvedPrevStart, resolvedPrevEnd);
+      const currentPeriodUsers = getActiveUsersInPeriod(resolvedStart, resolvedEnd);
+
+      let churnedUsers = 0;
+      for (const userId of prevPeriodUsers) {
+        if (!(await currentPeriodUsers).has(userId)) {
+          churnedUsers++;
+        }
+      }
+
+      const churnRate =
+        prevPeriodUsers.size > 0
+          ? (churnedUsers / prevPeriodUsers.size) * 100
+          : 0;
+      const prevPrevStart = new Date(prevStart);
+      const prevPrevEnd = new Date(prevEnd);
+
+      prevPrevStart.setDate(
+        prevPrevStart.getDate() - (prevEnd.getDate() - prevStart.getDate() + 1)
+      );
+      prevPrevStart.setHours(0, 0, 0, 0);
+
+      prevPrevEnd.setDate(
+        prevPrevEnd.getDate() - (prevEnd.getDate() - prevStart.getDate() + 1)
+      );
+      prevPrevEnd.setHours(23, 59, 59, 999);
+
+      const prevPrevUsers = await getActiveUsersInPeriod(
+        prevPrevStart,
+        prevPrevEnd
       );
 
-      const prevMonthChats = await fetchChats(prevMonthStart, prevMonthEnd);
-      const currentMonthChats = await fetchChats(currentMonthStart, now);
+      let prevChurned = 0;
+      for (const userId of prevPrevUsers) {
+        if (!prevPeriodUsers.has(userId)) {
+          prevChurned++;
+        }
+      }
 
-      const prevMonthUsers = getUniqueUsers(prevMonthChats);
-      const currentMonthUsers = getUniqueUsers(currentMonthChats);
-      const churnCount = Array.from(prevMonthUsers).filter(
-        (u) => !currentMonthUsers.has(u)
-      ).length;
-      const churnRate = (churnCount / prevMonthUsers.size) * 100 || 0;
-
-      // --- Previous Churn Rate ---
-      const prevPrevMonthStart = new Date(
-        prevMonthStart.getFullYear(),
-        prevMonthStart.getMonth() - 1,
-        1
-      );
-      const prevPrevMonthEnd = new Date(
-        prevMonthStart.getFullYear(),
-        prevMonthStart.getMonth(),
-        0,
-        23,
-        59,
-        59,
-        999
-      );
-      const prevPrevMonthChats = await fetchChats(
-        prevPrevMonthStart,
-        prevPrevMonthEnd
-      );
-      const prevPrevMonthUsers = getUniqueUsers(prevPrevMonthChats);
-
-      const prevChurnCount = Array.from(prevPrevMonthUsers).filter(
-        (u) => !prevMonthUsers.has(u)
-      ).length;
       const previousChurnRate =
-        (prevChurnCount / prevPrevMonthUsers.size) * 100 || 0;
+        prevPrevUsers.size > 0 ? (prevChurned / prevPrevUsers.size) * 100 : 0;
 
       // --- Total Messages ---
       const totalMessages = currentChats.reduce(
@@ -448,7 +509,7 @@ export const getReachActivationMetricsHandler = () => {
           },
           {
             title: "Onboarding Completion Rate",
-            value: onboardingCompletionRate.toFixed(1),
+            value: `${onboardingCompletionRate.toFixed(1)}%`,
             subtitle: "%",
             trend: calculateTrend(
               onboardingCompletionRate,

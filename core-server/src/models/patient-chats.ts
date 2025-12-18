@@ -5,6 +5,7 @@ export const patientChats = pgTable("patient_chats", {
 
   // store Mongo patient ObjectId as plain text
   patientId: text("patient_id").notNull(),
+  mongoPatientId: text("mongo_patient_id"),
 
   sessionStarted: timestamp("session_started", {
     withTimezone: true,
@@ -23,7 +24,6 @@ export const patientChats = pgTable("patient_chats", {
       timestamp: string;
       current_flow: string;
       current_language: string;
-
       [key: string]: any;
     }[]
   >(),

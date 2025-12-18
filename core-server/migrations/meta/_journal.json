@@ -15,6 +15,13 @@
       "when": 1764588410733,
       "tag": "0001_young_frank_castle",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1766041304769,
+      "tag": "0002_noisy_baron_strucker",
+      "breakpoints": true
     }
   ]
 }

@@ -2,9 +2,10 @@ import app from "@/app";
 import { db } from "@/db";
 import { jwtMiddleware } from "@/middleware/jwt";
 import { requireHealthWorker } from "@/middleware/role";
+import { patient } from "@/models/patient";
 import { patientChats } from "@/models/patient-chats";
 import { createRoute, z } from "@hono/zod-openapi";
-import { eq, desc, gte } from "drizzle-orm";
+import { eq, desc, gte, sql } from "drizzle-orm";
 
 // Schemas
 const MessageSchema = z.object({
@@ -62,21 +63,46 @@ const listPatientChatsRoute = createRoute({
   },
 });
 
+
+
+
 export const listPatientChatsHandler = () => {
   app.openapi(listPatientChatsRoute, async (c) => {
     const { patientId, limit } = c.req.valid("query");
 
-    // Filter date: Only chats from October 1st, 2025 onwards
-    const cutoffDate = new Date('2025-10-01T00:00:00Z');
+    // 🔹 Only chats from Oct 1, 2025 onwards
+    const cutoffDate = new Date("2025-10-01T00:00:00Z");
 
     let query = db
-      .select()
+      .select({
+        id: patientChats.id,
+        patientId: patientChats.patientId,
+        sessionStarted: patientChats.sessionStarted,
+        lastMessageAt: patientChats.lastMessageAt,
+        messages: patientChats.messages,
+        createdAt: patientChats.createdAt,
+
+        // from patient table
+        patientPhoneNumber: patient.phoneNumber,
+      })
       .from(patientChats)
+
+      // ✅ FIX #1 — CAST uuid → text for JOIN
+      .leftJoin(
+        patient,
+        sql`${patient.id}::text = ${patientChats.patientId}`
+      )
+
+      // ✅ FIX #2 — normal date filter (safe)
       .where(gte(patientChats.sessionStarted, cutoffDate))
+
       .orderBy(desc(patientChats.lastMessageAt));
 
+    // ✅ FIX #3 — CAST patientId filter
     if (patientId) {
-      query = query.where(eq(patientChats.patientId, patientId)) as any;
+      query = query.where(
+        sql`${patientChats.patientId} = ${patientId}`
+      ) as any;
     }
 
     query = query.limit(limit || 50) as any;

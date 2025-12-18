@@ -93,7 +93,10 @@ const split24hSessions = (messages: any[]) => {
 // =======================
 // METRIC CALCULATION
 // =======================
-const computeUserMetrics = (sessionsByUser: Map<string, any[][]>, rangeMs: number) => {
+const computeUserMetrics = (
+  sessionsByUser: Map<string, any[][]>,
+  rangeMs: number
+) => {
   let totalSessions = 0;
   let totalMessages = 0;
   let totalDurationMs = 0;
@@ -136,12 +139,13 @@ const computeUserMetrics = (sessionsByUser: Map<string, any[][]>, rangeMs: numbe
     : 0;
 
   // FIXED: weekly sessions must depend on actual calendar range
-  const weeks = rangeMs / (7 * 24 * 60 * 60 * 1000);
-  const weeklySessionsPerUser = weeks > 0 ? avgSessionsPerUser / weeks : 0;
+  const daysInRange = Math.max(1, Math.ceil(rangeMs / (24 * 60 * 60 * 1000)));
+
+  // Average sessions per user per week (normalized)
+  const weeklySessionsPerUser = (avgSessionsPerUser * daysInRange) / 7;
 
   const avgActiveDaysPerUser = totalActiveDaysArr.length
-    ? totalActiveDaysArr.reduce((a, b) => a + b, 0) /
-      totalActiveDaysArr.length
+    ? totalActiveDaysArr.reduce((a, b) => a + b, 0) / totalActiveDaysArr.length
     : 0;
 
   // FIXED: P90 calculation
@@ -193,9 +197,12 @@ const fetchChatsForChart = async () => {
   const end = new Date(now);
   end.setHours(23, 59, 59, 999);
 
-  return db.select().from(patientChats).where(
-    sql`session_started >= ${start.toISOString()} AND session_started <= ${end.toISOString()}`
-  );
+  return db
+    .select()
+    .from(patientChats)
+    .where(
+      sql`session_started >= ${start.toISOString()} AND session_started <= ${end.toISOString()}`
+    );
 };
 
 const generateChartData = (chats: any[]) => {
@@ -214,8 +221,7 @@ const generateChartData = (chats: any[]) => {
       chats
         .filter(
           (x) =>
-            new Date(x.sessionStarted) >= d1 &&
-            new Date(x.sessionStarted) <= d2
+            new Date(x.sessionStarted) >= d1 && new Date(x.sessionStarted) <= d2
         )
         .map((x) => x.patientId)
     );
@@ -245,19 +251,24 @@ export const getEngagementMetricsHandler = () => {
         start = new Date(startDateStr);
         end = new Date(endDateStr);
       } else {
-        const minRow = await db.select({
-          min: sql`MIN(session_started)`,
-        }).from(patientChats);
+        const minRow = await db
+          .select({
+            min: sql`MIN(session_started)`,
+          })
+          .from(patientChats);
 
-        const maxRow = await db.select({
-          max: sql`MAX(session_started)`,
-        }).from(patientChats);
+        const maxRow = await db
+          .select({
+            max: sql`MAX(session_started)`,
+          })
+          .from(patientChats);
 
-        if (!minRow?.[0]?.min || !maxRow?.[0]?.max)
-          return c.json({ cards: [], chartData: [] });
+        const minDate = minRow?.[0]?.min as string | undefined;
+        const maxDate = maxRow?.[0]?.max as string | undefined;
+        if (!minDate || !maxDate) return c.json({ cards: [], chartData: [] });
 
-        start = new Date(minRow[0].min);
-        end = new Date(maxRow[0].max);
+        start = new Date(minDate);
+        end = new Date(maxDate);
       }
 
       start.setHours(0, 0, 0, 0);
@@ -307,13 +318,34 @@ export const getEngagementMetricsHandler = () => {
       const prevMetrics = computeUserMetrics(prevMap, rangeMs);
 
       const trends = {
-        totalSessions: calcTrend(currentMetrics.totalSessions, prevMetrics.totalSessions),
-        avgSessionsPerUser: calcTrend(currentMetrics.avgSessionsPerUser, prevMetrics.avgSessionsPerUser),
-        avgMessagesPerSession: calcTrend(currentMetrics.avgMessagesPerSession, prevMetrics.avgMessagesPerSession),
-        avgSessionDurationSec: calcTrend(currentMetrics.avgSessionDurationSec, prevMetrics.avgSessionDurationSec),
-        weeklySessionsPerUser: calcTrend(currentMetrics.weeklySessionsPerUser, prevMetrics.weeklySessionsPerUser),
-        avgActiveDaysPerUser: calcTrend(currentMetrics.avgActiveDaysPerUser, prevMetrics.avgActiveDaysPerUser),
-        powerUsers: calcTrend(currentMetrics.powerUsers, prevMetrics.powerUsers),
+        totalSessions: calcTrend(
+          currentMetrics.totalSessions,
+          prevMetrics.totalSessions
+        ),
+        avgSessionsPerUser: calcTrend(
+          currentMetrics.avgSessionsPerUser,
+          prevMetrics.avgSessionsPerUser
+        ),
+        avgMessagesPerSession: calcTrend(
+          currentMetrics.avgMessagesPerSession,
+          prevMetrics.avgMessagesPerSession
+        ),
+        avgSessionDurationSec: calcTrend(
+          currentMetrics.avgSessionDurationSec,
+          prevMetrics.avgSessionDurationSec
+        ),
+        weeklySessionsPerUser: calcTrend(
+          currentMetrics.weeklySessionsPerUser,
+          prevMetrics.weeklySessionsPerUser
+        ),
+        avgActiveDaysPerUser: calcTrend(
+          currentMetrics.avgActiveDaysPerUser,
+          prevMetrics.avgActiveDaysPerUser
+        ),
+        powerUsers: calcTrend(
+          currentMetrics.powerUsers,
+          prevMetrics.powerUsers
+        ),
       };
 
       // CHART DATA
