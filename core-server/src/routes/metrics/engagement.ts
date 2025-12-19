@@ -101,9 +101,9 @@ const computeUserMetrics = (
   let totalMessages = 0;
   let totalDurationMs = 0;
   let totalActiveDaysArr: number[] = [];
-  const messagesPerUserArr: number[] = [];
+  const messagesPerUserArr: { userId: string; count: number }[] = [];
 
-  for (const sessions of sessionsByUser.values()) {
+  for (const [userId, sessions] of sessionsByUser.entries()) {
     const activeDays = new Set<string>();
     let userMessages = 0;
 
@@ -122,8 +122,9 @@ const computeUserMetrics = (
         activeDays.add(new Date(m.timestamp).toDateString());
       }
     }
+
     totalActiveDaysArr.push(activeDays.size);
-    messagesPerUserArr.push(userMessages);
+    messagesPerUserArr.push({ userId, count: userMessages });
   }
 
   const totalUsers = sessionsByUser.size || 1;
@@ -138,22 +139,24 @@ const computeUserMetrics = (
     ? totalDurationMs / totalSessions / 1000
     : 0;
 
-  // FIXED: weekly sessions must depend on actual calendar range
   const daysInRange = Math.max(1, Math.ceil(rangeMs / (24 * 60 * 60 * 1000)));
-
-  // Average sessions per user per week (normalized)
   const weeklySessionsPerUser = (avgSessionsPerUser * daysInRange) / 7;
 
   const avgActiveDaysPerUser = totalActiveDaysArr.length
     ? totalActiveDaysArr.reduce((a, b) => a + b, 0) / totalActiveDaysArr.length
     : 0;
 
-  // FIXED: P90 calculation
-  const sortedMsgs = [...messagesPerUserArr].sort((a, b) => a - b);
-  const index = Math.floor(0.9 * sortedMsgs.length);
-  const p90 = sortedMsgs[index] || 0;
+  // =======================
+  // Updated Power Users Calculation
+  // =======================
+  const sortedByMessages = [...messagesPerUserArr].sort(
+    (a, b) => a.count - b.count
+  );
 
-  const powerUsers = messagesPerUserArr.filter((m) => m > p90).length;
+  const index90 = Math.floor(0.9 * sortedByMessages.length);
+  const p90 = sortedByMessages[index90]?.count || 0;
+
+  const powerUsers = messagesPerUserArr.filter((u) => u.count > p90).length;
 
   return {
     totalSessions,

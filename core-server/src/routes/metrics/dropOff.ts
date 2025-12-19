@@ -94,7 +94,6 @@ export const getEMRDropOffHandler = () => {
         .from(patientChats)
         .execute();
 
-
       for (const chat of allChats) {
         // Take the latest lastMessageAt if multiple chats exist per patient
         if (!lastActivityMap[chat.patientId]) {
@@ -289,16 +288,19 @@ export const getEMRDropOffHandler = () => {
           userInfo: {
             name: string | null;
             phone: string | null;
-            lastActivity: string | null;
-            createdAt: string | null;
+            lastActivity: string | Date | null;
+            createdAt: string | Date | null;
           };
         }
       > = {};
 
       for (const chat of chats) {
         const appaMessages = (chat.messages || []).filter(
-          (msg: any) => msg.current_flow === "appa"
+          (msg: any) =>
+            msg.current_flow === "APPA_FLOW" && msg.sender === "user"
         );
+
+        
         if (appaMessages.length === 0) continue;
 
         if (!userMap[chat.patientId]) {
@@ -328,6 +330,8 @@ export const getEMRDropOffHandler = () => {
         }
       }
 
+     
+
       const ask1Users = Object.values(userMap).filter(
         (u) => u.questionCount === 1
       );
@@ -335,18 +339,20 @@ export const getEMRDropOffHandler = () => {
         (u) => u.questionCount === 2
       );
 
+      const totalUsers = Object.keys(userMap).length;
+
       const appaDropoff = [
         {
           label: "Ask 1st question",
           value: ask1Users.length,
-          total: ask1Users.reduce((acc, u) => acc + u.questionCount, 0),
+          total: totalUsers==0?1:totalUsers,
           metricKey: "ask-1st-question",
           users: ask1Users.map((u) => u.userInfo),
         },
         {
           label: "Ask 2nd question",
           value: ask2Users.length,
-          total: ask2Users.reduce((acc, u) => acc + u.questionCount, 0),
+          total: totalUsers==0?1:totalUsers,
           metricKey: "ask-2nd-question",
           users: ask2Users.map((u) => u.userInfo),
         },
@@ -388,28 +394,28 @@ export const getEMRDropOffHandler = () => {
           {
             label: "EMR Started",
             value: emrStarted,
-            total: emrStarted,
+            total: emrStarted == 0 ? 1 : emrStarted,
             metricKey: "emr-started",
             users: emrStartedUsers,
           },
           {
             label: "Layer 1 Completed",
             value: layer1Complete,
-            total: emrStarted,
+            total: emrStarted == 0 ? 1 : emrStarted,
             metricKey: "layer1-complete",
             users: layer1Users,
           },
           {
             label: "Layer 2 Completed",
             value: layer2Complete,
-            total: emrStarted,
+            total: emrStarted == 0 ? 1 : emrStarted,
             metricKey: "layer2-complete",
             users: layer2Users,
           },
           {
             label: "EMR Submitted",
             value: emrSubmitted,
-            total: emrStarted,
+            total: emrStarted == 0 ? 1 : emrStarted,
             metricKey: "emr-submitted",
             users: emrSubmittedUsers,
           },

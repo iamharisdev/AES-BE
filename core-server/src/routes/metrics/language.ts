@@ -14,7 +14,7 @@ const LanguageModalityResponseSchema = z.object({
       subtitle: z.string().optional(),
       trend: z.string(),
       trendUp: z.boolean(),
-      avgSessionDuration: z.number(), // added for new requirement
+      avgSessionDuration: z.string(),
     })
   ),
   chartData: z.array(
@@ -31,18 +31,21 @@ const LanguageModalityResponseSchema = z.object({
 // =======================
 function formatDuration(totalSeconds: number): string {
   if (!totalSeconds || totalSeconds <= 0) return "0s";
-
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = Math.floor(totalSeconds % 60);
-
   let out = "";
   if (hours) out += `${hours}h `;
   if (minutes) out += `${minutes}m `;
   out += `${seconds}s`;
-
   return out.trim();
 }
+
+// --- TREND CALCULATION ---
+const calculateTrend = (current: number, previous: number) => {
+  if (previous === 0) return current > 0 ? 100 : 0;
+  return ((current - previous) / previous) * 100;
+};
 
 // --- Route ---
 const route = createRoute({
@@ -69,11 +72,6 @@ const route = createRoute({
   },
 });
 
-const calculateTrend = (current: number, previous: number) => {
-  if (previous === 0) return current > 0 ? 100 : 0;
-  return ((current - previous) / previous) * 100;
-};
-
 // --- Handler ---
 export const getLanguageModalityMetricsHandler = () => {
   app.openapi(route, async (c) => {
@@ -96,12 +94,9 @@ export const getLanguageModalityMetricsHandler = () => {
         const maxRow = await db
           .select({ max: sql`MAX(session_started)` })
           .from(patientChats);
-
         const minDate = minRow?.[0]?.min;
         const maxDate = maxRow?.[0]?.max;
-
         if (!minDate || !maxDate) return c.json({ cards: [], chartData: [] });
-
         start = new Date(minDate);
         start.setHours(0, 0, 0, 0);
         end = new Date(maxDate);
@@ -127,10 +122,9 @@ export const getLanguageModalityMetricsHandler = () => {
       const currentSessions = await fetchChats(start, end);
       const previousSessions = await fetchChats(prevStart, prevEnd);
 
-      // --- METRICS ---
+      // --- METRICS CALCULATION ---
       const calculateMetrics = (sessions: typeof currentSessions) => {
         const sessionsByUser = new Map();
-
         for (const s of sessions) {
           const userId = s.patientId;
           if (!sessionsByUser.has(userId)) sessionsByUser.set(userId, []);
@@ -143,7 +137,6 @@ export const getLanguageModalityMetricsHandler = () => {
         let romanUrduUsers = 0;
         let englishUsers = 0;
 
-        // --- session durations for average calculation ---
         const voiceSessionsArr: number[] = [];
         const textSessionsArr: number[] = [];
         const bothSessionsArr: number[] = [];
@@ -153,16 +146,14 @@ export const getLanguageModalityMetricsHandler = () => {
         for (const [userId, userSessions] of sessionsByUser.entries()) {
           let voiceCount = 0;
           let textCount = 0;
-          let total = 0;
-
+          let totalInbound = 0;
           let allUrdu = true;
           let hasEnglish = false;
-
-          // --- collect session messages by day for avg duration ---
           const sessionsByDay: Record<string, any[]> = {};
 
           for (const s of userSessions) {
             for (const msg of s.messages ?? []) {
+              if (msg.direction !== "inbound") continue; // only inbound
               const ts = msg.timestamp ? new Date(msg.timestamp) : new Date();
               const dayKey = `${ts.getFullYear()}-${
                 ts.getMonth() + 1
@@ -170,24 +161,29 @@ export const getLanguageModalityMetricsHandler = () => {
               if (!sessionsByDay[dayKey]) sessionsByDay[dayKey] = [];
               sessionsByDay[dayKey].push(msg);
 
-              // --- count for modality ---
+              // Modality count
               if (msg.kind === "voice") voiceCount++;
-              if (msg.kind === "text") textCount++;
+              else if (msg.kind === "text") textCount++;
+              // text+voice messages do NOT increment voice/text counts
 
-              // --- count for language ---
+              // Language
               const lang = (msg.current_language || "").toLowerCase().trim();
               if (lang !== "ur") allUrdu = false;
-              if (lang === "en") hasEnglish = true;
+              if (
+                lang === "en" ||
+                (msg.normalized_user_text || "")
+                  .toLowerCase()
+                  .includes("i want to talk in english")
+              )
+                hasEnglish = true;
 
-              total++;
+              totalInbound++;
             }
           }
 
-          if (total === 0) continue;
+          if (totalInbound === 0) continue;
+          const voicePerc = (voiceCount / totalInbound) * 100;
 
-          const voicePerc = (voiceCount / total) * 100;
-
-          // --- calculate avg session duration for this user ---
           const sessionDurations: number[] = Object.values(sessionsByDay).map(
             (msgs) => {
               msgs.sort(
@@ -199,23 +195,18 @@ export const getLanguageModalityMetricsHandler = () => {
               const endTime = new Date(
                 msgs[msgs.length - 1].timestamp
               ).getTime();
-              return (endTime - startTime) / 1000; // in seconds
+              return (endTime - startTime) / 1000;
             }
           );
 
-          const userTotalSessionDuration = sessionDurations.reduce(
-            (a, b) => a + b,
-            0
-          );
-
-          // --- User classification ---
+          // CLASSIFY USERS
           if (voicePerc >= 80) {
             voiceMajority++;
             voiceSessionsArr.push(...sessionDurations);
           } else if (voicePerc <= 20) {
             textMajority++;
             textSessionsArr.push(...sessionDurations);
-          } else {
+          } else if (voicePerc > 20 && voicePerc < 80) {
             bothUsers++;
             bothSessionsArr.push(...sessionDurations);
           }
@@ -224,7 +215,6 @@ export const getLanguageModalityMetricsHandler = () => {
             romanUrduUsers++;
             romanUrduSessionsArr.push(...sessionDurations);
           }
-
           if (hasEnglish) {
             englishUsers++;
             englishSessionsArr.push(...sessionDurations);
@@ -232,7 +222,6 @@ export const getLanguageModalityMetricsHandler = () => {
         }
 
         const totalUsers = sessionsByUser.size || 1;
-
         const avg = (arr: number[]) =>
           arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
 
@@ -242,14 +231,11 @@ export const getLanguageModalityMetricsHandler = () => {
           bothUsers,
           romanUrduUsers,
           englishUsers,
-
           voiceMajorityPerc: (voiceMajority / totalUsers) * 100,
           textMajorityPerc: (textMajority / totalUsers) * 100,
           bothUsersPerc: (bothUsers / totalUsers) * 100,
           romanUrduUsersPerc: (romanUrduUsers / totalUsers) * 100,
           englishUsersPerc: (englishUsers / totalUsers) * 100,
-
-          // --- new avg session duration per category ---
           avgVoiceDuration: avg(voiceSessionsArr),
           avgTextDuration: avg(textSessionsArr),
           avgBothDuration: avg(bothSessionsArr),
@@ -265,27 +251,27 @@ export const getLanguageModalityMetricsHandler = () => {
         {
           name: "Voice Majority Users",
           value: currentMetrics.voiceMajority,
-          percentage: currentMetrics.voiceMajorityPerc.toFixed(2),
+          percentage: Number(currentMetrics.voiceMajorityPerc.toFixed(2)),
         },
         {
           name: "Text Majority Users",
           value: currentMetrics.textMajority,
-          percentage: currentMetrics.textMajorityPerc.toFixed(2),
+          percentage: Number(currentMetrics.textMajorityPerc.toFixed(2)),
         },
         {
           name: "Both Users",
           value: currentMetrics.bothUsers,
-          percentage: currentMetrics.bothUsersPerc.toFixed(2),
+          percentage: Number(currentMetrics.bothUsersPerc.toFixed(2)),
         },
         {
           name: "Roman Urdu Users",
           value: currentMetrics.romanUrduUsers,
-          percentage: currentMetrics.romanUrduUsersPerc.toFixed(2),
+          percentage: Number(currentMetrics.romanUrduUsersPerc.toFixed(2)),
         },
         {
           name: "English Users",
           value: currentMetrics.englishUsers,
-          percentage: currentMetrics.englishUsersPerc.toFixed(2),
+          percentage: Number(currentMetrics.englishUsersPerc.toFixed(2)),
         },
       ];
 
