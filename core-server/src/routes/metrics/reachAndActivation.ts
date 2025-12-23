@@ -5,6 +5,14 @@ import { patient } from "@/models/patient";
 import { patientChats } from "@/models/patient-chats";
 import { createRoute, z } from "@hono/zod-openapi";
 import { sql } from "drizzle-orm";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+const PKT = "Asia/Karachi";
 
 // --- Response schema ---
 const SuccessResponseSchema = z.object({
@@ -60,9 +68,12 @@ const route = createRoute({
 
 // --- Helpers ---
 const calculateTrend = (current: number, previous: number): number => {
-
   if (previous === 0) return current > 0 ? 100 : 0;
-    console.log(current,previous,((current - previous) / (current + previous)) * 100)
+  console.log(
+    current,
+    previous,
+    ((current - previous) / (current + previous)) * 100
+  );
   return ((current - previous) / (current + previous)) * 100;
 };
 
@@ -172,12 +183,13 @@ export const getReachActivationMetricsHandler = () => {
       const now = new Date();
 
       let start: Date, end: Date;
+
       if (startDateStr && endDateStr) {
-        start = new Date(startDateStr);
-        start.setHours(0, 0, 0, 0);
-        end = new Date(endDateStr);
-        end.setHours(23, 59, 59, 999);
+        // Use frontend provided dates, convert to PKT start/end of day
+        start = dayjs(startDateStr).tz(PKT).startOf("day").toDate();
+        end = dayjs(endDateStr).tz(PKT).endOf("day").toDate();
       } else {
+        // Fetch min/max from database
         const minRow = await db
           .select({ min: sql`MIN(session_started)` })
           .from(patientChats);
@@ -189,12 +201,10 @@ export const getReachActivationMetricsHandler = () => {
 
         if (!minDate || !maxDate) return c.json({ cards: [], chartData: [] });
 
-        start = new Date(minDate);
-
-        end = new Date(maxDate);
+        // Convert min/max dates to PKT start/end of day
+        start = dayjs(minDate).tz(PKT).startOf("day").toDate();
+        end = dayjs(maxDate).tz(PKT).endOf("day").toDate();
       }
-      start.setHours(0, 0, 0, 0);
-      end.setHours(23, 59, 59, 999);
 
       // --- Fetch chats helper ---
       const fetchChats = async (from?: Date, to?: Date) => {
@@ -296,7 +306,10 @@ export const getReachActivationMetricsHandler = () => {
       } = resolvePeriods(startDateStr, endDateStr);
 
       // users active in current period
-      const currentActiveUsers = await getActiveUsersInPeriod(resolvedStart, resolvedEnd);
+      const currentActiveUsers = await getActiveUsersInPeriod(
+        resolvedStart,
+        resolvedEnd
+      );
 
       // find first session of every user
       const firstSessionRows = await db
@@ -346,8 +359,14 @@ export const getReachActivationMetricsHandler = () => {
       // CHURN RATE
       // =======================
 
-      const prevPeriodUsers = await getActiveUsersInPeriod(resolvedPrevStart, resolvedPrevEnd);
-      const currentPeriodUsers = getActiveUsersInPeriod(resolvedStart, resolvedEnd);
+      const prevPeriodUsers = await getActiveUsersInPeriod(
+        resolvedPrevStart,
+        resolvedPrevEnd
+      );
+      const currentPeriodUsers = getActiveUsersInPeriod(
+        resolvedStart,
+        resolvedEnd
+      );
 
       let churnedUsers = 0;
       for (const userId of prevPeriodUsers) {
