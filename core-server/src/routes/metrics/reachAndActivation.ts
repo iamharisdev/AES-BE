@@ -60,8 +60,10 @@ const route = createRoute({
 
 // --- Helpers ---
 const calculateTrend = (current: number, previous: number): number => {
+
   if (previous === 0) return current > 0 ? 100 : 0;
-  return Math.round(((current - previous) / previous) * 100);
+    console.log(current,previous,((current - previous) / (current + previous)) * 100)
+  return ((current - previous) / (current + previous)) * 100;
 };
 
 const checkOnboardingCompleted = (p: any) => !!p.menu;

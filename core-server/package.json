@@ -11,7 +11,7 @@
         "db:migrate": "bun drizzle-kit migrate",
         "db:studio": "bun drizzle-kit studio --verbose",
         "create:user": "bun run ./src/scripts/create-user.ts",
-        "temp": "bun run ./src/scripts/tempScript.ts",
+        "pull:prod": "bun run ./src/scripts/prod-to-dev-sync.ts",
         "temp-1": "bun run ./src/scripts/temp.ts",
         "seed:reminders": "bun run src/seeds/reminders.seed.ts"
     },
@@ -21,6 +21,7 @@
         "@hono/zod-openapi": "^0.15.2",
         "@lifeomic/attempt": "^3.1.0",
         "@types/mime-types": "^3.0.1",
+        "dotenv": "^17.2.3",
         "drizzle-kit": "0.22.8",
         "drizzle-orm": "^0.33.0",
         "formidable": "^3.5.4",

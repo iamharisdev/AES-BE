@@ -9,4 +9,5 @@ credentials/
 core-server/src/credentials/gcs-service-account.json
 core-server/src/credentials/
 *.json
+db_backups
 
