@@ -4,6 +4,15 @@ import { jwtMiddleware } from "@/middleware/jwt";
 import { patientChats } from "@/models/patient-chats";
 import { createRoute, z } from "@hono/zod-openapi";
 import { and, gte, lte } from "drizzle-orm";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+const PKT = "Asia/Karachi";
+
 
 // ---------- Response Schema ----------
 const ResponseTimeSchema = z.object({
@@ -43,7 +52,7 @@ const route = createRoute({
 
 // ---------- Helpers ----------
 const calculateTrend = (current: number, previous: number) => {
-  if (previous === 0) return current > 0 ? 100 : 0;
+  if (previous < 10) return 0
   return Math.round(((current - previous) / previous) * 100);
 };
 
@@ -119,25 +128,28 @@ export const getResponseQualityMetricsHandler = () => {
       const startDateStr = c.req.query("startDate");
       const endDateStr = c.req.query("endDate");
 
-      let start: Date;
-      let end: Date;
+      let start: Date, end: Date;
 
       if (startDateStr && endDateStr) {
-        start = new Date(startDateStr);
-        start.setHours(0, 0, 0, 0);
-        end = new Date(endDateStr);
-        end.setHours(23, 59, 59, 999);
+        // Use frontend provided dates, convert to PKT start/end of day
+        start = dayjs(startDateStr).tz(PKT).startOf("day").toDate();
+        end = dayjs(endDateStr).tz(PKT).endOf("day").toDate();
       } else {
-        // Full DB range if dates not provided
-        const minRow = await db.select({ min: patientChats.sessionStarted }).from(patientChats).limit(1);
-        const maxRow = await db.select({ max: patientChats.sessionStarted }).from(patientChats).limit(1);
-        const minDate = minRow?.[0]?.min;
-        const maxDate = maxRow?.[0]?.max;
-        if (!minDate || !maxDate) return c.json({ cards: [] }, 200);
-        start = new Date(minDate);
-        start.setHours(0, 0, 0, 0);
-        end = new Date(maxDate);
-        end.setHours(23, 59, 59, 999);
+        // Fetch min/max from database
+        const minRow = await db
+          .select({ min: sql`MIN(session_started)` })
+          .from(patientChats);
+        const maxRow = await db
+          .select({ max: sql`MAX(session_started)` })
+          .from(patientChats);
+        const minDate = minRow?.[0]?.min as string | undefined;
+        const maxDate = maxRow?.[0]?.max as string | undefined;
+
+        if (!minDate || !maxDate) return c.json({ cards: [], chartData: [] });
+
+        // Convert min/max dates to PKT start/end of day
+        start = dayjs(minDate).tz(PKT).startOf("day").toDate();
+        end = dayjs(maxDate).tz(PKT).endOf("day").toDate();
       }
 
       // Previous period for trend calculation

@@ -68,13 +68,9 @@ const route = createRoute({
 
 // --- Helpers ---
 const calculateTrend = (current: number, previous: number): number => {
-  if (previous === 0) return current > 0 ? 100 : 0;
-  console.log(
-    current,
-    previous,
-    ((current - previous) / (current + previous)) * 100
-  );
-  return ((current - previous) / (current + previous)) * 100;
+  if (previous <10 ) return 0
+ 
+  return ((current - previous) /   previous) * 100;
 };
 
 const checkOnboardingCompleted = (p: any) => !!p.menu;
@@ -90,15 +86,20 @@ const getUniqueUsers = (
 };
 
 const getPreviousPeriod = (start: Date, end: Date) => {
+  // Number of days in the current period
   const diffDays = Math.ceil(
     (end.getTime() - start.getTime()) / (1000 * 3600 * 24)
   );
-  const prevStart = new Date(start);
-  prevStart.setDate(prevStart.getDate() - diffDays);
-  prevStart.setHours(0, 0, 0, 0);
 
-  const prevEnd = new Date(start);
-  prevEnd.setHours(23, 59, 59, 999);
+  // Previous period start = current start - diffDays
+  const prevStart = dayjs(start)
+    .tz(PKT)
+    .subtract(diffDays, "day")
+    .startOf("day")
+    .toDate();
+
+  // Previous period end = day before current start
+  const prevEnd = dayjs(start).tz(PKT).subtract(1, "day").endOf("day").toDate();
 
   return { prevStart, prevEnd };
 };
@@ -354,6 +355,13 @@ export const getReachActivationMetricsHandler = () => {
           ? (prevRetained / prevEligibleUsers.length) * 100
           : 0;
 
+      const retainedUserIds = new Set<string>();
+      for (const userId of eligibleUsers) {
+        if (currentActiveUsers.has(userId)) {
+          retainedUserIds.add(userId);
+        }
+      }
+
       // --- Churn Rate ---
       // =======================
       // CHURN RATE
@@ -407,11 +415,32 @@ export const getReachActivationMetricsHandler = () => {
       const previousChurnRate =
         prevPrevUsers.size > 0 ? (prevChurned / prevPrevUsers.size) * 100 : 0;
 
+      const churnedUserIds = new Set<string>();
+      for (const userId of prevPeriodUsers) {
+        if (!(await currentPeriodUsers).has(userId)) {
+          churnedUserIds.add(userId);
+        }
+      }
+
       // --- Total Messages ---
       const totalMessages = currentChats.reduce(
         (acc, chat) => acc + (chat.messages?.length || 0),
         0
       );
+      // Total user messages
+      const totalUserMessages = currentChats.reduce((acc, chat) => {
+        const userMessages =
+          chat.messages?.filter((msg) => msg.sender === "user").length || 0;
+        return acc + userMessages;
+      }, 0);
+
+      // Total assistant messages
+      const totalAssistantMessages = currentChats.reduce((acc, chat) => {
+        const assistantMessages =
+          chat.messages?.filter((msg) => msg.sender === "assistant").length ||
+          0;
+        return acc + assistantMessages;
+      }, 0);
       const previousTotalMessages = previousChats.reduce(
         (acc, chat) => acc + (chat.messages?.length || 0),
         0
@@ -435,6 +464,8 @@ export const getReachActivationMetricsHandler = () => {
       );
       const previousOnboardingCompletionRate =
         (previousOnboardedPatients.length / patientsData.length) * 100 || 0;
+
+      const onboardedUserIds = new Set(onboardedPatients.map((p) => p.id));
 
       // --- Chart Data (last 7 days) ---
       const chartData: { day: string; users: number }[] = [];
@@ -511,6 +542,7 @@ export const getReachActivationMetricsHandler = () => {
               previousRetentionRate
             ).toString(),
             trendUp: calculateTrend(retentionRate, previousRetentionRate) >= 0,
+            userList: mapUserList(retainedUserIds),
           },
           {
             title: "Churn Rate",
@@ -518,6 +550,7 @@ export const getReachActivationMetricsHandler = () => {
             subtitle: "%",
             trend: calculateTrend(churnRate, previousChurnRate).toString(),
             trendUp: calculateTrend(churnRate, previousChurnRate) <= 0,
+            userList: mapUserList(churnedUserIds),
           },
           {
             title: "Total Messages",
@@ -527,6 +560,21 @@ export const getReachActivationMetricsHandler = () => {
               previousTotalMessages
             ).toString(),
             trendUp: calculateTrend(totalMessages, previousTotalMessages) >= 0,
+          },
+          {
+            title: "Total User Messages",
+            value: totalUserMessages.toLocaleString(),
+            trend: calculateTrend(totalUserMessages, totalMessages).toString(),
+            trendUp: calculateTrend(totalUserMessages, totalMessages) >= 0,
+          },
+          {
+            title: "Total Assistent Messages",
+            value: totalAssistantMessages.toLocaleString(),
+            trend: calculateTrend(
+              totalAssistantMessages,
+              totalMessages
+            ).toString(),
+            trendUp: calculateTrend(totalAssistantMessages, totalMessages) >= 0,
           },
           {
             title: "Onboarding Completion Rate",
@@ -541,6 +589,7 @@ export const getReachActivationMetricsHandler = () => {
                 onboardingCompletionRate,
                 previousOnboardingCompletionRate
               ) >= 0,
+            userList: mapUserList(onboardedUserIds),
           },
         ],
         chartData,

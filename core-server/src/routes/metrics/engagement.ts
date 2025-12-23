@@ -4,6 +4,15 @@ import { jwtMiddleware } from "@/middleware/jwt";
 import { patientChats } from "@/models/patient-chats";
 import { createRoute, z } from "@hono/zod-openapi";
 import { sql } from "drizzle-orm";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+import { patient } from "@/models/patient";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+const PKT = "Asia/Karachi";
 
 // =======================
 // RESPONSE SCHEMA
@@ -53,8 +62,7 @@ const route = createRoute({
 const safeNumber = (v: number) => (isNaN(v) || !isFinite(v) ? 0 : v);
 
 const calcTrend = (current: number, previous: number) => {
-  if (previous === 0 && current === 0) return { trend: "0", trendUp: true };
-  if (previous === 0) return { trend: "100", trendUp: true };
+  if (previous < 10) return { trend: "0", trendUp: true };
 
   const growth = ((current - previous) / previous) * 100;
   return { trend: growth.toFixed(1), trendUp: growth >= 0 };
@@ -93,6 +101,129 @@ const split24hSessions = (messages: any[]) => {
 // =======================
 // METRIC CALCULATION
 // =======================
+// const computeUserMetrics = (
+//   sessionsByUser: Map<string, any[][]>,
+//   rangeMs: number
+// ) => {
+//   let totalSessions = 0;
+//   let totalMessages = 0;
+//   let totalDurationMs = 0;
+//   let totalActiveDaysArr: number[] = [];
+//   const messagesPerUserArr: { userId: string; count: number }[] = [];
+
+//   for (const [userId, sessions] of sessionsByUser.entries()) {
+//     const activeDays = new Set<string>();
+//     let userMessages = 0;
+
+//     for (const sess of sessions) {
+//       if (!sess.length) continue;
+
+//       totalSessions++;
+//       totalMessages += sess.length;
+//       userMessages += sess.length;
+
+//       const start = new Date(sess[0].timestamp).getTime();
+//       const end = new Date(sess[sess.length - 1].timestamp).getTime();
+//       totalDurationMs += Math.max(0, end - start);
+
+//       for (const m of sess) {
+//         activeDays.add(new Date(m.timestamp).toDateString());
+//       }
+//     }
+
+//     totalActiveDaysArr.push(activeDays.size);
+//     messagesPerUserArr.push({ userId, count: userMessages });
+//   }
+
+//   const totalUsers = sessionsByUser.size || 1;
+
+//   const avgSessionsPerUser = totalSessions / totalUsers;
+
+//   const avgMessagesPerSession = totalSessions
+//     ? totalMessages / totalSessions
+//     : 0;
+
+//   const avgSessionDurationSec = totalSessions
+//     ? totalDurationMs / totalSessions / 1000
+//     : 0;
+
+//   const daysInRange = Math.max(1, Math.ceil(rangeMs / (24 * 60 * 60 * 1000)));
+//   const weeklySessionsPerUser = (avgSessionsPerUser * daysInRange) / 7;
+
+//   const avgActiveDaysPerUser = totalActiveDaysArr.length
+//     ? totalActiveDaysArr.reduce((a, b) => a + b, 0) / totalActiveDaysArr.length
+//     : 0;
+
+//   // =======================
+//   // Updated Power Users Calculation
+//   // =======================
+//   const sortedByMessages = [...messagesPerUserArr].sort(
+//     (a, b) => a.count - b.count
+//   );
+
+//   const index90 = Math.floor(0.9 * sortedByMessages.length);
+//   const p90 = sortedByMessages[index90]?.count || 0;
+
+//   const powerUsers = messagesPerUserArr.filter((u) => u.count > p90).length;
+
+//   return {
+//     totalSessions,
+//     totalUsers,
+//     avgSessionsPerUser,
+//     avgMessagesPerSession,
+//     avgSessionDurationSec,
+//     weeklySessionsPerUser,
+//     avgActiveDaysPerUser,
+//     powerUsers,
+//   };
+// };
+
+const fetchChats = async (from?: Date, to?: Date) => {
+  if (from && to) {
+    return db
+      .select()
+      .from(patientChats)
+      .where(
+        sql`session_started >= ${from.toISOString()} AND session_started <= ${to.toISOString()}`
+      );
+  }
+  return db.select().from(patientChats);
+};
+
+const allChats = await fetchChats(); // all chats for lastActivity
+// --- Map patient info ---
+const patientsData = await db.select().from(patient);
+const patientsMap = new Map(patientsData.map((p) => [p.id, p]));
+
+// --- Map user list with lastActivity from latest message ---
+const mapUserList = (userIds: Set<string>) =>
+  Array.from(userIds).map((id) => {
+    // allChats = aapke DB se fetch kiye hue sare chats
+    const userChats = allChats.filter((c) => c.patientId === id);
+    let lastActivity: string | null = null;
+
+    userChats.forEach((chat) => {
+      if (chat.messages?.length) {
+        const latestMsgTime = chat.messages
+          .map((m: any) => new Date(m.timestamp))
+          .sort((a: Date, b: Date) => b.getTime() - a.getTime())[0];
+        if (!lastActivity || new Date(lastActivity) < latestMsgTime) {
+          lastActivity = latestMsgTime.toISOString();
+        }
+      }
+    });
+
+    // patientsMap = DB se fetch kiye hue patient data ka Map
+    const patientData = patientsMap.get(id);
+
+    return {
+      id,
+      name: patientData?.name || "Unknown",
+      phone: patientData?.phoneNumber || "",
+      lastActivity,
+    };
+  });
+
 const computeUserMetrics = (
   sessionsByUser: Map<string, any[][]>,
   rangeMs: number
@@ -101,6 +232,8 @@ const computeUserMetrics = (
   let totalMessages = 0;
   let totalDurationMs = 0;
   let totalActiveDaysArr: number[] = [];
+
+  // 👇 yahin define ho raha hai (pehle yahin tha, bas return nahi hota tha)
   const messagesPerUserArr: { userId: string; count: number }[] = [];
 
   for (const [userId, sessions] of sessionsByUser.entries()) {
@@ -130,7 +263,6 @@ const computeUserMetrics = (
   const totalUsers = sessionsByUser.size || 1;
 
   const avgSessionsPerUser = totalSessions / totalUsers;
-
   const avgMessagesPerSession = totalSessions
     ? totalMessages / totalSessions
     : 0;
@@ -147,7 +279,7 @@ const computeUserMetrics = (
     : 0;
 
   // =======================
-  // Updated Power Users Calculation
+  // ✅ POWER USERS (P90 logic – SAME as before)
   // =======================
   const sortedByMessages = [...messagesPerUserArr].sort(
     (a, b) => a.count - b.count
@@ -156,7 +288,9 @@ const computeUserMetrics = (
   const index90 = Math.floor(0.9 * sortedByMessages.length);
   const p90 = sortedByMessages[index90]?.count || 0;
 
-  const powerUsers = messagesPerUserArr.filter((u) => u.count > p90).length;
+  const powerUserIds = new Set(
+    messagesPerUserArr.filter((u) => u.count > p90).map((u) => u.userId)
+  );
 
   return {
     totalSessions,
@@ -166,7 +300,8 @@ const computeUserMetrics = (
     avgSessionDurationSec,
     weeklySessionsPerUser,
     avgActiveDaysPerUser,
-    powerUsers,
+    powerUsers: powerUserIds.size, // 👈 pehle jaisa count
+    powerUserIds, // 👈 NEW: list
   };
 };
 
@@ -247,35 +382,29 @@ export const getEngagementMetricsHandler = () => {
       const startDateStr = c.req.query("startDate");
       const endDateStr = c.req.query("endDate");
 
-      let start: Date;
-      let end: Date;
+      let start: Date, end: Date;
 
       if (startDateStr && endDateStr) {
-        start = new Date(startDateStr);
-        end = new Date(endDateStr);
+        // Use frontend provided dates, convert to PKT start/end of day
+        start = dayjs(startDateStr).tz(PKT).startOf("day").toDate();
+        end = dayjs(endDateStr).tz(PKT).endOf("day").toDate();
       } else {
+        // Fetch min/max from database
         const minRow = await db
-          .select({
-            min: sql`MIN(session_started)`,
-          })
+          .select({ min: sql`MIN(session_started)` })
           .from(patientChats);
-
         const maxRow = await db
-          .select({
-            max: sql`MAX(session_started)`,
-          })
+          .select({ max: sql`MAX(session_started)` })
           .from(patientChats);
-
         const minDate = minRow?.[0]?.min as string | undefined;
         const maxDate = maxRow?.[0]?.max as string | undefined;
+
         if (!minDate || !maxDate) return c.json({ cards: [], chartData: [] });
 
-        start = new Date(minDate);
-        end = new Date(maxDate);
+        // Convert min/max dates to PKT start/end of day
+        start = dayjs(minDate).tz(PKT).startOf("day").toDate();
+        end = dayjs(maxDate).tz(PKT).endOf("day").toDate();
       }
-
-      start.setHours(0, 0, 0, 0);
-      end.setHours(23, 59, 59, 999);
 
       const rangeMs = end.getTime() - start.getTime();
 
@@ -399,6 +528,7 @@ export const getEngagementMetricsHandler = () => {
               value: String(currentMetrics.powerUsers),
               trend: trends.powerUsers.trend,
               trendUp: trends.powerUsers.trendUp,
+              userList: mapUserList(currentMetrics.powerUserIds),
             },
           ],
           chartData,

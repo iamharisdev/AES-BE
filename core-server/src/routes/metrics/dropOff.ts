@@ -11,6 +11,14 @@ import { gynecologicalHistory } from "@/models/gynecological-history";
 import { obsHistory } from "@/models/obstetric-history";
 import { previousPregnancy } from "@/models/previous-pregnancy";
 import { patientChats } from "@/models/patient-chats";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+const PKT = "Asia/Karachi";
 
 const DashboardResponseSchema = z.object({
   kpis: z.object({
@@ -61,25 +69,37 @@ export const getEMRDropOffHandler = () => {
       const startDateStr = c.req.query("startDate");
       const endDateStr = c.req.query("endDate");
 
-      let startDate: Date | undefined;
-      let endDate: Date | undefined;
+      let start: Date, end: Date;
 
-      if (startDateStr) {
-        startDate = new Date(startDateStr);
-        startDate.setHours(0, 0, 0, 0);
-      }
-      if (endDateStr) {
-        endDate = new Date(endDateStr);
-        endDate.setHours(23, 59, 59, 999);
+      if (startDateStr && endDateStr) {
+        // Use frontend provided dates, convert to PKT start/end of day
+        start = dayjs(startDateStr).tz(PKT).startOf("day").toDate();
+        end = dayjs(endDateStr).tz(PKT).endOf("day").toDate();
+      } else {
+        // Fetch min/max from database
+        const minRow = await db
+          .select({ min: sql`MIN(session_started)` })
+          .from(patientChats);
+        const maxRow = await db
+          .select({ max: sql`MAX(session_started)` })
+          .from(patientChats);
+        const minDate = minRow?.[0]?.min as string | undefined;
+        const maxDate = maxRow?.[0]?.max as string | undefined;
+
+        if (!minDate || !maxDate) return c.json({ cards: [], chartData: [] });
+
+        // Convert min/max dates to PKT start/end of day
+        start = dayjs(minDate).tz(PKT).startOf("day").toDate();
+        end = dayjs(maxDate).tz(PKT).endOf("day").toDate();
       }
 
       // FETCH PATIENTS
       let allPatients = await db.select().from(patient);
-      if (startDate && endDate) {
+      if (start && end) {
         allPatients = allPatients.filter(
           (p) =>
-            new Date(p.createdAt) >= startDate! &&
-            new Date(p.createdAt) <= endDate!
+            new Date(p.createdAt) >= start! &&
+            new Date(p.createdAt) <= end!
         );
       }
 
@@ -153,11 +173,11 @@ export const getEMRDropOffHandler = () => {
 
       // FETCH EMRS
       let allEmrs = await db.select().from(emr);
-      if (startDate && endDate) {
+      if (start && end) {
         allEmrs = allEmrs.filter(
           (e) =>
-            new Date(e.createdAt) >= startDate! &&
-            new Date(e.createdAt) <= endDate!
+            new Date(e.createdAt) >= start! &&
+            new Date(e.createdAt) <= end!
         );
       }
 
@@ -272,9 +292,9 @@ export const getEMRDropOffHandler = () => {
         .from(patientChats);
 
       const chatConditions = [];
-      if (startDate)
-        chatConditions.push(gte(patientChats.createdAt, startDate));
-      if (endDate) chatConditions.push(lte(patientChats.createdAt, endDate));
+      if (start)
+        chatConditions.push(gte(patientChats.createdAt, start));
+      if (end) chatConditions.push(lte(patientChats.createdAt, end));
 
       if (chatConditions.length > 0)
         chatQuery = chatQuery.where(and(...chatConditions));
@@ -300,7 +320,6 @@ export const getEMRDropOffHandler = () => {
             msg.current_flow === "APPA_FLOW" && msg.sender === "user"
         );
 
-        
         if (appaMessages.length === 0) continue;
 
         if (!userMap[chat.patientId]) {
@@ -330,8 +349,6 @@ export const getEMRDropOffHandler = () => {
         }
       }
 
-     
-
       const ask1Users = Object.values(userMap).filter(
         (u) => u.questionCount === 1
       );
@@ -345,14 +362,14 @@ export const getEMRDropOffHandler = () => {
         {
           label: "Ask 1st question",
           value: ask1Users.length,
-          total: totalUsers==0?1:totalUsers,
+          total: totalUsers == 0 ? 1 : totalUsers,
           metricKey: "ask-1st-question",
           users: ask1Users.map((u) => u.userInfo),
         },
         {
           label: "Ask 2nd question",
           value: ask2Users.length,
-          total: totalUsers==0?1:totalUsers,
+          total: totalUsers == 0 ? 1 : totalUsers,
           metricKey: "ask-2nd-question",
           users: ask2Users.map((u) => u.userInfo),
         },
@@ -361,27 +378,7 @@ export const getEMRDropOffHandler = () => {
       return c.json({
         kpis: { emrCompletionRate, overallDropoffRate },
         onboarding: [
-          {
-            label: "Started Onboarding",
-            value: onboardStarted,
-            total: totalOnboarding,
-            metricKey: "onboard-started",
-            users: onboardStartedUsers,
-          },
-          {
-            label: "CNIC Entered",
-            value: cnicEntered,
-            total: totalOnboarding,
-            metricKey: "cnic-entered",
-            users: cnicUsers,
-          },
-          {
-            label: "Name Entered",
-            value: nameEntered,
-            total: totalOnboarding,
-            metricKey: "name-entered",
-            users: nameUsers,
-          },
+         
           {
             label: "Menu Option Selected",
             value: menuSelected,
@@ -431,3 +428,26 @@ export const getEMRDropOffHandler = () => {
     }
   });
 };
+
+
+ // {
+          //   label: "Started Onboarding",
+          //   value: onboardStarted,
+          //   total: totalOnboarding,
+          //   metricKey: "onboard-started",
+          //   users: onboardStartedUsers,
+          // },
+          // {
+          //   label: "CNIC Entered",
+          //   value: cnicEntered,
+          //   total: totalOnboarding,
+          //   metricKey: "cnic-entered",
+          //   users: cnicUsers,
+          // },
+          // {
+          //   label: "Name Entered",
+          //   value: nameEntered,
+          //   total: totalOnboarding,
+          //   metricKey: "name-entered",
+          //   users: nameUsers,
+          // },
