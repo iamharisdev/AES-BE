@@ -140,7 +140,7 @@ const searchPatientsHandler = () => {
           .select()
           .from(tables.patient)
           .orderBy(desc(tables.patient.createdAt))
-          .limit(20)
+         
           .execute();
       }
     } catch (error: any) {
