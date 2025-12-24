@@ -68,9 +68,9 @@ const route = createRoute({
 
 // --- Helpers ---
 const calculateTrend = (current: number, previous: number): number => {
-  if (previous <10 ) return 0
- 
-  return ((current - previous) /   previous) * 100;
+  if (previous < 10) return 0;
+
+  return ((current - previous) / previous) * 100;
 };
 
 const checkOnboardingCompleted = (p: any) => !!p.menu;
@@ -482,11 +482,13 @@ export const getReachActivationMetricsHandler = () => {
         );
 
       for (let i = 6; i >= 0; i--) {
-        const dayStart = new Date();
-        dayStart.setDate(today.getDate() - i);
-        dayStart.setHours(0, 0, 0, 0);
-        const dayEnd = new Date(dayStart);
-        dayEnd.setHours(23, 59, 59, 999);
+        const dayStart = dayjs()
+          .tz(PKT)
+          .subtract(i, "day")
+          .startOf("day")
+          .toDate();
+
+        const dayEnd = dayjs().tz(PKT).subtract(i, "day").endOf("day").toDate();
 
         const uniqueUsers = new Set(
           last7DaysChats
@@ -499,7 +501,7 @@ export const getReachActivationMetricsHandler = () => {
         );
 
         chartData.push({
-          day: dayStart.toLocaleDateString("en-US", { weekday: "short" }),
+          day: dayjs(dayStart).format("ddd"),
           users: uniqueUsers.size,
         });
       }
@@ -561,21 +563,21 @@ export const getReachActivationMetricsHandler = () => {
             ).toString(),
             trendUp: calculateTrend(totalMessages, previousTotalMessages) >= 0,
           },
-          {
-            title: "Total User Messages",
-            value: totalUserMessages.toLocaleString(),
-            trend: calculateTrend(totalUserMessages, totalMessages).toString(),
-            trendUp: calculateTrend(totalUserMessages, totalMessages) >= 0,
-          },
-          {
-            title: "Total Assistent Messages",
-            value: totalAssistantMessages.toLocaleString(),
-            trend: calculateTrend(
-              totalAssistantMessages,
-              totalMessages
-            ).toString(),
-            trendUp: calculateTrend(totalAssistantMessages, totalMessages) >= 0,
-          },
+          // {
+          //   title: "Total User Messages",
+          //   value: totalUserMessages.toLocaleString(),
+          //   trend: calculateTrend(totalUserMessages, totalMessages).toString(),
+          //   trendUp: calculateTrend(totalUserMessages, totalMessages) >= 0,
+          // },
+          // {
+          //   title: "Total Assistent Messages",
+          //   value: totalAssistantMessages.toLocaleString(),
+          //   trend: calculateTrend(
+          //     totalAssistantMessages,
+          //     totalMessages
+          //   ).toString(),
+          //   trendUp: calculateTrend(totalAssistantMessages, totalMessages) >= 0,
+          // },
           {
             title: "Onboarding Completion Rate",
             value: `${onboardingCompletionRate.toFixed(1)}%`,
