@@ -15,5 +15,5 @@ FROM oven/bun:latest as final
 WORKDIR /app
 COPY --from=builder /app/src/index.js /app/
 
-ENV PORT=8000
+ENV PORT=3000
 CMD ["bun", "index.js"]
