@@ -1,7 +1,23 @@
 import { env } from '@/env'
 import { Storage } from '@google-cloud/storage'
+import path from 'path'
+import fs from 'fs'
 
-const storage = new Storage({ keyFilename: env.KEYFILE_PATH })
+// Build absolute path to credentials file
+const credentialsPath = env.KEYFILE_PATH
+	? path.resolve(process.cwd(), env.KEYFILE_PATH)
+	: path.resolve(process.cwd(), process.env.GOOGLE_APPLICATION_CREDENTIALS || "")
+
+let storage
+
+// ✅ Use credentials file if it exists, otherwise fallback to default
+if (fs.existsSync(credentialsPath)) {
+	storage = new Storage({ keyFilename: credentialsPath })
+	console.info(`🧩 Using GCS credentials from: ${credentialsPath}`)
+} else {
+	storage = new Storage()
+	console.info("☁️ Using default GCS credentials (Cloud Run)")
+}
 
 export const createPresignedPutUrl = async ({ bucket, key }: { bucket: string; key: string }) => {
 	return storage

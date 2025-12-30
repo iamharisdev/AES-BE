@@ -1,4 +1,4 @@
-import { createRoute, z } from '@hono/zod-openapi';
+import { z } from '@hono/zod-openapi';
 
 export const YesNoEnum = z.enum(['Yes', 'No', "I don't know"]);
 

@@ -11,6 +11,9 @@
         "db:migrate": "bun drizzle-kit migrate",
         "db:studio": "bun drizzle-kit studio --verbose",
         "create:user": "bun run ./src/scripts/create-user.ts",
+        "pull:prod": "bun run ./src/scripts/prod-to-dev-sync.ts",
+        "temp": "bun run ./src/scripts/temp.ts",
+        "temp-1": "bun run ./src/scripts/tempScript.ts",
         "seed:reminders": "bun run src/seeds/reminders.seed.ts"
     },
     "dependencies": {
@@ -19,17 +22,27 @@
         "@hono/zod-openapi": "^0.15.2",
         "@lifeomic/attempt": "^3.1.0",
         "@types/mime-types": "^3.0.1",
+        "csv-parser": "^3.2.0",
+        "dayjs": "^1.11.19",
+        "dotenv": "^17.2.3",
         "drizzle-kit": "0.22.8",
         "drizzle-orm": "^0.33.0",
+        "formidable": "^3.5.4",
         "hono": "^4.5.4",
+        "json2csv": "^6.0.0-alpha.2",
         "node-fetch": "^3.3.2",
         "nodemailer": "^7.0.4",
         "openai": "^4.55.7",
+        "papaparse": "^5.5.3",
+        "parser": "^0.1.4",
+        "pg": "^8.16.3",
         "postgres": "^3.4.4",
-        "ulidx": "^2.4.0"
+        "ulidx": "^2.4.0",
+        "zod": "^4.2.1"
     },
     "devDependencies": {
         "@types/bun": "latest",
+        "@types/formidable": "^3.4.6",
         "@types/nodemailer": "^6.4.17"
     }
 }

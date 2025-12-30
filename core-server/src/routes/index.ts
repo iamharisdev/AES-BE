@@ -1,16 +1,73 @@
-import homeRoute from "@/routes/home-page";
 import {
-  getExaminationHandler,
+  createCurrentPregnancyHandler,
+  deleteCurrentPregnancyHandler,
+  getCurrentPregnancyHandler,
+  updateCurrentPregnancyHandler,
+} from "@/routes/current-pregnancy";
+import {
+  createDiagnosticsHandler,
+  deleteDiagnosticsHandler,
+  getAllDiagnosticsByPatientHandler,
+  getDiagnosticsByEmrHandler,
+  updateDiagnosticsHandler,
+} from "@/routes/diagnostics";
+import {
+  createEmrHandler,
+  getAllEmrsFromCnicHandler,
+  getAllEmrsFromPhoneHandler,
+  getEmrDetailsHandler,
+  updateEmrDataHandler,
+  updateEmrHandler,
+} from "@/routes/emr";
+import {
   createExaminationHandler,
+  getExaminationHandler,
   updateExaminationHandler,
 } from "@/routes/examination";
 import {
+  createFamilyHistoryHandler,
+  deleteFamilyHistoryHandler,
+  getFamilyHistoryHandler,
+  updateFamilyHistoryHandler,
+} from "@/routes/family-history";
+import {
+  createFilesHandler,
+  deleteFilesHandler,
+  getFilesHandler,
+  updateFilesHandler,
+  uploadFileHandler,
+} from "@/routes/files";
+import {
+  createFollowupQuestionsHandler,
+  deleteFollowupQuestionsHandler,
+  getFollowupQuestionsHandler,
+  updateFollowupQuestionsHandler,
+} from "@/routes/followup-questions";
+import {
+  createGynecologicalHistoryHandler,
+  deleteGynecologicalHistoryHandler,
+  getGynecologicalHistoryHandler,
+  updateGynecologicalHistoryHandler,
+} from "@/routes/gynecological-history";
+import {
   createHospitalHandler,
-  listHospitalsHandler,
-  getHospitalByIdHandler,
-  updateHospitalHandler,
   deleteHospitalHandler,
+  getHospitalByIdHandler,
+  listHospitalsHandler,
+  updateHospitalHandler,
 } from "@/routes/hospital";
+import {
+  createMedicalHistoryHandler,
+  deleteMedicalHistoryHandler,
+  getMedicalHistoryByEmrHandler,
+  updateMedicalHistoryHandler,
+} from "@/routes/medical-history";
+import {
+  createObstetricHistoryHandler,
+  deleteObstetricHistoryHandler,
+  getObstetricHistoryHandler,
+  updateObstetricHistoryHandler,
+} from "@/routes/obstetric-history";
 import {
   createPatientHandler,
   editPatientHandler,
@@ -19,96 +76,80 @@ import {
   uploadVoiceNoteHandler,
 } from "@/routes/patient";
 import {
-  getAllEmrsFromPhoneHandler,
-  getAllEmrsFromCnicHandler,
-  getEmrDetailsHandler,
-  updateEmrHandler,
-  createEmrHandler,
-  updateEmrDataHandler,
-} from "@/routes/emr";
-import {
-  createPresentingComplaintHandler,
-  getPresentingComplaintHandler,
-  updatePresentingComplaintHandler,
-  deletePresentingComplaintHandler,
-} from "@/routes/presenting-complaint";
-import {
-  createTrimesterHandler,
-  getTrimesterHandler,
-  updateTrimesterHandler,
-  deleteTrimesterHandler,
-} from "@/routes/trimester";
-import {
-  createCurrentPregnancyHandler,
-  getCurrentPregnancyHandler,
-  updateCurrentPregnancyHandler,
-  deleteCurrentPregnancyHandler,
-} from "@/routes/current-pregnancy";
-import {
-  createObstetricHistoryHandler,
-  getObstetricHistoryHandler,
-  updateObstetricHistoryHandler,
-  deleteObstetricHistoryHandler,
-} from "@/routes/obstetric-history";
-import {
-  createGynecologicalHistoryHandler,
-  getGynecologicalHistoryHandler,
-  updateGynecologicalHistoryHandler,
-  deleteGynecologicalHistoryHandler,
-} from "@/routes/gynecological-history";
-import {
-  createSurgicalHistoryHandler,
-  getSurgicalHistoryHandler,
-  updateSurgicalHistoryHandler,
-  deleteSurgicalHistoryHandler,
-} from "@/routes/surgical-history";
-import {
-  createFamilyHistoryHandler,
-  getFamilyHistoryHandler,
-  updateFamilyHistoryHandler,
-  deleteFamilyHistoryHandler,
-} from "@/routes/family-history";
+  addMessageToChatHandler,
+  createPatientChatHandler,
+  deletePatientChatHandler,
+  getPatientChatByIdHandler,
+  listPatientChatsHandler,
+  updatePatientChatHandler,
+} from "@/routes/patient-chats";
 import {
   createPersonalHistoryHandler,
+  deletePersonalHistoryHandler,
   getPersonalHistoryHandler,
   updatePersonalHistoryHandler,
-  deletePersonalHistoryHandler,
 } from "@/routes/personal-history";
 import {
-  createSocioEconomicHistoryHandler,
-  getSocioEconomicHistoryHandler,
-  updateSocioEconomicHistoryHandler,
-  deleteSocioEconomicHistoryHandler,
-} from "@/routes/socio-economic-history";
-import {
-  createVitalsHandler,
-  listVitalsHandler,
-  getVitalsByIdHandler,
-  updateVitalsHandler,
-  deleteVitalsHandler,
-} from "@/routes/vitals";
-import {
-  createFollowupQuestionsHandler,
-  getFollowupQuestionsHandler,
-  updateFollowupQuestionsHandler,
-  deleteFollowupQuestionsHandler,
-} from "@/routes/followup-questions";
-import {
-  createFilesHandler,
-  getFilesHandler,
-  updateFilesHandler,
-  deleteFilesHandler,
-  uploadFileHandler,
-} from "@/routes/files";
-import generatePresignedUrls from "@/routes/generate-presigned-urls";
+  createPresentingComplaintHandler,
+  deletePresentingComplaintHandler,
+  getPresentingComplaintHandler,
+  updatePresentingComplaintHandler,
+} from "@/routes/presenting-complaint";
 import {
   createProposedPlanHandler,
-  getProposedPlansByEmrHandler,
-  getProposedPlanByIdHandler,
-  updateProposedPlanHandler,
   deleteProposedPlanHandler,
   getAllDoctorNotesByPatientHandler,
+  getProposedPlanByIdHandler,
+  getProposedPlansByEmrHandler,
+  updateProposedPlanHandler,
 } from "@/routes/proposed-plan";
+import {
+  createQRCodeHandler,
+  deleteQRCodeHandler,
+  getQRCodeByPatientHandler,
+  getQRCodeByTokenHandler,
+  updateQRCodeHandler,
+} from "@/routes/qr-code";
+import {
+  createRedFlagsHandler,
+  deleteRedFlagsHandler,
+  getMajorRedFlags,
+  getRedFlagsByIdHandler,
+  listRedFlagsHandler,
+  updateRedFlagsHandler,
+} from "@/routes/red-flags";
+import {
+  createSocioEconomicHistoryHandler,
+  deleteSocioEconomicHistoryHandler,
+  getSocioEconomicHistoryHandler,
+  updateSocioEconomicHistoryHandler,
+} from "@/routes/socio-economic-history";
+import {
+  createSurgicalHistoryHandler,
+  deleteSurgicalHistoryHandler,
+  getSurgicalHistoryHandler,
+  updateSurgicalHistoryHandler,
+} from "@/routes/surgical-history";
+import {
+  createTrimesterHandler,
+  deleteTrimesterHandler,
+  getTrimesterHandler,
+  updateTrimesterHandler,
+} from "@/routes/trimester";
+import {
+  createVisitHandler,
+  getAdvisedTestsHandler,
+  getAllVisitsHandler,
+  getVisitDetailsHandler,
+  updateVisitHandler,
+} from "@/routes/visits";
+import {
+  createVitalsHandler,
+  deleteVitalsHandler,
+  getVitalsByIdHandler,
+  listVitalsHandler,
+  updateVitalsHandler,
+} from "@/routes/vitals";
 import {
   changePasswordHandler,
   forgotPasswordHandler,
@@ -119,51 +160,15 @@ import {
   sendOtpHandler,
   verifyOtpHandler,
 } from "./user";
-import {
-  createRedFlagsHandler,
-  listRedFlagsHandler,
-  getRedFlagsByIdHandler,
-  updateRedFlagsHandler,
-  deleteRedFlagsHandler,
-  getMajorRedFlags,
-} from "@/routes/red-flags";
-import {
-  createDiagnosticsHandler,
-  getDiagnosticsByEmrHandler,
-  updateDiagnosticsHandler,
-  deleteDiagnosticsHandler,
-  getAllDiagnosticsByPatientHandler,
-} from "@/routes/diagnostics";
-import {
-  createMedicalHistoryHandler,
-  getMedicalHistoryByEmrHandler,
-  updateMedicalHistoryHandler,
-  deleteMedicalHistoryHandler,
-} from "@/routes/medical-history";
-import {
-  createQRCodeHandler,
-  getQRCodeByTokenHandler,
-  getQRCodeByPatientHandler,
-  updateQRCodeHandler,
-  deleteQRCodeHandler,
-} from "@/routes/qr-code";
-import {
-  createVisitHandler,
-  getAdvisedTestsHandler,
-  getAllVisitsHandler,
-  getVisitDetailsHandler,
-  updateVisitHandler,
-} from "@/routes/visits";
-import {
-  listPatientChatsHandler,
-  getPatientChatByIdHandler,
-  createPatientChatHandler,
-  updatePatientChatHandler,
-  deletePatientChatHandler,
-  addMessageToChatHandler,
-} from "@/routes/patient-chats";
 
 import { audioToTextHandler } from "./audio-to-text";
+import { getReachActivationMetricsHandler } from "./metrics/reachAndActivation";
+import { getUserMetricsHandler } from "./user-metrics";
+import { getEngagementMetricsHandler } from "./metrics/engagement";
+import { getLanguageModalityMetricsHandler } from "./metrics/language";
+import { getResponseQualityMetricsHandler } from "./metrics/responseQuality";
+import { getRetentionMetricsHandler } from "./metrics/retention";
+import { getEMRDropOffHandler } from "./metrics/dropOff";
 
 export const registerRoutes = () => {
   createPresentingComplaintHandler();
@@ -281,4 +286,12 @@ export const registerRoutes = () => {
   deletePatientChatHandler();
   addMessageToChatHandler();
   getAllDiagnosticsByPatientHandler();
+  getUserMetricsHandler();
+  //Metrics
+  getReachActivationMetricsHandler();
+  getEngagementMetricsHandler();
+  getLanguageModalityMetricsHandler();
+  getResponseQualityMetricsHandler();
+  getRetentionMetricsHandler();
+  getEMRDropOffHandler()
 };

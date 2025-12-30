@@ -1,16 +1,19 @@
 {
-	"compilerOptions": {
-		// needed for postgres.js to work
-		"esModuleInterop": true,
+  "compilerOptions": {
+    // needed for postgres.js to work
+    "esModuleInterop": true,
+    "module": "esnext",
+    "target": "es2022",
+    "moduleResolution": "node",
 
-		"strict": true,
-		"jsx": "react-jsx",
-		"jsxImportSource": "hono/jsx",
+    "strict": true,
+    "jsx": "react-jsx",
+    "jsxImportSource": "hono/jsx",
 
-		// Configure Absolute Paths
-		"paths": {
-			"@/*": ["./src/*"]
-		}
-	},
-	"exclude": ["node_modules"]
+    // Configure Absolute Paths
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "exclude": ["node_modules"]
 }

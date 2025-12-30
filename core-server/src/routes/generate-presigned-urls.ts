@@ -55,7 +55,11 @@ const route = createRoute({
 });
 
 // Define the handler
-const generatePresignedUrlsHandler = app.openapi(route, async c => {
+export const generatePresignedUrlsHandler =()=>{
+
+
+
+app.openapi(route, async c => {
   const { extension } = c.req.valid('query');
   const id = ulid();
   const bucket = env.UPLOAD_BUCKET || 'undefined';
@@ -70,7 +74,7 @@ const generatePresignedUrlsHandler = app.openapi(route, async c => {
     },
     200
   );
-});
+})
+}
 
-export type GeneratePresignedUrlsRoute = typeof generatePresignedUrlsHandler;
-export default route;
+

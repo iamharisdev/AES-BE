@@ -1,0 +1,1 @@
+ALTER TABLE "patient_chats" ADD COLUMN "mongo_patient_id" text;
