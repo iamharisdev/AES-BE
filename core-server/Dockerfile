@@ -1,28 +1,19 @@
-# Stage 1: Build
-FROM oven/bun:latest AS builder
+# Stage 1: Build the web server binary
+FROM oven/bun:latest as builder
 
 WORKDIR /app
 
-COPY package.json bun.lock ./
+COPY package.json bun.lock /app/
 RUN bun install
 
 COPY . .
-RUN bun build src/index.ts \
-  --minify \
-  --sourcemap \
-  --target=bun \
-  --outfile index.js
+RUN bun build src/index.ts --minify --sourcemap --target=bun --outfile index.js
 
-# Stage 2: Runtime
-FROM oven/bun:latest
+# Stage 2: Serve the application
+FROM oven/bun:latest as final
 
 WORKDIR /app
+COPY --from=builder /app/src/index.js /app/
 
-COPY --from=builder /app/index.js /app/
-
-# ❌ DO NOT hardcode PORT
-# Cloud Run injects PORT automatically
-
-EXPOSE 8000
-
+ENV PORT=8000
 CMD ["bun", "index.js"]
