@@ -219,19 +219,34 @@ export const getReachActivationMetricsHandler = () => {
         }
         return db.select().from(patientChats);
       };
+      // --- Fetch all users helper ---
+      const fetchPatients = async (from?: Date, to?: Date) => {
+        if (from && to) {
+          return db
+            .select()
+            .from(patient)
+            .where(
+              sql`created_at >= ${from.toISOString()} AND created_at <= ${to.toISOString()}`
+            );
+        }
+        return db.select().from(patient);
+      };
+
       const allMessagesCount = await getTodayMessagesCount();
       const currentChats = await fetchChats(start, end);
       const allChats = await fetchChats(); // all chats for lastActivity
 
       const { prevStart, prevEnd } = getPreviousPeriod(start, end);
       const previousChats = await fetchChats(prevStart, prevEnd);
+      const allPatients = await fetchPatients(start, end);
+      const previousPatients = await fetchPatients(prevStart, prevEnd);
 
       // --- Unique and Active Users ---
-      const currentUniqueUsers = new Set(
-        currentChats
-          .filter((c) => c.messages && c.messages.length > 0) // ✅ only chats with messages
-          .map((c) => c.patientId)
-      );
+      // const currentUniqueUsers = new Set(
+      //   currentChats
+      //     .filter((c) => c.messages && c.messages.length > 0) // ✅ only chats with messages
+      //     .map((c) => c.patientId)
+      // );
 
       const day = new Date();
       day.setHours(23, 59, 59, 999);
@@ -239,26 +254,26 @@ export const getReachActivationMetricsHandler = () => {
       twoWeeksAgo.setDate(day.getDate() - 13);
       twoWeeksAgo.setHours(0, 0, 0, 0);
 
-      const last2WeeksChats = await fetchChats(twoWeeksAgo, day);
+      //const last2WeeksChats = await fetchChats(twoWeeksAgo, day);
       const activeUsers = new Set(
-        last2WeeksChats
+        currentChats
           .filter((c) => c.messages && c.messages.length > 0)
           .map((c) => c.patientId)
       );
 
-      const prevTwoWeeksStart = new Date();
-      prevTwoWeeksStart.setDate(twoWeeksAgo.getDate() - 14);
-      prevTwoWeeksStart.setHours(0, 0, 0, 0);
-      const prevTwoWeeksEnd = new Date();
-      prevTwoWeeksEnd.setDate(twoWeeksAgo.getDate() - 1);
-      prevTwoWeeksEnd.setHours(23, 59, 59, 999);
+      // const prevTwoWeeksStart = new Date();
+      // prevTwoWeeksStart.setDate(twoWeeksAgo.getDate() - 14);
+      // prevTwoWeeksStart.setHours(0, 0, 0, 0);
+      // const prevTwoWeeksEnd = new Date();
+      // prevTwoWeeksEnd.setDate(twoWeeksAgo.getDate() - 1);
+      // prevTwoWeeksEnd.setHours(23, 59, 59, 999);
 
-      const prev2WeeksChats = await fetchChats(
-        prevTwoWeeksStart,
-        prevTwoWeeksEnd
-      );
+      // const prev2WeeksChats = await fetchChats(
+      //   prevTwoWeeksStart,
+      //   prevTwoWeeksEnd
+      // );
       const previousActiveUsers = new Set(
-        prev2WeeksChats
+        previousChats
           .filter((c) => c.messages && c.messages.length > 0)
           .map((c) => c.patientId)
       );
@@ -266,24 +281,13 @@ export const getReachActivationMetricsHandler = () => {
       // --- Map patient info ---
       const patientsData = await db.select().from(patient);
       const patientsMap = new Map(patientsData.map((p) => [p.id, p]));
+      const getPatietnsIds = new Set(allPatients.map((c) => c.id));
 
       // --- Map user list with lastActivity from latest message ---
       const mapUserList = (userIds: Set<string>) =>
-        Array.from(userIds).map((id) => {
+        Array.from(userIds).map((id, index) => {
           const userChats = allChats.filter((c) => c.patientId === id);
-          let lastActivity: string | null = null;
-
-          userChats.forEach((chat) => {
-            if (chat.messages?.length) {
-              const latestMsgTime = chat.messages
-                .map((m: any) => new Date(m.timestamp))
-                .sort((a: Date, b: Date) => b.getTime() - a.getTime())[0];
-              if (!lastActivity || new Date(lastActivity) < latestMsgTime) {
-                lastActivity = latestMsgTime.toISOString();
-              }
-            }
-          });
-
+          let lastActivity = userChats[0]?.lastMessageAt;
           const patientData = patientsMap.get(id);
 
           return {
@@ -474,11 +478,11 @@ export const getReachActivationMetricsHandler = () => {
       sevenDaysAgo.setDate(today.getDate() - 6);
       sevenDaysAgo.setHours(0, 0, 0, 0);
 
-      const last7DaysChats = await db
+      const last7DaysPatients = await db
         .select()
-        .from(patientChats)
+        .from(patient)
         .where(
-          sql`session_started >= ${sevenDaysAgo.toISOString()} AND session_started <= ${today.toISOString()}`
+          sql`created_at >= ${sevenDaysAgo.toISOString()} AND created_at <= ${today.toISOString()}`
         );
 
       for (let i = 6; i >= 0; i--) {
@@ -491,13 +495,13 @@ export const getReachActivationMetricsHandler = () => {
         const dayEnd = dayjs().tz(PKT).subtract(i, "day").endOf("day").toDate();
 
         const uniqueUsers = new Set(
-          last7DaysChats
+          last7DaysPatients
             .filter(
-              (chat) =>
-                new Date(chat.sessionStarted) >= dayStart &&
-                new Date(chat.sessionStarted) <= dayEnd
+              (p) =>
+                new Date(p.createdAt) >= dayStart &&
+                new Date(p.createdAt) <= dayEnd
             )
-            .map((chat) => chat.patientId)
+            .map((i) => i.id)
         );
 
         chartData.push({
@@ -511,17 +515,11 @@ export const getReachActivationMetricsHandler = () => {
         cards: [
           {
             title: "Unique Users",
-            value: currentUniqueUsers.size.toLocaleString(),
-            trend: calculateTrend(
-              currentUniqueUsers.size,
-              getUniqueUsers(previousChats).size
-            ).toString(),
+            value: allPatients?.length,
+            trend: calculateTrend(allPatients?.length, previousPatients.length),
             trendUp:
-              calculateTrend(
-                currentUniqueUsers.size,
-                getUniqueUsers(previousChats).size
-              ) >= 0,
-            userList: mapUserList(currentUniqueUsers),
+              calculateTrend(allPatients?.length, previousPatients.length) >= 0,
+            userList: mapUserList(getPatietnsIds),
           },
           {
             title: "Active Users",
@@ -563,21 +561,21 @@ export const getReachActivationMetricsHandler = () => {
             ).toString(),
             trendUp: calculateTrend(totalMessages, previousTotalMessages) >= 0,
           },
-          // {
-          //   title: "Total User Messages",
-          //   value: totalUserMessages.toLocaleString(),
-          //   trend: calculateTrend(totalUserMessages, totalMessages).toString(),
-          //   trendUp: calculateTrend(totalUserMessages, totalMessages) >= 0,
-          // },
-          // {
-          //   title: "Total Assistent Messages",
-          //   value: totalAssistantMessages.toLocaleString(),
-          //   trend: calculateTrend(
-          //     totalAssistantMessages,
-          //     totalMessages
-          //   ).toString(),
-          //   trendUp: calculateTrend(totalAssistantMessages, totalMessages) >= 0,
-          // },
+          {
+            title: "Total User Messages",
+            value: totalUserMessages.toLocaleString(),
+            trend: calculateTrend(totalUserMessages, totalMessages).toString(),
+            trendUp: calculateTrend(totalUserMessages, totalMessages) >= 0,
+          },
+          {
+            title: "Total Assistent Messages",
+            value: totalAssistantMessages.toLocaleString(),
+            trend: calculateTrend(
+              totalAssistantMessages,
+              totalMessages
+            ).toString(),
+            trendUp: calculateTrend(totalAssistantMessages, totalMessages) >= 0,
+          },
           {
             title: "Onboarding Completion Rate",
             value: `${onboardingCompletionRate.toFixed(1)}%`,

@@ -3,13 +3,12 @@ import { db } from "@/db";
 import { patientChats } from "@/models/patient-chats";
 import { eq } from "drizzle-orm";
 
-async function updateFirst20ChatsLanguage() {
+async function updateChatsLanguage() {
   console.log("Fetching chats...");
 
-  const chats = await db.select().from(patientChats).limit(20);
+  const chats = await db.select().from(patientChats);
 
-  console.log("Total chats fetched:", chats.length);
-  console.log("Updating first 20 chats → current_language = 'ur'");
+ 
 
   for (const chat of chats) {
     if (!Array.isArray(chat.messages) || chat.messages.length === 0) {
@@ -30,10 +29,10 @@ async function updateFirst20ChatsLanguage() {
       .where(eq(patientChats.id, chat.id));
   }
 
-  console.log("Done! First 20 chats updated.");
+  console.log("Done!  chats updated.");
 }
 
-updateFirst20ChatsLanguage()
+updateChatsLanguage()
   .then(() => process.exit(0))
   .catch((err) => {
     console.error("Error running script:", err);

@@ -3,7 +3,7 @@ import { db } from "@/db";
 import { jwtMiddleware } from "@/middleware/jwt";
 import { patientChats } from "@/models/patient-chats";
 import { createRoute, z } from "@hono/zod-openapi";
-import { and, gte, lte } from "drizzle-orm";
+import { and, gte, lte, sql } from "drizzle-orm";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
