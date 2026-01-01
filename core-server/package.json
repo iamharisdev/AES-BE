@@ -14,7 +14,8 @@
         "pull:prod": "bun run ./src/scripts/prod-to-dev-sync.ts",
         "temp": "bun run ./src/scripts/temp.ts",
         "temp-1": "bun run ./src/scripts/tempScript.ts",
-        "seed:reminders": "bun run src/seeds/reminders.seed.ts"
+        "seed:reminders": "bun run src/seeds/reminders.seed.ts",
+        "delete:patient": "bun run src/scripts/delete-patient.ts"
     },
     "dependencies": {
         "@google-cloud/storage": "^7.12.1",
@@ -30,6 +31,7 @@
         "formidable": "^3.5.4",
         "hono": "^4.5.4",
         "json2csv": "^6.0.0-alpha.2",
+        "mongodb": "^7.0.0",
         "node-fetch": "^3.3.2",
         "nodemailer": "^7.0.4",
         "openai": "^4.55.7",

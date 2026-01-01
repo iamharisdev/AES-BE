@@ -96,7 +96,7 @@ const computeLatency = (chats: any[], start: Date, end: Date) => {
         lastUserTime = ts;
       } else if ((sender === "assistant" || sender === "bot") && lastUserTime) {
         const diff = ts.getTime() - lastUserTime.getTime();
-        if (diff >= 0 && diff < 5 * 60 * 1000) { // ignore delays >5min
+        if (diff >= 0 && diff < 15 * 60 * 1000) { // ignore delays >5min
           totalLatency += diff;
           count++;
         }
@@ -132,8 +132,8 @@ export const getResponseQualityMetricsHandler = () => {
 
       if (startDateStr && endDateStr) {
         // Use frontend provided dates, convert to PKT start/end of day
-        start = dayjs(startDateStr).tz(PKT).startOf("day").toDate();
-        end = dayjs(endDateStr).tz(PKT).endOf("day").toDate();
+        start = dayjs(startDateStr).tz(PKT).startOf("day").utc().toDate();
+        end = dayjs(endDateStr).tz(PKT).endOf("day").utc().toDate();
       } else {
         // Fetch min/max from database
         const minRow = await db
@@ -148,8 +148,8 @@ export const getResponseQualityMetricsHandler = () => {
         if (!minDate || !maxDate) return c.json({ cards: [], chartData: [] });
 
         // Convert min/max dates to PKT start/end of day
-        start = dayjs(minDate).tz(PKT).startOf("day").toDate();
-        end = dayjs(maxDate).tz(PKT).endOf("day").toDate();
+        start = dayjs(minDate).tz(PKT).startOf("day").utc().toDate();
+        end = dayjs(maxDate).tz(PKT).endOf("day").utc().toDate();
       }
 
       // Previous period for trend calculation

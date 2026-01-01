@@ -183,12 +183,12 @@ export const getReachActivationMetricsHandler = () => {
       const endDateStr = c.req.query("endDate");
       const now = new Date();
 
-      let start: Date, end: Date;
+      let start: Date | string, end: Date | string;
 
       if (startDateStr && endDateStr) {
         // Use frontend provided dates, convert to PKT start/end of day
-        start = dayjs(startDateStr).tz(PKT).startOf("day").toDate();
-        end = dayjs(endDateStr).tz(PKT).endOf("day").toDate();
+        start = dayjs(startDateStr).tz(PKT).startOf("day").utc().toDate();
+        end = dayjs(endDateStr).tz(PKT).endOf("day").utc().toDate();
       } else {
         // Fetch min/max from database
         const minRow = await db
@@ -203,8 +203,9 @@ export const getReachActivationMetricsHandler = () => {
         if (!minDate || !maxDate) return c.json({ cards: [], chartData: [] });
 
         // Convert min/max dates to PKT start/end of day
-        start = dayjs(minDate).tz(PKT).startOf("day").toDate();
-        end = dayjs(maxDate).tz(PKT).endOf("day").toDate();
+
+        start = dayjs(minDate).tz(PKT).startOf("day").utc().toDate();
+        end = dayjs(maxDate).tz(PKT).endOf("day").utc().toDate();
       }
 
       // --- Fetch chats helper ---
@@ -473,10 +474,16 @@ export const getReachActivationMetricsHandler = () => {
 
       // --- Chart Data (last 7 days) ---
       const chartData: { day: string; users: number }[] = [];
-      const today = new Date();
-      const sevenDaysAgo = new Date(today);
-      sevenDaysAgo.setDate(today.getDate() - 6);
-      sevenDaysAgo.setHours(0, 0, 0, 0);
+      // Today (end of today)
+      const today = dayjs().tz(PKT).endOf("day").utc().toDate();
+
+      // 7 days ago (start of that day)
+      const sevenDaysAgo = dayjs()
+        .tz(PKT)
+        .subtract(6, "day")
+        .startOf("day")
+        .utc()
+        .toDate();
 
       const last7DaysPatients = await db
         .select()
@@ -490,9 +497,15 @@ export const getReachActivationMetricsHandler = () => {
           .tz(PKT)
           .subtract(i, "day")
           .startOf("day")
+          .utc()
           .toDate();
 
-        const dayEnd = dayjs().tz(PKT).subtract(i, "day").endOf("day").toDate();
+        const dayEnd = dayjs()
+          .tz(PKT)
+          .subtract(i, "day")
+          .endOf("day")
+          .utc()
+          .toDate();
 
         const uniqueUsers = new Set(
           last7DaysPatients

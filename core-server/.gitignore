@@ -6,6 +6,7 @@ build
 
 credentials/
 db_backups/
+newProduction.dump
 
 core-server/src/credentials/gcs-service-account.json
 core-server/src/credentials/
