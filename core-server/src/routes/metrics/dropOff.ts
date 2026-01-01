@@ -73,8 +73,8 @@ export const getEMRDropOffHandler = () => {
 
       if (startDateStr && endDateStr) {
         // Use frontend provided dates, convert to PKT start/end of day
-        start = dayjs(startDateStr).tz(PKT).startOf("day").toDate();
-        end = dayjs(endDateStr).tz(PKT).endOf("day").toDate();
+        start = dayjs(startDateStr).tz(PKT).startOf("day").utc().toDate();
+        end = dayjs(endDateStr).tz(PKT).endOf("day").utc().toDate();
       } else {
         // Fetch min/max from database
         const minRow = await db
@@ -89,8 +89,8 @@ export const getEMRDropOffHandler = () => {
         if (!minDate || !maxDate) return c.json({ cards: [], chartData: [] });
 
         // Convert min/max dates to PKT start/end of day
-        start = dayjs(minDate).tz(PKT).startOf("day").toDate();
-        end = dayjs(maxDate).tz(PKT).endOf("day").toDate();
+        start = dayjs(minDate).tz(PKT).startOf("day").utc().toDate();
+        end = dayjs(maxDate).tz(PKT).endOf("day").utc().toDate();
       }
 
       // FETCH PATIENTS
@@ -130,32 +130,32 @@ export const getEMRDropOffHandler = () => {
       const totalOnboarding = allPatients.length;
 
       // Onboarding users arrays
-      const onboardStartedUsers = allPatients
-        .filter((p) => p.menu)
-        .map((p) => ({
-          name: p.name,
-          phone: p.phoneNumber,
-          lastActivity: lastActivityMap[p.id] || null,
-          createdAt: p.createdAt,
-        }));
+      // const onboardStartedUsers = allPatients
+      //   .filter((p) => p.menu)
+      //   .map((p) => ({
+      //     name: p.name,
+      //     phone: p.phoneNumber,
+      //     lastActivity: lastActivityMap[p.id] || null,
+      //     createdAt: p.createdAt,
+      //   }));
 
-      const cnicUsers = allPatients
-        .filter((p) => p.cnic)
-        .map((p) => ({
-          name: p.name,
-          phone: p.phoneNumber,
-          lastActivity: lastActivityMap[p.id] || null,
-          createdAt: p.createdAt,
-        }));
+      // const cnicUsers = allPatients
+      //   .filter((p) => p.cnic)
+      //   .map((p) => ({
+      //     name: p.name,
+      //     phone: p.phoneNumber,
+      //     lastActivity: lastActivityMap[p.id] || null,
+      //     createdAt: p.createdAt,
+      //   }));
 
-      const nameUsers = allPatients
-        .filter((p) => p.name)
-        .map((p) => ({
-          name: p.name,
-          phone: p.phoneNumber,
-          lastActivity: lastActivityMap[p.id] || null,
-          createdAt: p.createdAt,
-        }));
+      // const nameUsers = allPatients
+      //   .filter((p) => p.name)
+      //   .map((p) => ({
+      //     name: p.name,
+      //     phone: p.phoneNumber,
+      //     lastActivity: lastActivityMap[p.id] || null,
+      //     createdAt: p.createdAt,
+      //   }));
 
       const menuUsers = allPatients
         .filter((p) => p.menu)
@@ -166,9 +166,9 @@ export const getEMRDropOffHandler = () => {
           createdAt: p.createdAt,
         }));
 
-      const onboardStarted = onboardStartedUsers.length;
-      const cnicEntered = cnicUsers.length;
-      const nameEntered = nameUsers.length;
+      // const onboardStarted = onboardStartedUsers.length;
+      // const cnicEntered = cnicUsers.length;
+      // const nameEntered = nameUsers.length;
       const menuSelected = menuUsers.length;
 
       // FETCH EMRS
@@ -376,13 +376,13 @@ export const getEMRDropOffHandler = () => {
       ];
 
       return c.json({
-        kpis: { emrCompletionRate, overallDropoffRate },
+        kpis: { layer1Complete, layer2Complete },
         onboarding: [
          
           {
             label: "Menu Option Selected",
             value: menuSelected,
-            total: totalOnboarding,
+            total: totalOnboarding==0?1:totalOnboarding,
             metricKey: "menu-selected",
             users: menuUsers,
           },

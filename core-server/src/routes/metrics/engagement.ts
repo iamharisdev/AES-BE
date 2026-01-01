@@ -386,8 +386,8 @@ export const getEngagementMetricsHandler = () => {
 
       if (startDateStr && endDateStr) {
         // Use frontend provided dates, convert to PKT start/end of day
-        start = dayjs(startDateStr).tz(PKT).startOf("day").toDate();
-        end = dayjs(endDateStr).tz(PKT).endOf("day").toDate();
+        start = dayjs(startDateStr).tz(PKT).startOf("day").utc().toDate();
+        end = dayjs(endDateStr).tz(PKT).endOf("day").utc().toDate();
       } else {
         // Fetch min/max from database
         const minRow = await db
@@ -402,8 +402,8 @@ export const getEngagementMetricsHandler = () => {
         if (!minDate || !maxDate) return c.json({ cards: [], chartData: [] });
 
         // Convert min/max dates to PKT start/end of day
-        start = dayjs(minDate).tz(PKT).startOf("day").toDate();
-        end = dayjs(maxDate).tz(PKT).endOf("day").toDate();
+        start = dayjs(minDate).tz(PKT).startOf("day").utc().toDate();
+        end = dayjs(maxDate).tz(PKT).endOf("day").utc().toDate();
       }
 
       const rangeMs = end.getTime() - start.getTime();
