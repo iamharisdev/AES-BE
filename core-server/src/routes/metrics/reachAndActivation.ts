@@ -288,9 +288,9 @@ export const getReachActivationMetricsHandler = () => {
       const mapUserList = (userIds: Set<string>) =>
         Array.from(userIds).map((id, index) => {
           const userChats = allChats.filter((c) => c.patientId === id);
-             const patientData = patientsMap.get(id);
-          let lastActivity = userChats[0]?.lastMessageAt||patientData?.createdAt;
-       
+          const patientData = patientsMap.get(id);
+          let lastActivity =
+            userChats[0]?.lastMessageAt || patientData?.createdAt;
 
           return {
             id,
@@ -299,9 +299,6 @@ export const getReachActivationMetricsHandler = () => {
             lastActivity,
           };
         });
-
-  
-
 
       // --- Retention Rate ---
       // =======================

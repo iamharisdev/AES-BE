@@ -1,199 +1,199 @@
-// // deletePatientEverywhere.ts
-// import { MongoClient, ObjectId } from "mongodb";
-// import { Client } from "pg";
-// import dotenv from "dotenv";
+// // // deletePatientEverywhere.ts
+// // import { MongoClient, ObjectId } from "mongodb";
+// // import { Client } from "pg";
+// // import dotenv from "dotenv";
 
-// dotenv.config();
+// // dotenv.config();
 
-// // --- Logging helper ---
-// const log = {
-//   info: console.log,
-//   debug: console.debug,
-//   warn: console.warn,
-//   error: console.error,
-// };
+// // // --- Logging helper ---
+// // const log = {
+// //   info: console.log,
+// //   debug: console.debug,
+// //   warn: console.warn,
+// //   error: console.error,
+// // };
 
-// // --- Normalize phone ---
-// function normalizePhoneNumber(phone: string): string {
-//   if (!phone) return "";
+// // // --- Normalize phone ---
+// // function normalizePhoneNumber(phone: string): string {
+// //   if (!phone) return "";
 
-//   let cleaned = phone.replace(/[^\d+]/g, "");
-//   cleaned = cleaned.replace(/^whatsapp:/i, "");
-//   if (cleaned.startsWith("0")) {
-//     cleaned = "+92" + cleaned.slice(1);
-//   } else if (cleaned.startsWith("92")) {
-//     cleaned = "+" + cleaned;
-//   } else if (!cleaned.startsWith("+")) {
-//     cleaned = "+92" + cleaned;
-//   }
-//   return cleaned;
-// }
-
-
-
-// // --- Mongo setup ---
-// const mongoUri = "mongodb+srv://wahajkhalid:qRF1Xxh0d0rxc7K7@cluster0.nwiebld.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
-// const mongoDbName = "appa_db";
-// const client = new MongoClient(mongoUri);
-
-// // --- Postgres setup ---
-// const pgClient = new Client({
-//   host: "34.87.36.56",
-//   port: 5432,
-//   user: "postgres",
-//   password: "sOXw0dXUmuZ7nNtTKrO90eXD3F0yWoF9",
-//   database: "newProduction",
-// });
+// //   let cleaned = phone.replace(/[^\d+]/g, "");
+// //   cleaned = cleaned.replace(/^whatsapp:/i, "");
+// //   if (cleaned.startsWith("0")) {
+// //     cleaned = "+92" + cleaned.slice(1);
+// //   } else if (cleaned.startsWith("92")) {
+// //     cleaned = "+" + cleaned;
+// //   } else if (!cleaned.startsWith("+")) {
+// //     cleaned = "+92" + cleaned;
+// //   }
+// //   return cleaned;
+// // }
 
 
-// // --- Delete from Mongo ---
-// async function deleteFromMongo(phone: string) {
-//   const normPhone = normalizePhoneNumber(phone);
-//   const dbMongo = client.db(mongoDbName);
 
-//   const patientsCol = dbMongo.collection("patients");
-//   const chatsCol = dbMongo.collection("patient_chats");
-//   const kvCol = dbMongo.collection("emr_kv_memory");
-//   const appaThreads = dbMongo.collection("appa_threads");
+// // // --- Mongo setup ---
+// // const mongoUri = "mongodb+srv://wahajkhalid:qRF1Xxh0d0rxc7K7@cluster0.nwiebld.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+// // const mongoDbName = "appa_db";
+// // const client = new MongoClient(mongoUri);
 
-//   const patientDoc = await patientsCol.findOne({ phoneNumber: normPhone });
-//   if (!patientDoc) {
-//     log.info(`[MONGO] No patient found | phone=${phone}`);
-//     return {};
-//   }
+// // // --- Postgres setup ---
+// // const pgClient = new Client({
+// //   host: "34.87.36.56",
+// //   port: 5432,
+// //   user: "postgres",
+// //   password: "sOXw0dXUmuZ7nNtTKrO90eXD3F0yWoF9",
+// //   database: "newProduction",
+// // });
 
-//   const mongoId = patientDoc._id;
-//   const pgPatientId = patientDoc.pg_patient_id;
 
-//   log.info(`[MONGO] Found patient | _id=${mongoId} | pg_patient_id=${pgPatientId}`);
+// // // --- Delete from Mongo ---
+// // async function deleteFromMongo(phone: string) {
+// //   const normPhone = normalizePhoneNumber(phone);
+// //   const dbMongo = client.db(mongoDbName);
 
-//   // Delete KV
-//   const kvRes = kvCol ? await kvCol.deleteOne({ user_id: normPhone }) : { deletedCount: 0 };
-//   log.debug(`[MONGO] Deleted EMR KV docs: ${kvRes.deletedCount}`);
+// //   const patientsCol = dbMongo.collection("patients");
+// //   const chatsCol = dbMongo.collection("patient_chats");
+// //   const kvCol = dbMongo.collection("emr_kv_memory");
+// //   const appaThreads = dbMongo.collection("appa_threads");
 
-//   // Delete chats
-//   const chatsRes = chatsCol ? await chatsCol.deleteMany({ patientId: mongoId }) : { deletedCount: 0 };
-//   log.debug(`[MONGO] Deleted patient_chats: ${chatsRes.deletedCount}`);
+// //   const patientDoc = await patientsCol.findOne({ phoneNumber: normPhone });
+// //   if (!patientDoc) {
+// //     log.info(`[MONGO] No patient found | phone=${phone}`);
+// //     return {};
+// //   }
 
-//   // Delete appa_threads
-//   const threadRes = appaThreads
-//     ? await appaThreads.deleteMany({
-//         $or: [{ user_id: normPhone }, { sender: normPhone }, { phone: normPhone }],
-//       })
-//     : { deletedCount: 0 };
-//   log.debug(`[MONGO] Deleted appa_threads: ${threadRes.deletedCount}`);
+// //   const mongoId = patientDoc._id;
+// //   const pgPatientId = patientDoc.pg_patient_id;
 
-//   // Delete patient
-//   const patientRes = await patientsCol.deleteOne({ _id: mongoId });
-//   log.debug(`[MONGO] Deleted patient doc: ${patientRes.deletedCount}`);
+// //   log.info(`[MONGO] Found patient | _id=${mongoId} | pg_patient_id=${pgPatientId}`);
 
-//   log.info(`[MONGO] Summary | kv=${kvRes.deletedCount} | chats=${chatsRes.deletedCount} | threads=${threadRes.deletedCount} | patient=${patientRes.deletedCount}`);
+// //   // Delete KV
+// //   const kvRes = kvCol ? await kvCol.deleteOne({ user_id: normPhone }) : { deletedCount: 0 };
+// //   log.debug(`[MONGO] Deleted EMR KV docs: ${kvRes.deletedCount}`);
 
-//   return { mongoId, pgPatientId };
-// }
+// //   // Delete chats
+// //   const chatsRes = chatsCol ? await chatsCol.deleteMany({ patientId: mongoId }) : { deletedCount: 0 };
+// //   log.debug(`[MONGO] Deleted patient_chats: ${chatsRes.deletedCount}`);
 
-// // --- Delete from Postgres ---
-// async function deleteFromPostgres(phone: string, mongoId?: ObjectId, pgPatientId?: string) {
-//   const normPhone = normalizePhoneNumber(phone);
-//   let pid = pgPatientId;
+// //   // Delete appa_threads
+// //   const threadRes = appaThreads
+// //     ? await appaThreads.deleteMany({
+// //         $or: [{ user_id: normPhone }, { sender: normPhone }, { phone: normPhone }],
+// //       })
+// //     : { deletedCount: 0 };
+// //   log.debug(`[MONGO] Deleted appa_threads: ${threadRes.deletedCount}`);
 
-//   if (!pid) {
-//     const res = await pgClient.query(
-//       `SELECT id FROM patient WHERE phone_number = $1 LIMIT 1`,
-//       [normPhone]
-//     );
-//     pid = res.rows[0]?.id;
-//   }
+// //   // Delete patient
+// //   const patientRes = await patientsCol.deleteOne({ _id: mongoId });
+// //   log.debug(`[MONGO] Deleted patient doc: ${patientRes.deletedCount}`);
 
-//   if (!pid) {
-//     log.info(`[POSTGRES] No patient found | phone=${phone}`);
-//     return;
-//   }
+// //   log.info(`[MONGO] Summary | kv=${kvRes.deletedCount} | chats=${chatsRes.deletedCount} | threads=${threadRes.deletedCount} | patient=${patientRes.deletedCount}`);
 
-//   log.info(`[POSTGRES] Patient resolved | id=${pid}`);
+// //   return { mongoId, pgPatientId };
+// // }
 
-//   // Delete mirrored patient_chats
-//   if (mongoId) {
-//     try {
-//       const res = await pgClient.query(`DELETE FROM patient_chats WHERE mongo_patient_id = $1`, [mongoId.toString()]);
-//       log.debug(`[POSTGRES] Deleted patient_chats: ${res.rowCount}`);
-//     } catch (err) {
-//       log.warn(`[POSTGRES] Failed to delete patient_chats: ${err}`);
-//     }
-//   }
+// // // --- Delete from Postgres ---
+// // async function deleteFromPostgres(phone: string, mongoId?: ObjectId, pgPatientId?: string) {
+// //   const normPhone = normalizePhoneNumber(phone);
+// //   let pid = pgPatientId;
 
-//   // Delete EMR child tables first to avoid FK violation
-//   const emrChildTables = [
-//     "obs_history",
-//     "current_pregnancy",
-//     "presenting_complaint",
-//     "gynecological_history",
-//     "surgical_history",
-//     "family_history",
-//     "personal_history",
-//     "socio_economic_history",
-//     "obstetric_history",
-//     "medical_history"
-//   ];
+// //   if (!pid) {
+// //     const res = await pgClient.query(
+// //       `SELECT id FROM patient WHERE phone_number = $1 LIMIT 1`,
+// //       [normPhone]
+// //     );
+// //     pid = res.rows[0]?.id;
+// //   }
 
-//   for (const tbl of emrChildTables) {
-//     try {
-//       const res = await pgClient.query(
-//         `DELETE FROM ${tbl} WHERE emr_id IN (SELECT id FROM emr WHERE patient_id = $1)`,
-//         [pid]
-//       );
-//       log.debug(`[POSTGRES] Deleted ${tbl}: ${res.rowCount}`);
-//     } catch (err) {
-//       log.warn(`[POSTGRES] Failed to delete ${tbl}: ${err.message}`);
-//     }
-//   }
+// //   if (!pid) {
+// //     log.info(`[POSTGRES] No patient found | phone=${phone}`);
+// //     return;
+// //   }
 
-//   // Delete EMR rows
-//   try {
-//     const emrRes = await pgClient.query(`DELETE FROM emr WHERE patient_id = $1`, [pid]);
-//     log.debug(`[POSTGRES] Deleted EMR rows: ${emrRes.rowCount}`);
-//   } catch (err) {
-//     log.warn(`[POSTGRES] Failed to delete EMR rows: ${err.message}`);
-//   }
+// //   log.info(`[POSTGRES] Patient resolved | id=${pid}`);
 
-//   // Delete patient
-//   try {
-//     const patientRes = await pgClient.query(`DELETE FROM patient WHERE id = $1`, [pid]);
-//     log.debug(`[POSTGRES] Deleted patient: ${patientRes.rowCount}`);
-//   } catch (err) {
-//     log.warn(`[POSTGRES] Failed to delete patient: ${err.message}`);
-//   }
+// //   // Delete mirrored patient_chats
+// //   if (mongoId) {
+// //     try {
+// //       const res = await pgClient.query(`DELETE FROM patient_chats WHERE mongo_patient_id = $1`, [mongoId.toString()]);
+// //       log.debug(`[POSTGRES] Deleted patient_chats: ${res.rowCount}`);
+// //     } catch (err) {
+// //       log.warn(`[POSTGRES] Failed to delete patient_chats: ${err}`);
+// //     }
+// //   }
 
-//   log.info(`[POSTGRES] Completed deletion for patient_id=${pid}`);
-// }
+// //   // Delete EMR child tables first to avoid FK violation
+// //   const emrChildTables = [
+// //     "obs_history",
+// //     "current_pregnancy",
+// //     "presenting_complaint",
+// //     "gynecological_history",
+// //     "surgical_history",
+// //     "family_history",
+// //     "personal_history",
+// //     "socio_economic_history",
+// //     "obstetric_history",
+// //     "medical_history"
+// //   ];
 
-// // --- Main ---
-// async function main() {
-//   const phone = process.argv[2];
-//   if (!phone) {
-//     log.error("Usage: bun run deletePatientEverywhere.ts <phone>");
-//     process.exit(1);
-//   }
+// //   for (const tbl of emrChildTables) {
+// //     try {
+// //       const res = await pgClient.query(
+// //         `DELETE FROM ${tbl} WHERE emr_id IN (SELECT id FROM emr WHERE patient_id = $1)`,
+// //         [pid]
+// //       );
+// //       log.debug(`[POSTGRES] Deleted ${tbl}: ${res.rowCount}`);
+// //     } catch (err) {
+// //       log.warn(`[POSTGRES] Failed to delete ${tbl}: ${err.message}`);
+// //     }
+// //   }
 
-//   try {
-//     await client.connect();
-//     await pgClient.connect();
+// //   // Delete EMR rows
+// //   try {
+// //     const emrRes = await pgClient.query(`DELETE FROM emr WHERE patient_id = $1`, [pid]);
+// //     log.debug(`[POSTGRES] Deleted EMR rows: ${emrRes.rowCount}`);
+// //   } catch (err) {
+// //     log.warn(`[POSTGRES] Failed to delete EMR rows: ${err.message}`);
+// //   }
 
-//     const { mongoId, pgPatientId } = await deleteFromMongo(phone);
-//     await deleteFromPostgres(phone, mongoId, pgPatientId);
+// //   // Delete patient
+// //   try {
+// //     const patientRes = await pgClient.query(`DELETE FROM patient WHERE id = $1`, [pid]);
+// //     log.debug(`[POSTGRES] Deleted patient: ${patientRes.rowCount}`);
+// //   } catch (err) {
+// //     log.warn(`[POSTGRES] Failed to delete patient: ${err.message}`);
+// //   }
 
-//     log.info("✅ Delete operation completed successfully");
-//   } catch (err) {
-//     log.error("❌ Failed to delete patient data:", err);
-//   } finally {
-//     await client.close();
-//     await pgClient.end();
-//   }
-// }
+// //   log.info(`[POSTGRES] Completed deletion for patient_id=${pid}`);
+// // }
 
-// await main();
+// // // --- Main ---
+// // async function main() {
+// //   const phone = process.argv[2];
+// //   if (!phone) {
+// //     log.error("Usage: bun run deletePatientEverywhere.ts <phone>");
+// //     process.exit(1);
+// //   }
 
-// delete patients if refrence not get
+// //   try {
+// //     await client.connect();
+// //     await pgClient.connect();
+
+// //     const { mongoId, pgPatientId } = await deleteFromMongo(phone);
+// //     await deleteFromPostgres(phone, mongoId, pgPatientId);
+
+// //     log.info("✅ Delete operation completed successfully");
+// //   } catch (err) {
+// //     log.error("❌ Failed to delete patient data:", err);
+// //   } finally {
+// //     await client.close();
+// //     await pgClient.end();
+// //   }
+// // }
+
+// // await main();
+
+// // delete patients if refrence not get
 
 // import { Client } from "pg";
 // import dotenv from "dotenv";
@@ -207,7 +207,7 @@
 //   port: 5432,
 //   user: "postgres",
 //   password: "sOXw0dXUmuZ7nNtTKrO90eXD3F0yWoF9",
-//   database: "cloneNewProduction",
+//   database: "development",
 // });
 
 // // --- Logical link tables that may not have FK constraints
@@ -320,14 +320,120 @@
 // main();
 
 
-//insert patients
+// //insert patients
 
+
+// // import { Client } from "pg";
+// // import fs from "fs";
+// // import dotenv from "dotenv";
+
+// // dotenv.config();
+
+// // const pgClient = new Client({
+// //   host: "34.87.36.56",
+// //   port: 5432,
+// //   user: "postgres",
+// //   password: "sOXw0dXUmuZ7nNtTKrO90eXD3F0yWoF9",
+// //   database: "cloneNewProduction",
+// // });
+
+// // async function insertPatients(jsonPath: string) {
+// //   const data = fs.readFileSync(jsonPath, "utf-8");
+// //   const patients = JSON.parse(data);
+
+// //   for (const p of patients) {
+// //     // Check for existing patient by phone_number
+// //     const exists = await pgClient.query(
+// //       "SELECT 1 FROM patient WHERE phone_number = $1 LIMIT 1",
+// //       [p.phone_number]
+// //     );
+
+// //     if (exists.rowCount > 0) {
+// //       console.log(`⚠️ Skipping duplicate patient: ${p.phone_number}`);
+// //       continue;
+// //     }
+
+// //     // Insert patient
+// //     const columns = Object.keys(p).join(", ");
+// //     const values = Object.values(p);
+// //     const placeholders = values.map((_, i) => `$${i + 1}`).join(", ");
+
+// //     await pgClient.query(
+// //       `INSERT INTO patient (${columns}) VALUES (${placeholders})`,
+// //       values
+// //     );
+
+// //     console.log(`✅ Inserted patient: ${p.phone_number}`);
+// //   }
+// // }
+
+// // async function main() {
+// //   try {
+// //     await pgClient.connect();
+// //     await insertPatients("/home/shahzaib-malik/projects/Nodejs/core-backend/core-server/src/scripts/patient.json"); // your JSON file path
+// //   } catch (err) {
+// //     console.error("❌ Error:", err);
+// //   } finally {
+// //     await pgClient.end();
+// //   }
+// // }
+
+// // main();
+
+
+// //delete orphanChats
+
+// // import { Client } from "pg";
+// // import dotenv from "dotenv";
+
+// // dotenv.config();
+
+// // const pgClient = new Client({
+// //   host: "34.87.36.56",
+// //   port: 5432,
+// //   user: "postgres",
+// //   password: "sOXw0dXUmuZ7nNtTKrO90eXD3F0yWoF9",
+// //   database: "cloneNewProduction",
+// // });
+
+// // async function listOrphanChats() {
+// //   await pgClient.connect();
+
+// //   // Orphan chats with valid UUID
+// //   const res = await pgClient.query(`
+// //     SELECT *
+// //     FROM patient_chats
+// //     WHERE patient_id ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+// //       AND patient_id::uuid NOT IN (SELECT id FROM patient)
+// //   `);
+
+// //   console.log(`👀 Orphan chats with valid UUIDs: ${res.rowCount}`);
+// //   console.table(res.rows);
+
+// //   // Orphan chats with invalid UUID
+// //   const invalidRes = await pgClient.query(`
+// //     SELECT *
+// //     FROM patient_chats
+// //     WHERE patient_id !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+// //   `);
+
+// //   console.log(`👀 Chats with invalid patient_id: ${invalidRes.rowCount}`);
+// //   console.table(invalidRes.rows);
+
+// //   await pgClient.end();
+// // }
+
+// // listOrphanChats();
+
+
+// insert patient chats
 
 // import { Client } from "pg";
 // import fs from "fs";
 // import dotenv from "dotenv";
 
 // dotenv.config();
+
 
 // const pgClient = new Client({
 //   host: "34.87.36.56",
@@ -337,40 +443,72 @@
 //   database: "cloneNewProduction",
 // });
 
-// async function insertPatients(jsonPath: string) {
-//   const data = fs.readFileSync(jsonPath, "utf-8");
-//   const patients = JSON.parse(data);
+// // --- Helper: check valid UUID ---
+// function isValidUUID(uuid: string) {
+//   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(uuid);
+// }
 
-//   for (const p of patients) {
-//     // Check for existing patient by phone_number
-//     const exists = await pgClient.query(
-//       "SELECT 1 FROM patient WHERE phone_number = $1 LIMIT 1",
-//       [p.phone_number]
-//     );
+// // --- Insert patient_chats safely ---
+// async function insertPatientChats(jsonPath: string) {
+//   const raw = fs.readFileSync(jsonPath, "utf-8");
+//   const data = JSON.parse(raw);
+//   console.log(data.length)
+//   const chats = Array.isArray(data) ? data : data.chats;
 
-//     if (exists.rowCount > 0) {
-//       console.log(`⚠️ Skipping duplicate patient: ${p.phone_number}`);
+//   if (!Array.isArray(chats)) throw new Error("Invalid JSON format, expected array or { chats: [...] }");
+
+//   for (const chat of chats) {
+//     const patientId = chat.patient_id;
+
+//     // 1️⃣ Ignore invalid UUIDs
+//     if (!patientId || !isValidUUID(patientId)) {
+//       console.warn(`⚠️ Skipping invalid patient_id: ${patientId}`);
 //       continue;
 //     }
 
-//     // Insert patient
-//     const columns = Object.keys(p).join(", ");
-//     const values = Object.values(p);
+//     // 2️⃣ Check if patient exists
+//     const patientRes = await pgClient.query(
+//       "SELECT 1 FROM patient WHERE id = $1 LIMIT 1",
+//       [patientId]
+//     );
+
+//     if (patientRes.rowCount === 0) {
+//       console.warn(`⚠️ Skipping chat: patient_id ${patientId} does not exist in patient table`);
+//       continue;
+//     }
+
+//     // 3️⃣ Check duplicate in patient_chats
+//     const existsRes = await pgClient.query(
+//       "SELECT 1 FROM patient_chats WHERE patient_id = $1 LIMIT 1",
+//       [patientId]
+//     );
+
+//     if (existsRes.rowCount > 0) {
+//       console.log(`⏭️ Skipping duplicate chat for patient_id: ${patientId}`);
+//       continue;
+//     }
+
+//     // 4️⃣ Insert chat
+//     const columns = Object.keys(chat).join(", ");
+//     const values = Object.values(chat);
 //     const placeholders = values.map((_, i) => `$${i + 1}`).join(", ");
 
 //     await pgClient.query(
-//       `INSERT INTO patient (${columns}) VALUES (${placeholders})`,
+//       `INSERT INTO patient_chats (${columns}) VALUES (${placeholders})`,
 //       values
 //     );
 
-//     console.log(`✅ Inserted patient: ${p.phone_number}`);
+//     console.log(`✅ Inserted chat for patient_id: ${patientId}`);
 //   }
 // }
-
+// // --- Main ---
 // async function main() {
 //   try {
 //     await pgClient.connect();
-//     await insertPatients("/home/shahzaib-malik/projects/Nodejs/core-backend/core-server/src/scripts/patient.json"); // your JSON file path
+
+//     // Pass your JSON file path here
+ 
+//     await insertPatientChats("/home/shahzaib-malik/projects/Nodejs/core-backend/core-server/src/scripts/patient_chats.json"); 
 //   } catch (err) {
 //     console.error("❌ Error:", err);
 //   } finally {
@@ -381,59 +519,12 @@
 // main();
 
 
-//delete orphanChats
-
-// import { Client } from "pg";
-// import dotenv from "dotenv";
-
-// dotenv.config();
-
-// const pgClient = new Client({
-//   host: "34.87.36.56",
-//   port: 5432,
-//   user: "postgres",
-//   password: "sOXw0dXUmuZ7nNtTKrO90eXD3F0yWoF9",
-//   database: "cloneNewProduction",
-// });
-
-// async function listOrphanChats() {
-//   await pgClient.connect();
-
-//   // Orphan chats with valid UUID
-//   const res = await pgClient.query(`
-//     SELECT *
-//     FROM patient_chats
-//     WHERE patient_id ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
-//       AND patient_id::uuid NOT IN (SELECT id FROM patient)
-//   `);
-
-//   console.log(`👀 Orphan chats with valid UUIDs: ${res.rowCount}`);
-//   console.table(res.rows);
-
-//   // Orphan chats with invalid UUID
-//   const invalidRes = await pgClient.query(`
-//     SELECT *
-//     FROM patient_chats
-//     WHERE patient_id !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
-//   `);
-
-//   console.log(`👀 Chats with invalid patient_id: ${invalidRes.rowCount}`);
-//   console.table(invalidRes.rows);
-
-//   await pgClient.end();
-// }
-
-// listOrphanChats();
-
-
-// insert patient chats
 
 import { Client } from "pg";
 import fs from "fs";
 import dotenv from "dotenv";
 
 dotenv.config();
-
 
 const pgClient = new Client({
   host: "34.87.36.56",
@@ -448,47 +539,39 @@ function isValidUUID(uuid: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(uuid);
 }
 
-// --- Insert patient_chats safely ---
+// --- Insert patient_chats (skip duplicates by id) ---
 async function insertPatientChats(jsonPath: string) {
   const raw = fs.readFileSync(jsonPath, "utf-8");
   const data = JSON.parse(raw);
-  console.log(data.length)
   const chats = Array.isArray(data) ? data : data.chats;
 
-  if (!Array.isArray(chats)) throw new Error("Invalid JSON format, expected array or { chats: [...] }");
+  if (!Array.isArray(chats)) {
+    throw new Error("Invalid JSON format, expected array or { chats: [...] }");
+  }
+
+  console.log(`📦 Total JSON records: ${chats.length}`);
 
   for (const chat of chats) {
-    const patientId = chat.patient_id;
+    const chatId = chat.id;
 
-    // 1️⃣ Ignore invalid UUIDs
-    if (!patientId || !isValidUUID(patientId)) {
-      console.warn(`⚠️ Skipping invalid patient_id: ${patientId}`);
+    // 1️⃣ Skip invalid chat.id
+    if (!chatId || !isValidUUID(chatId)) {
+      console.warn(`⚠️ Skipping invalid chat id: ${chatId}`);
       continue;
     }
 
-    // 2️⃣ Check if patient exists
-    const patientRes = await pgClient.query(
-      "SELECT 1 FROM patient WHERE id = $1 LIMIT 1",
-      [patientId]
-    );
-
-    if (patientRes.rowCount === 0) {
-      console.warn(`⚠️ Skipping chat: patient_id ${patientId} does not exist in patient table`);
-      continue;
-    }
-
-    // 3️⃣ Check duplicate in patient_chats
+    // 2️⃣ Check duplicate by chat.id
     const existsRes = await pgClient.query(
-      "SELECT 1 FROM patient_chats WHERE patient_id = $1 LIMIT 1",
-      [patientId]
+      "SELECT 1 FROM patient_chats WHERE id = $1 LIMIT 1",
+      [chatId]
     );
 
     if (existsRes.rowCount > 0) {
-      console.log(`⏭️ Skipping duplicate chat for patient_id: ${patientId}`);
+      console.log(`⏭️ Skipping duplicate chat id: ${chatId}`);
       continue;
     }
 
-    // 4️⃣ Insert chat
+    // 3️⃣ Insert chat
     const columns = Object.keys(chat).join(", ");
     const values = Object.values(chat);
     const placeholders = values.map((_, i) => `$${i + 1}`).join(", ");
@@ -498,17 +581,20 @@ async function insertPatientChats(jsonPath: string) {
       values
     );
 
-    console.log(`✅ Inserted chat for patient_id: ${patientId}`);
+    console.log(`✅ Inserted chat id: ${chatId}`);
   }
+
+  console.log("🎉 Insert process completed");
 }
+
 // --- Main ---
 async function main() {
   try {
     await pgClient.connect();
 
-    // Pass your JSON file path here
- 
-    await insertPatientChats("/home/shahzaib-malik/projects/Nodejs/core-backend/core-server/src/scripts/patient_chats.json"); 
+    await insertPatientChats(
+      "/home/shahzaib-malik/projects/Nodejs/core-backend/core-server/src/scripts/patient_chats.json"
+    );
   } catch (err) {
     console.error("❌ Error:", err);
   } finally {
