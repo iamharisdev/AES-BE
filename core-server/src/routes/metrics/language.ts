@@ -1,6 +1,7 @@
 import app from "@/app";
 import { db } from "@/db";
 import { jwtMiddleware } from "@/middleware/jwt";
+import { patient } from "@/models/patient";
 import { patientChats } from "@/models/patient-chats";
 import { createRoute, z } from "@hono/zod-openapi";
 import { sql } from "drizzle-orm";
@@ -23,6 +24,16 @@ const LanguageModalityResponseSchema = z.object({
       trend: z.string(),
       trendUp: z.boolean(),
       avgSessionDuration: z.string(),
+      userList: z
+        .array(
+          z.object({
+            id: z.string(),
+            name: z.string(),
+            phone: z.string(),
+            lastActivity: z.string().nullable(),
+          })
+        )
+        .optional(),
     })
   ),
   chartData: z.array(
@@ -51,8 +62,7 @@ function formatDuration(totalSeconds: number): string {
 
 // --- TREND CALCULATION ---
 const calculateTrend = (current: number, previous: number) => {
-  if (previous < 10) return 0
-  console.log(current , previous, ((current - previous) / previous) * 100)
+  if (previous < 10) return 0;
   return ((current - previous) / previous) * 100;
 };
 
@@ -88,29 +98,29 @@ export const getLanguageModalityMetricsHandler = () => {
       const startDateStr = c.req.query("startDate");
       const endDateStr = c.req.query("endDate");
 
-    let start: Date, end: Date;
-   
-         if (startDateStr && endDateStr) {
-           // Use frontend provided dates, convert to PKT start/end of day
-           start = dayjs(startDateStr).tz(PKT).startOf("day").utc().toDate();
-           end = dayjs(endDateStr).tz(PKT).endOf("day").utc().toDate();
-         } else {
-           // Fetch min/max from database
-           const minRow = await db
-             .select({ min: sql`MIN(session_started)` })
-             .from(patientChats);
-           const maxRow = await db
-             .select({ max: sql`MAX(session_started)` })
-             .from(patientChats);
-           const minDate = minRow?.[0]?.min as string | undefined;
-           const maxDate = maxRow?.[0]?.max as string | undefined;
-   
-           if (!minDate || !maxDate) return c.json({ cards: [], chartData: [] });
-   
-           // Convert min/max dates to PKT start/end of day
-           start = dayjs(minDate).tz(PKT).startOf("day").utc().toDate();
-           end = dayjs(maxDate).tz(PKT).endOf("day").utc().toDate();
-         }
+      let start: Date, end: Date;
+
+      if (startDateStr && endDateStr) {
+        start = dayjs(startDateStr).tz(PKT).startOf("day").utc().toDate();
+        end = dayjs(endDateStr).tz(PKT).endOf("day").utc().toDate();
+      } else {
+        const minRow = await db
+          .select({ min: sql`MIN(session_started)` })
+          .from(patientChats);
+        const maxRow = await db
+          .select({ max: sql`MAX(session_started)` })
+          .from(patientChats);
+
+        const minDate = minRow?.[0]?.min as string | undefined;
+        const maxDate = maxRow?.[0]?.max as string | undefined;
+
+        if (!minDate || !maxDate) {
+          return c.json({ cards: [], chartData: [] });
+        }
+
+        start = dayjs(minDate).tz(PKT).startOf("day").utc().toDate();
+        end = dayjs(maxDate).tz(PKT).endOf("day").utc().toDate();
+      }
 
       const rangeMs = end.getTime() - start.getTime();
       const prevStart = new Date(start.getTime() - rangeMs - 1000);
@@ -130,34 +140,74 @@ export const getLanguageModalityMetricsHandler = () => {
 
       const currentSessions = await fetchChats(start, end);
       const previousSessions = await fetchChats(prevStart, prevEnd);
+      const allChats = await fetchChats();
+      // =======================
+      // PATIENT MAP
+      // =======================
+      const patients = await db.select().from(patient);
+      const patientMap = new Map(patients.map((p) => [p.id, p]));
 
-      // --- METRICS CALCULATION ---
+      // =======================
+      // CHATS BY PATIENT
+      // =======================
+      const chatsByPatient = new Map<string, typeof currentSessions>();
+      for (const s of [...currentSessions, ...previousSessions]) {
+        if (!chatsByPatient.has(s.patientId)) {
+          chatsByPatient.set(s.patientId, []);
+        }
+        chatsByPatient.get(s.patientId)!.push(s);
+      }
+
+      // =======================
+      // MAP USERLIST: FIXED
+      // =======================
+      // Always include all users in the set, regardless of messages
+      const mapUserList = (userIds: Set<string>) =>
+        Array.from(userIds).map((id) => {
+          const userChats = chatsByPatient.get(id) ?? [];
+          const patientData = patientMap.get(id);
+
+          const lastActivity =
+            userChats[0]?.lastMessageAt ?? patientData?.createdAt ?? null;
+
+          return {
+            id,
+            name: patientData?.name || "Unknown",
+            phone: patientData?.phoneNumber || "",
+            lastActivity,
+          };
+        });
+
+      // =======================
+      // METRICS CALCULATION
+      // =======================
       const calculateMetrics = (sessions: typeof currentSessions) => {
-        const sessionsByUser = new Map();
+        const sessionsByUser = new Map<string, typeof sessions>();
         for (const s of sessions) {
-          const userId = s.patientId;
-          if (!sessionsByUser.has(userId)) sessionsByUser.set(userId, []);
-          sessionsByUser.get(userId).push(s);
+          if (!sessionsByUser.has(s.patientId))
+            sessionsByUser.set(s.patientId, []);
+          sessionsByUser.get(s.patientId)!.push(s);
         }
 
-        let voiceMajority = 0;
-        let textMajority = 0;
-        let bothUsers = 0;
-        let romanUrduUsers = 0;
-        let englishUsers = 0;
+        const voiceSet = new Set<string>();
+        const textSet = new Set<string>();
+        const bothSet = new Set<string>();
+        const romanUrduSet = new Set<string>();
+        const englishSet = new Set<string>();
 
-        const voiceSessionsArr: number[] = [];
-        const textSessionsArr: number[] = [];
-        const bothSessionsArr: number[] = [];
-        const romanUrduSessionsArr: number[] = [];
-        const englishSessionsArr: number[] = [];
+        const voiceDur: number[] = [];
+        const textDur: number[] = [];
+        const bothDur: number[] = [];
+        const romanDur: number[] = [];
+        const englishDur: number[] = [];
 
         for (const [userId, userSessions] of sessionsByUser.entries()) {
-          let voiceCount = 0;
-          let textCount = 0;
-          let totalInbound = 0;
-          let allUrdu = true;
-          let hasEnglish = false;
+          let voiceCount = 0,
+            textCount = 0,
+            totalInbound = 0,
+            allUrdu = true,
+            hasEnglish = false;
+
           const sessionsByDay: Record<string, any[]> = {};
 
           for (const s of userSessions) {
@@ -208,152 +258,165 @@ export const getLanguageModalityMetricsHandler = () => {
             }
           );
 
-          // CLASSIFY USERS
+          // Classification
           if (voicePerc >= 80) {
-            voiceMajority++;
-            voiceSessionsArr.push(...sessionDurations);
+            voiceSet.add(userId);
+            voiceDur.push(...sessionDurations);
           } else if (voicePerc <= 20) {
-            textMajority++;
-            textSessionsArr.push(...sessionDurations);
-          } else if (voicePerc > 20 && voicePerc < 80) {
-            bothUsers++;
-            bothSessionsArr.push(...sessionDurations);
+            textSet.add(userId);
+            textDur.push(...sessionDurations);
+          } else {
+            bothSet.add(userId);
+            bothDur.push(...sessionDurations);
           }
 
           if (allUrdu) {
-            romanUrduUsers++;
-            romanUrduSessionsArr.push(...sessionDurations);
+            romanUrduSet.add(userId);
+            romanDur.push(...sessionDurations);
           }
+
           if (hasEnglish) {
-            englishUsers++;
-            englishSessionsArr.push(...sessionDurations);
+            englishSet.add(userId);
+            englishDur.push(...sessionDurations);
           }
         }
 
-        const totalUsers = sessionsByUser.size || 1;
         const avg = (arr: number[]) =>
           arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
 
+        const totalUsers = sessionsByUser.size || 1;
+
         return {
-          voiceMajority,
-          textMajority,
-          bothUsers,
-          romanUrduUsers,
-          englishUsers,
-          voiceMajorityPerc: (voiceMajority / totalUsers) * 100,
-          textMajorityPerc: (textMajority / totalUsers) * 100,
-          bothUsersPerc: (bothUsers / totalUsers) * 100,
-          romanUrduUsersPerc: (romanUrduUsers / totalUsers) * 100,
-          englishUsersPerc: (englishUsers / totalUsers) * 100,
-          avgVoiceDuration: avg(voiceSessionsArr),
-          avgTextDuration: avg(textSessionsArr),
-          avgBothDuration: avg(bothSessionsArr),
-          avgRomanUrduDuration: avg(romanUrduSessionsArr),
-          avgEnglishDuration: avg(englishSessionsArr),
+          counts: {
+            voice: voiceSet.size,
+            text: textSet.size,
+            both: bothSet.size,
+            roman: romanUrduSet.size,
+            english: englishSet.size,
+          },
+          perc: {
+            voice: (voiceSet.size / totalUsers) * 100,
+            text: (textSet.size / totalUsers) * 100,
+            both: (bothSet.size / totalUsers) * 100,
+            roman: (romanUrduSet.size / totalUsers) * 100,
+            english: (englishSet.size / totalUsers) * 100,
+          },
+          avg: {
+            voice: avg(voiceDur),
+            text: avg(textDur),
+            both: avg(bothDur),
+            roman: avg(romanDur),
+            english: avg(englishDur),
+          },
+          users: {
+            voice: voiceSet,
+            text: textSet,
+            both: bothSet,
+            roman: romanUrduSet,
+            english: englishSet,
+          },
         };
       };
 
-      const currentMetrics = calculateMetrics(currentSessions);
-      const prevMetrics = calculateMetrics(previousSessions);
-
-      const chartData = [
-        {
-          name: "Voice Majority Users",
-          value: currentMetrics.voiceMajority,
-          percentage: Number(currentMetrics.voiceMajorityPerc.toFixed(2)),
-        },
-        {
-          name: "Text Majority Users",
-          value: currentMetrics.textMajority,
-          percentage: Number(currentMetrics.textMajorityPerc.toFixed(2)),
-        },
-        {
-          name: "Both Users",
-          value: currentMetrics.bothUsers,
-          percentage: Number(currentMetrics.bothUsersPerc.toFixed(2)),
-        },
-        {
-          name: "Roman Urdu Users",
-          value: currentMetrics.romanUrduUsers,
-          percentage: Number(currentMetrics.romanUrduUsersPerc.toFixed(2)),
-        },
-        {
-          name: "English Users",
-          value: currentMetrics.englishUsers,
-          percentage: Number(currentMetrics.englishUsersPerc.toFixed(2)),
-        },
-      ];
+      const current = calculateMetrics(currentSessions);
+      const prev = calculateMetrics(previousSessions);
 
       const response = {
         cards: [
           {
             title: "Voice Majority Users",
-            value: currentMetrics.voiceMajority.toString(),
-            subtitle: `${currentMetrics.voiceMajorityPerc.toFixed(1)}%`,
+            value: current.counts.voice.toString(),
+            subtitle: `${current.perc.voice.toFixed(1)}%`,
             trend: calculateTrend(
-              currentMetrics.voiceMajority,
-              prevMetrics.voiceMajority
+              current.counts.voice,
+              prev.counts.voice
             ).toFixed(1),
-            trendUp: currentMetrics.voiceMajority >= prevMetrics.voiceMajority,
-            avgSessionDuration: formatDuration(currentMetrics.avgVoiceDuration),
+            trendUp: current.counts.voice >= prev.counts.voice,
+            avgSessionDuration: formatDuration(current.avg.voice),
+            userList: mapUserList(current.users.voice),
           },
           {
             title: "Text Majority Users",
-            value: currentMetrics.textMajority.toString(),
-            subtitle: `${currentMetrics.textMajorityPerc.toFixed(1)}%`,
+            value: current.counts.text.toString(),
+            subtitle: `${current.perc.text.toFixed(1)}%`,
             trend: calculateTrend(
-              currentMetrics.textMajority,
-              prevMetrics.textMajority
+              current.counts.text,
+              prev.counts.text
             ).toFixed(1),
-            trendUp: currentMetrics.textMajority >= prevMetrics.textMajority,
-            avgSessionDuration: formatDuration(currentMetrics.avgTextDuration),
+            trendUp: current.counts.text >= prev.counts.text,
+            avgSessionDuration: formatDuration(current.avg.text),
+            userList: mapUserList(current.users.text),
           },
           {
             title: "Both (Text + Voice) Users",
-            value: currentMetrics.bothUsers.toString(),
-            subtitle: `${currentMetrics.bothUsersPerc.toFixed(1)}%`,
+            value: current.counts.both.toString(),
+            subtitle: `${current.perc.both.toFixed(1)}%`,
             trend: calculateTrend(
-              currentMetrics.bothUsers,
-              prevMetrics.bothUsers
+              current.counts.both,
+              prev.counts.both
             ).toFixed(1),
-            trendUp: currentMetrics.bothUsers >= prevMetrics.bothUsers,
-            avgSessionDuration: formatDuration(currentMetrics.avgBothDuration),
+            trendUp: current.counts.both >= prev.counts.both,
+            avgSessionDuration: formatDuration(current.avg.both),
+            userList: mapUserList(current.users.both),
           },
           {
             title: "Roman Urdu–Only Users",
-            value: currentMetrics.romanUrduUsers.toString(),
-            subtitle: `${currentMetrics.romanUrduUsersPerc.toFixed(1)}%`,
+            value: current.counts.roman.toString(),
+            subtitle: `${current.perc.roman.toFixed(1)}%`,
             trend: calculateTrend(
-              currentMetrics.romanUrduUsers,
-              prevMetrics.romanUrduUsers
+              current.counts.roman,
+              prev.counts.roman
             ).toFixed(1),
-            trendUp:
-              currentMetrics.romanUrduUsers >= prevMetrics.romanUrduUsers,
-            avgSessionDuration: formatDuration(
-              currentMetrics.avgRomanUrduDuration
-            ),
+            trendUp: current.counts.roman >= prev.counts.roman,
+            avgSessionDuration: formatDuration(current.avg.roman),
+            userList: mapUserList(current.users.roman),
           },
           {
             title: "English Users",
-            value: currentMetrics.englishUsers.toString(),
-            subtitle: `${currentMetrics.englishUsersPerc.toFixed(1)}%`,
+            value: current.counts.english.toString(),
+            subtitle: `${current.perc.english.toFixed(1)}%`,
             trend: calculateTrend(
-              currentMetrics.englishUsers,
-              prevMetrics.englishUsers
+              current.counts.english,
+              prev.counts.english
             ).toFixed(1),
-            trendUp: currentMetrics.englishUsers >= prevMetrics.englishUsers,
-            avgSessionDuration: formatDuration(
-              currentMetrics.avgEnglishDuration
-            ),
+            trendUp: current.counts.english >= prev.counts.english,
+            avgSessionDuration: formatDuration(current.avg.english),
+            userList: mapUserList(current.users.english),
           },
         ],
-        chartData,
+        chartData: [
+          {
+            name: "Voice",
+            value: current.counts.voice,
+            percentage: Number(current.perc.voice.toFixed(1)),
+          },
+          {
+            name: "Text",
+            value: current.counts.text,
+            percentage: Number(current.perc.text.toFixed(1)),
+          },
+          {
+            name: "Both",
+            value: current.counts.both,
+            percentage: Number(current.perc.both.toFixed(1)),
+          },
+          {
+            name: "Roman Urdu",
+            value: current.counts.roman,
+            percentage: Number(current.perc.roman.toFixed(1)),
+          },
+          {
+            name: "English",
+            value: current.counts.english,
+            percentage: Number(current.perc.english.toFixed(1)),
+          },
+        ],
       };
 
       return c.json(response, 200);
     } catch (err) {
       console.error("Error in language-modality metrics:", err);
-      return c.json({ ok: false, error: "Failed to fetch metrics" }, 500);
+      return c.json({ error: "Failed to fetch metrics" }, 500);
     }
   });
 };
