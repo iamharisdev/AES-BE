@@ -1,0 +1,1 @@
+ALTER TABLE "obs_history" ADD COLUMN "children_school_status" text;

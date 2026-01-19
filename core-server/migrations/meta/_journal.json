@@ -5,22 +5,50 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1762948660144,
-      "tag": "0000_mighty_chamber",
+      "when": 1768285752405,
+      "tag": "0000_clumsy_manta",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
-      "when": 1764588410733,
-      "tag": "0001_young_frank_castle",
+      "when": 1768385233174,
+      "tag": "0001_chilly_forge",
       "breakpoints": true
     },
     {
       "idx": 2,
       "version": "7",
-      "when": 1766041304769,
-      "tag": "0002_noisy_baron_strucker",
+      "when": 1768391243368,
+      "tag": "0002_secret_chamber",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1768473082665,
+      "tag": "0003_sloppy_deathstrike",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1768550446469,
+      "tag": "0004_petite_sage",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1768812130905,
+      "tag": "0005_massive_mikhail_rasputin",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1768822081383,
+      "tag": "0006_careful_stellaris",
       "breakpoints": true
     }
   ]

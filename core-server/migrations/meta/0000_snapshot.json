@@ -1,5 +1,5 @@
 {
-  "id": "941c1679-520f-4f06-8009-024c25e49be3",
+  "id": "a23280e8-feed-4618-b67b-8a6154e3db25",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -1300,6 +1300,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "mongo_patient_id": {
+          "name": "mongo_patient_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "session_started": {
           "name": "session_started",
           "type": "timestamp with time zone",
@@ -1481,6 +1487,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "husband_name": {
+          "name": "husband_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "marital_status": {
           "name": "marital_status",
           "type": "text",
@@ -1507,6 +1519,12 @@
         },
         "miscarriage": {
           "name": "miscarriage",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "menu": {
+          "name": "menu",
           "type": "text",
           "primaryKey": false,
           "notNull": false

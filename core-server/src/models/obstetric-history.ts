@@ -16,6 +16,7 @@ export const obsHistory = pgTable('obs_history', {
   childrenBirthPlaces: text('children_birth_places'),
   childrenBirthWeights: text('children_birth_weights'),
   childrenHealthStatus: text('children_health_status'),
+  childrenSchoolStatus: text('children_school_status'),
   previousPregnancyConditions: text('previous_pregnancy_conditions'),
   previousPregnancycomplications: text('previous_pregnancy_complications'),
 

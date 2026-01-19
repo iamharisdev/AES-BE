@@ -1,0 +1,1 @@
+ALTER TABLE "patient" ADD COLUMN "husband_relation" text;

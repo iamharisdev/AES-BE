@@ -36,13 +36,13 @@ const NotFoundSchema = z.object({
   }),
 });
 
-
 const CreatePatientRequestSchema = z.object({
   name: z.string().min(1, "Name is required"),
   phoneNumber: z
     .string()
     .min(10, "Phone number must be at least 10 digits")
     .max(15),
+  husbandName: z.string().optional(),
   cnic: z.string().min(13, "CNIC must be 13 digits").max(15),
   age: z.string().optional(),
   gestationalAge: z.string().optional(),
@@ -84,6 +84,8 @@ const searchPatientsRoute = createRoute({
         .min(3)
         .optional()
         .or(z.literal("").transform(() => undefined)),
+      page: z.coerce.number().min(1).default(1),
+      pageSize: z.coerce.number().min(1).max(100).default(20),
     }),
   },
   responses: {
@@ -108,68 +110,94 @@ const searchPatientsRoute = createRoute({
 
 const searchPatientsHandler = () => {
   app.openapi(searchPatientsRoute, async (c) => {
-    const { searchKey } = c.req.valid("query");
+    const { searchKey, page, pageSize } = c.req.valid("query");
+
+    const offset = (page - 1) * pageSize;
+
     let patients;
+    let totalCount = 0;
+ 
 
     try {
-      if (searchKey && searchKey.trim().length >= 3) {
-        // Try normal query first
-        patients = await db
-          .select()
-          .from(tables.patient)
-          .where(
-            or(
+      const whereCondition =
+        searchKey && searchKey.trim().length >= 3
+          ? or(
               ilike(tables.patient.name, `%${searchKey}%`),
               ilike(tables.patient.phoneNumber, `%${searchKey}%`),
               ilike(tables.patient.cnic, `%${searchKey}%`)
             )
-          )
-          .orderBy(desc(tables.patient.createdAt))
-          .limit(50)
-          .execute();
+          : undefined;
 
-        if (patients.length === 0) {
-          return c.json(
-            { error: "No patients found for the given search key" },
-            404
-          );
-        }
-      } else {
-        // No search key → return recent patients
-        patients = await db
-          .select()
-          .from(tables.patient)
-          .orderBy(desc(tables.patient.createdAt))
-         
-          .execute();
+      // 🔹 TOTAL COUNT
+      const countResult = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(tables.patient)
+        .where(whereCondition)
+        .execute();
+
+      totalCount = Number(countResult[0].count);
+
+      // 🔹 DATA
+      patients = await db
+        .select()
+        .from(tables.patient)
+        .where(whereCondition)
+        .orderBy(desc(tables.patient.createdAt))
+        .limit(pageSize)
+        .offset(offset)
+        .execute();
+
+      if (patients.length === 0) {
+        return c.json({ error: "No patients found" }, 404);
       }
     } catch (error: any) {
-      // 🔥 Catch any kind of DB schema or column error safely
       const message = error?.message || "";
       const code = error?.code;
 
-      if (
-        code === "42703" || // Postgres missing column
-        message.includes("column") ||
-        message.includes("does not exist")
-      ) {
-        console.warn("⚠️ Missing column (e.g. miscarriage_count) ignored.");
+      if (code === "42703" || message.includes("column")) {
+        // fallback SQL
+        const whereSql =
+          searchKey && searchKey.trim().length >= 3
+            ? sql`WHERE name ILIKE ${"%" + searchKey + "%"}
+                  OR phone_number ILIKE ${"%" + searchKey + "%"}
+                  OR cnic ILIKE ${"%" + searchKey + "%"}
+                  OR id ILIKE ${"%" + searchKey + "%"}`
+            : sql``;
 
-        // Run fallback SQL manually
-        const limit = searchKey && searchKey.trim().length >= 3 ? 50 : 20;
+        const countQuery = await db.execute(
+          sql`SELECT count(*) FROM patient ${whereSql}`
+        );
+        totalCount = Number(countQuery[0].count);
+
         patients = await db.execute(
-          sql`SELECT id, name, phone_number, cnic, location, created_at, updated_at
-               FROM patient
-               ORDER BY created_at DESC
-               LIMIT ${limit}`
+          sql`
+          SELECT id, name, phone_number, cnic, location, created_at, updated_at
+          FROM patient
+          ${whereSql}
+          ORDER BY created_at DESC
+          LIMIT ${pageSize} OFFSET ${offset}
+        `
         );
       } else {
-        console.error("❌ Unhandled DB error:", error);
+        console.error("❌ DB error:", error);
         return c.json({ error: "Internal Server Error" }, 500);
       }
     }
 
-    return c.json(patients, 200);
+    const totalPages = Math.ceil(totalCount / pageSize);
+
+    return c.json(
+      {
+        data: patients,
+        pagination: {
+          totalRecords: totalCount,
+          totalPages,
+          currentPage: page,
+          pageSize,
+        },
+      },
+      200
+    );
   });
 };
 
@@ -419,10 +447,12 @@ const EditPatientRequestSchema = z.object({
   education: z.string().optional(),
   marriedYears: z.string().optional(),
   pregnancyMonths: z.string().optional(),
+  gestationalAge: z.string().optional(),
   miscarriage: z.string().optional(),
   firstPregnancy: z.string().optional(),
   familyMarriage: z.string().optional(),
   husbandPhoneNumber: z.string().optional(),
+  husbandName:z.string().optional(),
   patientBloodGroup: z.string().optional(),
   husbandBloodGroup: z.string().optional(),
   lastMenstruationDate: z.string().optional(),
@@ -448,6 +478,8 @@ const EditPatientSuccessSchema = z.object({
     education: z.string().nullable(),
     marriedYears: z.string().nullable(),
     pregnancyMonths: z.string().nullable(),
+    husbandName:z.string().optional(),
+    gestationalAge: z.string().nullable(),
     miscarriage: z.string().nullable(),
     firstPregnancy: z.string().nullable(),
     familyMarriage: z.string().nullable(),
@@ -546,7 +578,6 @@ const editPatientHandler = () => {
   });
 };
 
-
 const createPatientRoute = createRoute({
   method: "post",
   operationId: "createPatient",
@@ -596,7 +627,8 @@ const createPatientHandler = () => {
   app.openapi(createPatientRoute, async (c) => {
     try {
       const body = c.req.valid("json");
-      const { name, phoneNumber, cnic, age, gestationalAge } = body;
+      const { name, phoneNumber, husbandName, cnic, age, gestationalAge } =
+        body;
 
       // Check for existing patient by phone number
       const existing = await db
@@ -618,9 +650,10 @@ const createPatientHandler = () => {
         .values({
           name,
           phoneNumber,
+          husbandName,
           cnic,
           age: age || null,
-          pregnancyMonths: gestationalAge || null,
+          gestationalAge,
           createdAt: new Date(),
           updatedAt: new Date(),
         })
@@ -642,8 +675,10 @@ const createPatientHandler = () => {
 
 
 
-
 export {
-  createPatientHandler, editPatientHandler, getPatientInfoHandler, searchPatientsHandler, uploadVoiceNoteHandler
+  createPatientHandler,
+  editPatientHandler,
+  getPatientInfoHandler,
+  searchPatientsHandler,
+  uploadVoiceNoteHandler,
 };
-

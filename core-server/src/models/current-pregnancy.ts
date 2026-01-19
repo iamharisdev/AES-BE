@@ -16,7 +16,6 @@ export const currentPregnancy = pgTable("current_pregnancy", {
   earlyPregnancySymptoms: text("early_pregnancy_symptoms"),
   pregnancyMethod: text("pregnancy_method"),
 
-
   // 📝 Remaining existing fields (not directly matched)
   bleeding: text("bleeding"),
   fever: text("fever"),
@@ -35,7 +34,7 @@ export const currentPregnancy = pgTable("current_pregnancy", {
   urineTest: text("urine_test"),
   bloodUrineTest: text("blood_urine_test"), // kept for backward compatibility
   bloodUrineTestTypes: text("blood_urine_test_types"),
-
+  
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
