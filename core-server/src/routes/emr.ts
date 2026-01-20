@@ -3,7 +3,7 @@ import { db } from "@/db";
 import { jwtMiddleware } from "@/middleware/jwt";
 import { tables } from "@/models";
 import { createRoute, z } from "@hono/zod-openapi";
-import { eq, sql, inArray } from "drizzle-orm";
+import { eq, inArray, sql } from "drizzle-orm";
 
 // --- get-emr-details ---
 const GetEmrSuccessResponseSchema = z.object({
@@ -84,42 +84,42 @@ const getEmrDetailsHandler = () => {
       .leftJoin(tables.examination, eq(tables.emr.id, tables.examination.id))
       .leftJoin(
         tables.patient,
-        eq(tables.emr.phone, tables.patient.phoneNumber)
+        eq(tables.emr.phone, tables.patient.phoneNumber),
       )
       .leftJoin(
         tables.presentingComplaint,
-        eq(tables.emr.id, tables.presentingComplaint.emrId)
+        eq(tables.emr.id, tables.presentingComplaint.emrId),
       )
       .leftJoin(
         tables.currentPregnancy,
-        eq(tables.emr.id, tables.currentPregnancy.emrId)
+        eq(tables.emr.id, tables.currentPregnancy.emrId),
       )
       .leftJoin(tables.trimester, eq(tables.emr.id, tables.trimester.emrId))
       .leftJoin(tables.obsHistory, eq(tables.emr.id, tables.obsHistory.emrId))
       .leftJoin(
         tables.gynecologicalHistory,
-        eq(tables.emr.id, tables.gynecologicalHistory.emrId)
+        eq(tables.emr.id, tables.gynecologicalHistory.emrId),
       )
       .leftJoin(
         tables.surgicalHistory,
-        eq(tables.emr.id, tables.surgicalHistory.emrId)
+        eq(tables.emr.id, tables.surgicalHistory.emrId),
       )
       .leftJoin(
         tables.familyHistory,
-        eq(tables.emr.id, tables.familyHistory.emrId)
+        eq(tables.emr.id, tables.familyHistory.emrId),
       )
       .leftJoin(
         tables.personalHistory,
-        eq(tables.emr.id, tables.personalHistory.emrId)
+        eq(tables.emr.id, tables.personalHistory.emrId),
       )
       .leftJoin(
         tables.socioEconomicHistory,
-        eq(tables.emr.id, tables.socioEconomicHistory.emrId)
+        eq(tables.emr.id, tables.socioEconomicHistory.emrId),
       )
       .leftJoin(tables.redFlags, eq(tables.emr.id, tables.redFlags.emrId))
       .leftJoin(
         tables.followupQuestions,
-        eq(tables.emr.id, tables.followupQuestions.emrId)
+        eq(tables.emr.id, tables.followupQuestions.emrId),
       )
       .where(eq(tables.emr.id, id))
       .execute()
@@ -186,7 +186,7 @@ const getEmrDetailsHandler = () => {
       {
         emr: transformedEmr,
       },
-      200
+      200,
     );
   });
 };
@@ -214,7 +214,7 @@ const GetAllEmrsSuccessSchema = z.object({
       followupQuestions: z.record(z.unknown()),
       proposedPlan: z.array(z.record(z.unknown())),
       previousPregnancy: z.array(z.record(z.unknown())),
-    })
+    }),
   ),
 });
 const GetAllEmrsNotFoundSchema = z.object({
@@ -266,7 +266,7 @@ const getAllEmrsFromPhoneHandler = () => {
     if (emrs.length === 0) {
       return c.json(
         { error: `No EMR records found for phone number ${phoneNumber}` },
-        404
+        404,
       );
     }
 
@@ -365,29 +365,35 @@ const getAllEmrsFromPhoneHandler = () => {
 
     // Create lookup maps for efficient data retrieval
     const createLookupMap = (data: any[], key: string) => {
-      return data.reduce((acc, item) => {
-        const emrId = item[key];
-        if (!acc[emrId]) {
-          acc[emrId] = item;
-        }
-        return acc;
-      }, {} as Record<string, any>);
+      return data.reduce(
+        (acc, item) => {
+          const emrId = item[key];
+          if (!acc[emrId]) {
+            acc[emrId] = item;
+          }
+          return acc;
+        },
+        {} as Record<string, any>,
+      );
     };
 
     const createGroupedLookupMap = (data: any[], key: string) => {
-      return data.reduce((acc, item) => {
-        const emrId = item[key];
-        if (!acc[emrId]) {
-          acc[emrId] = [];
-        }
-        acc[emrId].push(item);
-        return acc;
-      }, {} as Record<string, any[]>);
+      return data.reduce(
+        (acc, item) => {
+          const emrId = item[key];
+          if (!acc[emrId]) {
+            acc[emrId] = [];
+          }
+          acc[emrId].push(item);
+          return acc;
+        },
+        {} as Record<string, any[]>,
+      );
     };
 
     const presentingComplaintsMap = createLookupMap(
       presentingComplaints,
-      "emrId"
+      "emrId",
     );
     const currentPregnanciesMap = createLookupMap(currentPregnancies, "emrId");
     const trimestersMap = createLookupMap(trimesters, "emrId");
@@ -395,19 +401,19 @@ const getAllEmrsFromPhoneHandler = () => {
     const medicalHistoryMap = createLookupMap(medicalHistory, "emrId");
     const gynecologicalHistoriesMap = createLookupMap(
       gynecologicalHistories,
-      "emrId"
+      "emrId",
     );
     const surgicalHistoriesMap = createLookupMap(surgicalHistories, "emrId");
     const familyHistoriesMap = createLookupMap(familyHistories, "emrId");
     const personalHistoriesMap = createLookupMap(personalHistories, "emrId");
     const socioEconomicHistoriesMap = createLookupMap(
       socioEconomicHistories,
-      "emrId"
+      "emrId",
     );
     const redFlagsMap = createGroupedLookupMap(redFlags, "emrId");
     const followupQuestionsMap = createGroupedLookupMap(
       followupQuestions,
-      "emrId"
+      "emrId",
     );
     // const proposedPlansMap = createGroupedLookupMap(proposedPlans, "emrId");
 
@@ -421,7 +427,7 @@ const getAllEmrsFromPhoneHandler = () => {
         acc[emrId].push(pregnancy);
         return acc;
       },
-      {} as Record<string, any[]>
+      {} as Record<string, any[]>,
     );
 
     // Transform the response to match the schema
@@ -462,7 +468,7 @@ const getAllEmrsFromPhoneHandler = () => {
           pregnancyProblems: pregnancy.pregnancyProblems,
           createdAt: pregnancy.createdAt,
           updatedAt: pregnancy.updatedAt,
-        })
+        }),
       ),
     }));
 
@@ -479,21 +485,21 @@ const GetAllEmrsFromCnicSuccessSchema = z.object({
       visit: z.number(),
       createdAt: z.date(),
       updatedAt: z.date(),
-      patient: z.record(z.unknown()),
-      presentingComplaint: z.record(z.unknown()),
-      currentPregnancy: z.record(z.unknown()),
-      trimester: z.record(z.unknown()),
-      obsHistory: z.record(z.unknown()),
-      gynecologicalHistory: z.record(z.unknown()),
-      surgicalHistory: z.record(z.unknown()),
-      familyHistory: z.record(z.unknown()),
-      personalHistory: z.record(z.unknown()),
-      socioEconomicHistory: z.record(z.unknown()),
-      redFlags: z.record(z.unknown()),
-      followupQuestions: z.record(z.unknown()),
-      proposedPlan: z.array(z.record(z.unknown())),
-      previousPregnancy: z.array(z.record(z.unknown())),
-    })
+      patient: z.record(z.string(), z.unknown()).optional(),
+      presentingComplaint: z.record(z.string(), z.unknown()).optional(),
+      currentPregnancy: z.record(z.string(), z.unknown()).optional(),
+      trimester: z.record(z.string(), z.unknown()).optional(),
+      obsHistory: z.record(z.string(), z.unknown()).optional(),
+      gynecologicalHistory: z.record(z.string(), z.unknown()).optional(),
+      surgicalHistory: z.record(z.string(), z.unknown()).optional(),
+      familyHistory: z.record(z.string(), z.unknown()).optional(),
+      personalHistory: z.record(z.string(), z.unknown()).optional(),
+      socioEconomicHistory: z.record(z.string(), z.unknown()).optional(),
+      redFlags: z.record(z.string(), z.unknown()).optional(),
+      followupQuestions: z.record(z.string(), z.unknown()).optional(),
+      proposedPlan: z.array(z.record(z.string(),z.unknown())),
+      previousPregnancy: z.array(z.record(z.string(),z.unknown())),
+    }),
   ),
 });
 const GetAllEmrsFromCnicNotFoundSchema = z.object({
@@ -643,48 +649,54 @@ const getAllEmrsFromCnicHandler = () => {
 
     // Create lookup maps for efficient data retrieval
     const createLookupMap = (data: any[], key: string) => {
-      return data.reduce((acc, item) => {
-        const emrId = item[key];
-        if (!acc[emrId]) {
-          acc[emrId] = item;
-        }
-        return acc;
-      }, {} as Record<string, any>);
+      return data.reduce(
+        (acc, item) => {
+          const emrId = item[key];
+          if (!acc[emrId]) {
+            acc[emrId] = item;
+          }
+          return acc;
+        },
+        {} as Record<string, any>,
+      );
     };
 
     const createGroupedLookupMap = (data: any[], key: string) => {
-      return data.reduce((acc, item) => {
-        const emrId = item[key];
-        if (!acc[emrId]) {
-          acc[emrId] = [];
-        }
-        acc[emrId].push(item);
-        return acc;
-      }, {} as Record<string, any[]>);
+      return data.reduce(
+        (acc, item) => {
+          const emrId = item[key];
+          if (!acc[emrId]) {
+            acc[emrId] = [];
+          }
+          acc[emrId].push(item);
+          return acc;
+        },
+        {} as Record<string, any[]>,
+      );
     };
 
     const presentingComplaintsMap = createLookupMap(
       presentingComplaints,
-      "emrId"
+      "emrId",
     );
     const currentPregnanciesMap = createLookupMap(currentPregnancies, "emrId");
     const trimestersMap = createLookupMap(trimesters, "emrId");
     const obsHistoriesMap = createLookupMap(obsHistories, "emrId");
     const gynecologicalHistoriesMap = createLookupMap(
       gynecologicalHistories,
-      "emrId"
+      "emrId",
     );
     const surgicalHistoriesMap = createLookupMap(surgicalHistories, "emrId");
     const familyHistoriesMap = createLookupMap(familyHistories, "emrId");
     const personalHistoriesMap = createLookupMap(personalHistories, "emrId");
     const socioEconomicHistoriesMap = createLookupMap(
       socioEconomicHistories,
-      "emrId"
+      "emrId",
     );
     const redFlagsMap = createGroupedLookupMap(redFlags, "emrId");
     const followupQuestionsMap = createGroupedLookupMap(
       followupQuestions,
-      "emrId"
+      "emrId",
     );
     const proposedPlansMap = createGroupedLookupMap(proposedPlans, "emrId");
 
@@ -698,7 +710,7 @@ const getAllEmrsFromCnicHandler = () => {
         acc[emrId].push(pregnancy);
         return acc;
       },
-      {} as Record<string, any[]>
+      {} as Record<string, any[]>,
     );
 
     // Transform the response to match the schema
@@ -738,7 +750,7 @@ const getAllEmrsFromCnicHandler = () => {
           pregnancyProblems: pregnancy.pregnancyProblems,
           createdAt: pregnancy.createdAt,
           updatedAt: pregnancy.updatedAt,
-        })
+        }),
       ),
     }));
 
@@ -772,7 +784,7 @@ const UpdateEmrRequestSchema = z.object({
           message: "Invalid section name",
         }),
         content: z.object({}),
-      })
+      }),
     )
     .min(1)
     .refine(
@@ -780,7 +792,7 @@ const UpdateEmrRequestSchema = z.object({
         const sectionSet = new Set(updates.map((u) => u.section));
         return sectionSet.size === updates.length;
       },
-      { message: "Duplicate sections are not allowed" }
+      { message: "Duplicate sections are not allowed" },
     ),
 });
 const UpdateEmrSuccessSchema = z.object({
@@ -857,7 +869,7 @@ const updateEmrHandler = () => {
         updatedFields: updates.map((u: any) => u.section),
         lastmodified,
       },
-      200
+      200,
     );
   });
 };
@@ -867,21 +879,22 @@ const CreateEmrRequestSchema = z.object({
   phone: z.string(),
   patientId: z.string(),
   visit: z.number(),
-  patient: z.record(z.unknown()).optional(),
-  currentPregnancy: z.record(z.unknown()).optional(),
-  obsHistory: z.record(z.unknown()).optional(),
-  gynecologicalHistory: z.record(z.unknown()).optional(),
-  surgicalHistory: z.record(z.unknown()).optional(),
-  familyHistory: z.record(z.unknown()).optional(),
-  personalHistory: z.record(z.unknown()).optional(),
-  socioEconomicHistory: z.record(z.unknown()).optional(),
-  previousPregnancy: z.array(z.record(z.unknown())).optional(),
+  patient: z.record(z.string(), z.unknown()).optional(),
+  currentPregnancy: z.record(z.string(), z.unknown()).optional(),
+  obsHistory: z.record(z.string(), z.unknown()).optional(),
+  gynecologicalHistory: z.record(z.string(), z.unknown()).optional(),
+  surgicalHistory: z.record(z.string(), z.unknown()).optional(),
+  familyHistory: z.record(z.string(), z.unknown()).optional(),
+  trimester: z.record(z.string(), z.unknown()).optional(),
+  personalHistory: z.record(z.string(), z.unknown()).optional(),
+  socioEconomicHistory: z.record(z.string(), z.unknown()).optional(),
+  previousPregnancy: z.array(z.record(z.string(), z.unknown())).optional(),
 });
 
 const CreateEmrSuccessSchema = z.object({
   message: z.string(),
-  emrId: z.string().uuid(),
-  createdAt: z.string().datetime(),
+  emrId:z.uuid(),
+ createdAt: z.iso.datetime(),
 });
 
 // --- Create EMR Route ---
@@ -925,7 +938,7 @@ const createEmrHandler = () => {
         .where(
           patientId
             ? eq(tables.patient.id, patientId)
-            : eq(tables.patient.phoneNumber, phone)
+            : eq(tables.patient.phoneNumber, phone),
         )
         .then((res) => res.at(0));
 
@@ -979,16 +992,16 @@ const createEmrHandler = () => {
       await insertJsonSection(tables.obsHistory, body.obsHistory);
       await insertJsonSection(
         tables.gynecologicalHistory,
-        body.gynecologicalHistory
+        body.gynecologicalHistory,
       );
       await insertJsonSection(tables.surgicalHistory, body.surgicalHistory);
       await insertJsonSection(tables.familyHistory, body.familyHistory);
       await insertJsonSection(tables.personalHistory, body.personalHistory);
       await insertJsonSection(tables.medicalHistory, body.medicalHistory);
-      await insertJsonSection(tables.trimester, body.tremister);
+      await insertJsonSection(tables.trimester, body.trimester);
       await insertJsonSection(
         tables.socioEconomicHistory,
-        body.socioEconomicHistory
+        body.socioEconomicHistory,
       );
 
       // 7️⃣ Handle previousPregnancy array
@@ -1014,7 +1027,7 @@ const createEmrHandler = () => {
               ? insertedEmr.createdAt.toISOString()
               : new Date().toISOString(),
         },
-        200
+        200,
       );
     } catch (err: any) {
       console.error("❌ Error creating EMR:", err);
@@ -1025,7 +1038,7 @@ const createEmrHandler = () => {
 
 const UpdateEmrDataRequestSchema = CreateEmrRequestSchema.omit({ visit: true }) // we don’t want visit enforced for updates
   .extend({
-    emrId: z.string().uuid().optional(), // only required for update
+    emrId: z.uuid().optional(), // only required for update
   });
 
 const updateEmrDataRoute = createRoute({
@@ -1142,16 +1155,16 @@ const updateEmrDataHandler = () => {
       await upsertSection(tables.obsHistory, body.obsHistory);
       await upsertSection(
         tables.gynecologicalHistory,
-        body.gynecologicalHistory
+        body.gynecologicalHistory,
       );
       await upsertSection(tables.surgicalHistory, body.surgicalHistory);
       await upsertSection(tables.familyHistory, body.familyHistory);
       await upsertSection(tables.personalHistory, body.personalHistory);
       await upsertSection(tables.medicalHistory, body.medicalHistory);
-      await upsertSection(tables.trimester, body.tremister);
+      await upsertSection(tables.trimester, body.trimester);
       await upsertSection(
         tables.socioEconomicHistory,
-        body.socioEconomicHistory
+        body.socioEconomicHistory,
       );
 
       // 7️⃣ Handle previousPregnancy array (replace all existing)
@@ -1178,7 +1191,7 @@ const updateEmrDataHandler = () => {
           emrId,
           updatedAt: new Date().toISOString(),
         },
-        200
+        200,
       );
     } catch (err: any) {
       console.error("❌ Error updating EMR:", err);
@@ -1188,10 +1201,6 @@ const updateEmrDataHandler = () => {
 };
 
 export {
-  getEmrDetailsHandler,
-  getAllEmrsFromPhoneHandler,
-  getAllEmrsFromCnicHandler,
-  updateEmrHandler,
-  createEmrHandler,
-  updateEmrDataHandler,
+  createEmrHandler, getAllEmrsFromCnicHandler, getAllEmrsFromPhoneHandler, getEmrDetailsHandler, updateEmrDataHandler, updateEmrHandler
 };
+
