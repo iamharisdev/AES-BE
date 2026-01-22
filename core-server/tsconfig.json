@@ -2,10 +2,10 @@
   "compilerOptions": {
     // needed for postgres.js to work
     "esModuleInterop": true,
-    "module": "esnext",
-    "target": "es2022",
+    "allowSyntheticDefaultImports": true,
     "moduleResolution": "node",
-
+    "target": "es2020",
+    "module": "commonjs",
     "strict": true,
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx",
